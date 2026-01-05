@@ -159,6 +159,15 @@
       gap:10px;
     }
 
+    .pillRow{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      align-items:center;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
     .pill{
       display:inline-flex;
       align-items:center;
@@ -170,15 +179,56 @@
       background: rgba(51,230,209,0.10);
       border: 1px solid rgba(51,230,209,0.22);
       color: rgba(233,238,252,0.92);
+      white-space: nowrap;
     }
+
     .dot{
       width:8px; height:8px; border-radius:99px;
       background: var(--teal);
       box-shadow: 0 0 12px rgba(51,230,209,0.5);
     }
 
+    /* #5 breathing LIVE indicator (pauses when SYNC) */
+    @keyframes breathe {
+      0%   { transform: scale(1);   opacity: 0.75; box-shadow: 0 0 10px rgba(51,230,209,0.25); }
+      50%  { transform: scale(1.45);opacity: 1;    box-shadow: 0 0 22px rgba(51,230,209,0.55); }
+      100% { transform: scale(1);   opacity: 0.75; box-shadow: 0 0 10px rgba(51,230,209,0.25); }
+    }
+    .pill .dot{
+      animation: breathe 1.6s ease-in-out infinite;
+      transform-origin: center;
+    }
+
     .pos{ color: var(--pos); }
     .neg{ color: var(--neg); }
+
+    /* #2 Market badge styles */
+    .pill.market{
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.14);
+      color: rgba(233,238,252,0.90);
+    }
+    .mDot{
+      width:8px; height:8px; border-radius:99px;
+      background: rgba(233,238,252,0.55);
+      box-shadow: 0 0 10px rgba(233,238,252,0.18);
+    }
+    .pill.market.open{
+      background: rgba(119,255,181,0.12);
+      border-color: rgba(119,255,181,0.26);
+    }
+    .pill.market.open .mDot{
+      background: #77ffb5;
+      box-shadow: 0 0 14px rgba(119,255,181,0.40);
+    }
+    .pill.market.closed{
+      background: rgba(255,122,122,0.12);
+      border-color: rgba(255,122,122,0.24);
+    }
+    .pill.market.closed .mDot{
+      background: #ff7a7a;
+      box-shadow: 0 0 14px rgba(255,122,122,0.35);
+    }
 
     /* “Portfolio Pulse” area fills the empty space */
     .pulse{
@@ -316,7 +366,12 @@
           </div>
 
           <div class="priceBox">
-            <div class="pill"><span class="dot"></span><span id="status">LIVE</span></div>
+            <!-- #2: Add market badge next to LIVE -->
+            <div class="pillRow">
+              <div class="pill"><span class="dot" id="liveDot"></span><span id="status">LIVE</span></div>
+              <div class="pill market" id="marketBadge"><span class="mDot"></span><span id="marketText">—</span></div>
+            </div>
+
             <div class="price" id="price">—</div>
             <div class="chg" id="chg">—</div>
           </div>
@@ -384,8 +439,46 @@
   let config = null;
   let quotes = {}; // symbol -> { price, change, changesPercentage }
   let idx = 0;
+
+  // timers
   let cycleTimer = null;
   let refreshTimer = null;
+
+  // #4 Weighted cycling state
+  let weightedSeq = [];
+  let weightedPos = 0;
+
+  // #5 Live dot control (pause breathe when SYNC)
+  function setLiveState(isLive){
+    const dot = document.getElementById("liveDot");
+    if(!dot) return;
+    dot.style.animationPlayState = isLive ? "running" : "paused";
+    dot.style.opacity = isLive ? "1" : "0.6";
+  }
+
+  // #2 Market open/closed (no API; ignores holidays)
+  function isMarketOpenET(now = new Date()){
+    const et = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+    const day = et.getDay(); // 0 Sun ... 6 Sat
+    const minutes = et.getHours() * 60 + et.getMinutes();
+
+    const isWeekday = day >= 1 && day <= 5;
+    const openMinutes = 9 * 60 + 30;
+    const closeMinutes = 16 * 60;
+
+    return isWeekday && minutes >= openMinutes && minutes < closeMinutes;
+  }
+
+  function updateMarketBadge(){
+    const badge = document.getElementById("marketBadge");
+    const text = document.getElementById("marketText");
+    if(!badge || !text) return;
+
+    const open = isMarketOpenET();
+    badge.classList.remove("open", "closed");
+    badge.classList.add(open ? "open" : "closed");
+    text.textContent = open ? "MARKET OPEN" : "MARKET CLOSED";
+  }
 
   async function loadConfig(){
     const r = await fetch("./portfolio.json", { cache: "no-store" });
@@ -408,6 +501,9 @@
 
     document.getElementById("pulseHint").textContent =
       `${Object.keys(quotes).length}/${config.holdings.length} symbols updated`;
+
+    // success -> breathe
+    setLiveState(true);
   }
 
   function computeTotals(){
@@ -494,10 +590,12 @@
       priceEl.textContent = fmtUsd(q.price);
       chgEl.textContent = `${fmtSignedUsd(q.change)}  (${fmtPct(q.changesPercentage)})`;
       chgEl.className = "chg " + clsFor(q.change);
+      chgEl.style.color = ""; // clear any forced muted color
 
       const qty = Number(h.qty ?? 0);
       metaEl.textContent = `Qty: ${qty.toLocaleString(undefined,{maximumFractionDigits:3})} • Est. position: ${fmtUsd(qty * q.price)}`;
       statusEl.textContent = "LIVE";
+      setLiveState(true);
     } else {
       priceEl.textContent = "—";
       chgEl.textContent = "No quote (delisted/OTC?)";
@@ -505,6 +603,7 @@
       chgEl.style.color = "rgba(233,238,252,0.70)";
       metaEl.textContent = "Waiting for quote data…";
       statusEl.textContent = "SYNC";
+      setLiveState(false);
     }
 
     document.getElementById("next").textContent = nextH.symbol;
@@ -518,12 +617,40 @@
     renderPulse();
   }
 
+  // #4 Weighted sequence builder
+  function buildWeightedSequence(holdings){
+    const slots = 120; // smooth cycling; tweak if you want
+    const totalW = holdings.reduce((a,h)=>a + (Number(h.weight)||0), 0) || 1;
+
+    const seq = [];
+    for(let i=0;i<holdings.length;i++){
+      const w = (Number(holdings[i].weight)||0) / totalW;
+      const count = Math.max(1, Math.round(w * slots));
+      for(let k=0;k<count;k++) seq.push(i);
+    }
+
+    // Shuffle to avoid clumps
+    for(let i=seq.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [seq[i], seq[j]] = [seq[j], seq[i]];
+    }
+    return seq;
+  }
+
   function startCycle(){
     const cycleMs = (config.cycleSeconds ?? 5) * 1000;
     if(cycleTimer) clearInterval(cycleTimer);
+
+    // Build weighted playlist once at start (or rebuild if you want on refresh)
+    weightedSeq = buildWeightedSequence(config.holdings);
+    weightedPos = 0;
+
+    idx = weightedSeq[weightedPos] ?? 0;
     render();
+
     cycleTimer = setInterval(() => {
-      idx = (idx + 1) % config.holdings.length;
+      weightedPos = (weightedPos + 1) % weightedSeq.length;
+      idx = weightedSeq[weightedPos] ?? 0;
       render();
     }, cycleMs);
   }
@@ -532,14 +659,28 @@
     const refreshMs = (config.refreshSeconds ?? 60) * 1000;
     if(refreshTimer) clearInterval(refreshTimer);
     refreshTimer = setInterval(async () => {
-      try { await fetchQuotes(); render(); }
-      catch(e){ console.error(e); }
+      try {
+        await fetchQuotes();
+        render();
+      } catch(e){
+        console.error(e);
+        document.getElementById("status").textContent = "SYNC";
+        setLiveState(false);
+      }
     }, refreshMs);
   }
 
   (async function init(){
     await loadConfig();
-    try { await fetchQuotes(); } catch(e){ console.error(e); }
+    updateMarketBadge();
+    setInterval(updateMarketBadge, 60_000);
+
+    try { await fetchQuotes(); } catch(e){
+      console.error(e);
+      document.getElementById("status").textContent = "SYNC";
+      setLiveState(false);
+    }
+
     startCycle();
     startRefresh();
   })();
