@@ -5,74 +5,300 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Roth Ticker</title>
   <style>
-    :root { color-scheme: dark; }
+    :root{
+      color-scheme: dark;
+
+      /* Match the “teal dashboard” vibe */
+      --bg0: #060b14;
+      --bg1: #0a1020;
+      --card: rgba(255,255,255,0.06);
+      --card2: rgba(255,255,255,0.04);
+      --stroke: rgba(255,255,255,0.12);
+      --stroke2: rgba(255,255,255,0.10);
+      --text: #e9eefc;
+      --muted: rgba(233,238,252,0.72);
+
+      --teal: #33e6d1;
+      --teal2: rgba(51,230,209,0.25);
+
+      --pos: #77ffb5;
+      --neg: #ff7a7a;
+
+      --radius: 22px;
+    }
+
+    *{ box-sizing:border-box; }
     body{
       margin:0;
-      font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif;
-      background:#0b1020;
-      color:#e9eefc;
       height:100vh;
       overflow:hidden;
-    }
-    .wrap{ height:100%; padding:16px 18px; display:flex; flex-direction:column; gap:14px; }
-    .top{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
-    .acct{ font-weight:800; letter-spacing:.3px; font-size:18px; opacity:.95; }
-    .stamp{ font-size:12px; opacity:.75; white-space:nowrap; }
+      font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
 
-    .card{
-      flex:1;
-      border-radius:22px;
-      background: rgba(255,255,255,0.06);
-      border:1px solid rgba(255,255,255,0.12);
-      padding:18px 20px;
+      /* Subtle grid + vignette */
+      background:
+        radial-gradient(1100px 700px at 70% 30%, rgba(51,230,209,0.10), transparent 60%),
+        radial-gradient(1000px 650px at 20% 80%, rgba(120,170,255,0.10), transparent 55%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+    }
+
+    /* faint grid overlay */
+    body:before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background:
+        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 44px 44px;
+      opacity:0.12;
+      mask-image: radial-gradient(circle at 55% 45%, black 55%, transparent 78%);
+    }
+
+    .wrap{
+      height:100%;
+      padding: 12px 14px;
       display:flex;
       flex-direction:column;
+      gap: 10px;
+    }
+
+    /* Header */
+    .top{
+      display:flex;
       justify-content:space-between;
+      align-items:baseline;
+      gap:12px;
+      padding: 2px 2px 0 2px;
+    }
+    .acct{
+      font-weight:900;
+      letter-spacing:0.4px;
+      font-size:18px;
+      opacity:0.95;
+    }
+    .stamp{
+      font-size:12px;
+      color: var(--muted);
+      white-space:nowrap;
+    }
+
+    /* Main card */
+    .card{
+      flex:1;
+      border-radius: var(--radius);
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+    }
+
+    .cardInner{
+      flex:1;
+      padding: 18px 20px 14px 20px;
+      display:flex;
+      flex-direction:column;
+      gap: 14px;
+    }
+
+    /* HERO row */
+    .heroRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:16px;
+    }
+
+    .leftBlock .sym{
+      font-size: 88px;
+      font-weight: 950;
+      letter-spacing: 1px;
+      line-height: 0.95;
+      margin:0;
+    }
+    .leftBlock .weight{
+      margin-top: 10px;
+      font-size: 18px;
+      color: var(--muted);
+    }
+    .leftBlock .meta{
+      margin-top: 10px;
+      font-size: 16px;
+      color: rgba(233,238,252,0.70);
+    }
+
+    /* Price block */
+    .priceBox{
+      text-align:right;
+      padding: 12px 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--stroke2);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      min-width: 280px;
+    }
+
+    .price{
+      font-size: 98px;
+      font-weight: 950;
+      line-height: 0.95;
+      margin:0;
+      text-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+
+    .chg{
+      margin-top: 12px;
+      font-size: 30px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      display:flex;
+      justify-content:flex-end;
+      align-items:center;
       gap:10px;
     }
 
-    .heroRow{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
-    .sym{ font-size:52px; font-weight:900; letter-spacing:1px; line-height:1; }
-    .weight{ font-size:14px; opacity:.75; margin-top:8px; }
-    .priceBox{ text-align:right; }
-    .price{ font-size:54px; font-weight:900; line-height:1; }
-    .chg{ margin-top:10px; font-size:20px; font-weight:800; font-variant-numeric: tabular-nums; }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 800;
+      background: rgba(51,230,209,0.10);
+      border: 1px solid rgba(51,230,209,0.22);
+      color: rgba(233,238,252,0.92);
+    }
+    .dot{
+      width:8px; height:8px; border-radius:99px;
+      background: var(--teal);
+      box-shadow: 0 0 12px rgba(51,230,209,0.5);
+    }
 
-    .pos{ color:#77ffb5; }
-    .neg{ color:#ff7a7a; }
-    .muted{ opacity:.75; }
+    .pos{ color: var(--pos); }
+    .neg{ color: var(--neg); }
+
+    /* “Portfolio Pulse” area fills the empty space */
+    .pulse{
+      flex:1;
+      border-radius: 18px;
+      background: var(--card2);
+      border: 1px solid rgba(255,255,255,0.10);
+      padding: 14px;
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .pulse:before{
+      content:"";
+      position:absolute;
+      inset:-80px -80px auto auto;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(51,230,209,0.18), transparent 65%);
+      transform: rotate(25deg);
+    }
+
+    .pulseTitle{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 0.6px;
+      color: rgba(233,238,252,0.86);
+      text-transform: uppercase;
+    }
+    .pulseTitle span{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .tiles{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      flex:1;
+      min-height: 0;
+    }
+
+    .tile{
+      border-radius: 16px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      padding: 12px 12px 10px 12px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      gap:8px;
+      min-height: 0;
+    }
+
+    .tileLabel{
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      color: rgba(233,238,252,0.70);
+      text-transform: uppercase;
+    }
+
+    .tileValue{
+      font-size: 30px;
+      font-weight: 950;
+      line-height: 1.0;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tileSub{
+      font-size: 12px;
+      color: rgba(233,238,252,0.70);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Bottom progress / footer */
+    .footer{
+      padding: 10px 14px 12px 14px;
+      border-top: 1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.18);
+      display:flex;
+      flex-direction:column;
+      gap: 8px;
+    }
 
     .bar{
-      height:12px;
-      border-radius:999px;
+      height: 12px;
+      border-radius: 999px;
       background: rgba(255,255,255,0.10);
       overflow:hidden;
-      border:1px solid rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.10);
     }
     .bar > div{
       height:100%;
       width:0%;
-      background: rgba(233,238,252,0.85);
+      background: linear-gradient(90deg, rgba(51,230,209,0.35), rgba(51,230,209,0.90));
       border-radius:999px;
       transition: width .35s ease;
+      box-shadow: 0 0 18px rgba(51,230,209,0.35);
     }
 
-    .bottom{
+    .bottomRow{
       display:flex;
       justify-content:space-between;
-      align-items:flex-end;
       gap:12px;
-      font-size:12px;
-      opacity:.8;
+      font-size: 12px;
+      color: rgba(233,238,252,0.80);
       font-variant-numeric: tabular-nums;
-    }
-    .bigHint{
-      font-size:14px;
-      opacity:.7;
-      margin-top:8px;
     }
   </style>
 </head>
+
 <body>
   <div class="wrap">
     <div class="top">
@@ -81,26 +307,60 @@
     </div>
 
     <div class="card">
-      <div>
+      <div class="cardInner">
         <div class="heroRow">
-          <div>
+          <div class="leftBlock">
             <div class="sym" id="sym">—</div>
             <div class="weight" id="wgt">—</div>
+            <div class="meta" id="meta">Loading…</div>
           </div>
+
           <div class="priceBox">
+            <div class="pill"><span class="dot"></span><span id="status">LIVE</span></div>
             <div class="price" id="price">—</div>
             <div class="chg" id="chg">—</div>
           </div>
         </div>
 
-        <div class="bigHint" id="hint">Cycling holdings…</div>
+        <div class="pulse">
+          <div class="pulseTitle">
+            <span><span class="dot"></span> Portfolio Pulse</span>
+            <span id="pulseHint" style="color:rgba(233,238,252,0.65);font-size:12px;font-weight:800;">—</span>
+          </div>
+
+          <div class="tiles">
+            <div class="tile">
+              <div class="tileLabel">Est. Total Value</div>
+              <div class="tileValue" id="tTotal">—</div>
+              <div class="tileSub" id="tTotalSub">Based on quantities</div>
+            </div>
+
+            <div class="tile">
+              <div class="tileLabel">Est. Day Change</div>
+              <div class="tileValue" id="tDay">—</div>
+              <div class="tileSub" id="tDaySub">Sum(qty × change)</div>
+            </div>
+
+            <div class="tile">
+              <div class="tileLabel">Top Gainer</div>
+              <div class="tileValue" id="tGainer">—</div>
+              <div class="tileSub" id="tGainerSub">—</div>
+            </div>
+
+            <div class="tile">
+              <div class="tileLabel">Top Loser</div>
+              <div class="tileValue" id="tLoser">—</div>
+              <div class="tileSub" id="tLoserSub">—</div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div>
+      <div class="footer">
         <div class="bar"><div id="barFill"></div></div>
-        <div class="bottom">
+        <div class="bottomRow">
           <div>Est. total value: <strong id="total">—</strong></div>
-          <div class="muted">Next: <span id="next">—</span></div>
+          <div>Next: <span id="next">—</span></div>
         </div>
       </div>
     </div>
@@ -111,20 +371,18 @@
     (n == null || !isFinite(n)) ? "—" :
     n.toLocaleString(undefined, { style:"currency", currency:"USD" });
 
-  const fmtPct = (n) =>
-    (n == null || !isFinite(n)) ? "—" :
-    (n >= 0 ? "+" : "") + n.toFixed(2) + "%";
-
   const fmtSignedUsd = (n) =>
     (n == null || !isFinite(n)) ? "—" :
     (n >= 0 ? "+" : "") + fmtUsd(n);
 
-  function clsFor(n){
-    return n > 0 ? "pos" : (n < 0 ? "neg" : "");
-  }
+  const fmtPct = (n) =>
+    (n == null || !isFinite(n)) ? "—" :
+    (n >= 0 ? "+" : "") + n.toFixed(2) + "%";
+
+  function clsFor(n){ return n > 0 ? "pos" : (n < 0 ? "neg" : ""); }
 
   let config = null;
-  let quotes = {};     // symbol -> { price, change, changesPercentage }
+  let quotes = {}; // symbol -> { price, change, changesPercentage }
   let idx = 0;
   let cycleTimer = null;
   let refreshTimer = null;
@@ -136,24 +394,86 @@
   }
 
   async function fetchQuotes(){
+    const statusEl = document.getElementById("status");
+    statusEl.textContent = "LIVE";
+
     const symbols = config.holdings.map(h => h.symbol).join(",");
-    const r = await fetch(`/api/quotes?symbols=${encodeURIComponent(symbols)}`, { cache: "no-store" });
+    const r = await fetch(`/api/quotes?symbols=${encodeURIComponent(symbols)}&t=${Date.now()}`, { cache:"no-store" });
     if(!r.ok) throw new Error("Quote fetch failed: " + r.status);
+
     const data = await r.json();
     quotes = data.quotes || {};
     document.getElementById("stamp").textContent =
       "Updated " + new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
+
+    document.getElementById("pulseHint").textContent =
+      `${Object.keys(quotes).length}/${config.holdings.length} symbols updated`;
   }
 
-  function computeTotal(){
-    let total = 0;
+  function computeTotals(){
+    let totalValue = 0;
+    let totalDay = 0;
+
+    let topGainer = null; // {sym, pct, chg}
+    let topLoser  = null;
+
     for(const h of config.holdings){
       const q = quotes[h.symbol];
-      if(q && isFinite(q.price) && isFinite(h.qty)){
-        total += q.price * h.qty;
+      if(!q || !isFinite(q.price)) continue;
+
+      const qty = Number(h.qty ?? 0);
+      const value = q.price * qty;
+      totalValue += (isFinite(value) ? value : 0);
+
+      const dayPart = (isFinite(q.change) ? (q.change * qty) : 0);
+      totalDay += dayPart;
+
+      const pct = Number(q.changesPercentage);
+      if(isFinite(pct)){
+        if(!topGainer || pct > topGainer.pct) topGainer = { sym: h.symbol, pct, chg: q.change };
+        if(!topLoser  || pct < topLoser.pct)  topLoser  = { sym: h.symbol, pct, chg: q.change };
       }
     }
-    return total;
+
+    return { totalValue, totalDay, topGainer, topLoser };
+  }
+
+  function renderPulse(){
+    const { totalValue, totalDay, topGainer, topLoser } = computeTotals();
+
+    // Total
+    document.getElementById("tTotal").textContent = fmtUsd(totalValue);
+
+    // Day change
+    const tDay = document.getElementById("tDay");
+    tDay.textContent = fmtSignedUsd(totalDay);
+    tDay.className = "tileValue " + clsFor(totalDay);
+
+    // Gainer/Loser
+    if(topGainer){
+      const el = document.getElementById("tGainer");
+      el.textContent = topGainer.sym;
+      el.className = "tileValue pos";
+      document.getElementById("tGainerSub").textContent =
+        `${fmtPct(topGainer.pct)} • ${fmtSignedUsd(topGainer.chg)}`;
+    } else {
+      document.getElementById("tGainer").textContent = "—";
+      document.getElementById("tGainerSub").textContent = "—";
+    }
+
+    if(topLoser){
+      const el = document.getElementById("tLoser");
+      el.textContent = topLoser.sym;
+      el.className = "tileValue neg";
+      document.getElementById("tLoserSub").textContent =
+        `${fmtPct(topLoser.pct)} • ${fmtSignedUsd(topLoser.chg)}`;
+    } else {
+      document.getElementById("tLoser").textContent = "—";
+      document.getElementById("tLoserSub").textContent = "—";
+    }
+
+    // Footer duplicate total value
+    document.getElementById("total").textContent = fmtUsd(totalValue);
   }
 
   function render(){
@@ -163,31 +483,39 @@
 
     document.getElementById("sym").textContent = h.symbol;
     document.getElementById("wgt").textContent =
-      (h.weight != null ? `Weight: ${h.weight.toFixed(2)}%` : "Weight: —");
+      (h.weight != null ? `Weight: ${Number(h.weight).toFixed(2)}%` : "Weight: —");
 
     const priceEl = document.getElementById("price");
-    const chgEl = document.getElementById("chg");
+    const chgEl   = document.getElementById("chg");
+    const metaEl  = document.getElementById("meta");
+    const statusEl = document.getElementById("status");
 
-    if(q){
+    if(q && isFinite(q.price)){
       priceEl.textContent = fmtUsd(q.price);
       chgEl.textContent = `${fmtSignedUsd(q.change)}  (${fmtPct(q.changesPercentage)})`;
       chgEl.className = "chg " + clsFor(q.change);
-      document.getElementById("hint").textContent =
-        `Qty: ${h.qty ?? "—"}  •  Est. position: ${fmtUsd((h.qty ?? 0) * q.price)}`;
+
+      const qty = Number(h.qty ?? 0);
+      metaEl.textContent = `Qty: ${qty.toLocaleString(undefined,{maximumFractionDigits:3})} • Est. position: ${fmtUsd(qty * q.price)}`;
+      statusEl.textContent = "LIVE";
     } else {
       priceEl.textContent = "—";
-      chgEl.textContent = "—";
-      chgEl.className = "chg muted";
-      document.getElementById("hint").textContent = "Waiting for quotes…";
+      chgEl.textContent = "No quote (delisted/OTC?)";
+      chgEl.className = "chg";
+      chgEl.style.color = "rgba(233,238,252,0.70)";
+      metaEl.textContent = "Waiting for quote data…";
+      statusEl.textContent = "SYNC";
     }
 
-    document.getElementById("total").textContent = fmtUsd(computeTotal());
     document.getElementById("next").textContent = nextH.symbol;
 
-    // progress bar toward next cycle
+    // Progress bar
     const fill = document.getElementById("barFill");
     fill.style.width = "0%";
     requestAnimationFrame(() => { fill.style.width = "100%"; });
+
+    // Pulse area
+    renderPulse();
   }
 
   function startCycle(){
@@ -201,7 +529,7 @@
   }
 
   function startRefresh(){
-    const refreshMs = (config.refreshSeconds ?? 90) * 1000;
+    const refreshMs = (config.refreshSeconds ?? 60) * 1000;
     if(refreshTimer) clearInterval(refreshTimer);
     refreshTimer = setInterval(async () => {
       try { await fetchQuotes(); render(); }
