@@ -1,6 +1,7 @@
 export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
   const symbolsRaw = (url.searchParams.get("symbols") || "").trim();
+
   if (!symbolsRaw) {
     return new Response(JSON.stringify({ error: "Missing symbols" }), {
       status: 400,
@@ -8,67 +9,79 @@ export async function onRequestGet({ request, env }) {
     });
   }
 
-  const apiKey = env.TWELVE_API_KEY;
-  if (!apiKey) {
-    return new Response(JSON.stringify({ error: "Missing TWELVE_API_KEY env var" }), {
+  const keyId = env.APCA_API_KEY_ID;
+  const secret = env.APCA_API_SECRET_KEY;
+
+  if (!keyId || !secret) {
+    return new Response(JSON.stringify({ error: "Missing Alpaca env vars (APCA_API_KEY_ID / APCA_API_SECRET_KEY)" }), {
       status: 500,
       headers: { "content-type": "application/json" }
     });
   }
 
-  // Normalize symbols (remove spaces)
-  const symbols = symbolsRaw.split(",").map(s => s.trim().toUpperCase()).filter(Boolean);
-  const symbolsParam = symbols.join(",");
+  // Normalize symbols
+  const symbols = symbolsRaw
+    .split(",")
+    .map(s => s.trim().toUpperCase())
+    .filter(Boolean);
 
-  const cacheSeconds = 45;
-  const tdUrl =
-    `https://api.twelvedata.com/quote?symbol=${encodeURIComponent(symbolsParam)}&apikey=${apiKey}`;
+  // Alpaca snapshots (multi) endpoint
+  // We explicitly request feed=iex to work on free plan.
+  // Endpoint: https://data.alpaca.markets/v2/stocks/snapshots :contentReference[oaicite:3]{index=3}
+  const feed = "iex";
+  const alpacaUrl =
+    `https://data.alpaca.markets/v2/stocks/snapshots?symbols=${encodeURIComponent(symbols.join(","))}&feed=${feed}`;
 
-  // Cloudflare cache
+  // Cache to reduce calls and stay well under throttling (Alpaca throttles API) :contentReference[oaicite:4]{index=4}
+  const cacheSeconds = 30;
   const cache = caches.default;
-  const cacheKey = new Request(tdUrl, { method: "GET" });
+  const cacheKey = new Request(alpacaUrl, { method: "GET" });
 
   let resp = await cache.match(cacheKey);
+
   if (!resp) {
-    const upstream = await fetch(tdUrl, { cf: { cacheTtl: cacheSeconds } });
-    const data = await upstream.json();
+    const upstream = await fetch(alpacaUrl, {
+      headers: {
+        "APCA-API-KEY-ID": keyId,
+        "APCA-API-SECRET-KEY": secret
+      },
+      cf: { cacheTtl: cacheSeconds }
+    });
 
-    // Twelve Data returns either:
-    // - single object for 1 symbol
-    // - { "AAPL": {...}, "MSFT": {...} } for many symbols (depending on plan/endpoint behavior)
-    // We'll handle both.
-
-    const quotes = {};
-
-    // Case: error
-    if (data && data.code && data.message) {
-      return new Response(JSON.stringify({ error: data.message, code: data.code }), {
+    if (!upstream.ok) {
+      const text = await upstream.text().catch(() => "");
+      return new Response(JSON.stringify({
+        error: "Upstream failed",
+        status: upstream.status,
+        body: text.slice(0, 300)
+      }), {
         status: 502,
         headers: { "content-type": "application/json" }
       });
     }
 
-    // Case: single symbol object
-    if (data && data.symbol && data.close) {
-      const price = Number(data.close);
-      const prevClose = Number(data.previous_close);
-      const change = (isFinite(price) && isFinite(prevClose)) ? (price - prevClose) : null;
+    const data = await upstream.json();
+
+    // data is a map keyed by symbol
+    // Each item includes latestTrade (price) and prevDailyBar (close), etc.
+    const quotes = {};
+
+    for (const sym of symbols) {
+      const snap = data?.[sym];
+      if (!snap) continue;
+
+      const price = Number(snap.latestTrade?.p ?? snap.latestQuote?.ap ?? snap.latestQuote?.bp);
+      const prevClose = Number(snap.prevDailyBar?.c);
+
+      const change =
+        (isFinite(price) && isFinite(prevClose)) ? (price - prevClose) : null;
+
       const changesPercentage =
-        (change != null && isFinite(prevClose) && prevClose !== 0) ? (change / prevClose) * 100 : null;
+        (change != null && isFinite(prevClose) && prevClose !== 0)
+          ? (change / prevClose) * 100
+          : null;
 
-      quotes[data.symbol] = { price, change, changesPercentage };
-    } else {
-      // Case: multi symbol map
-      for (const sym of symbols) {
-        const q = data?.[sym];
-        if (!q) continue;
-
-        const price = Number(q.close);
-        const prevClose = Number(q.previous_close);
-        const change = (isFinite(price) && isFinite(prevClose)) ? (price - prevClose) : null;
-        const changesPercentage =
-          (change != null && isFinite(prevClose) && prevClose !== 0) ? (change / prevClose) * 100 : null;
-
+      if (isFinite(price)) {
         quotes[sym] = { price, change, changesPercentage };
       }
     }
