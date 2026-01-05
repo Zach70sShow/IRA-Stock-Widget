@@ -7,27 +7,20 @@
   <style>
     :root{
       color-scheme: dark;
-
       --bg0:#060b14;
       --bg1:#0a1020;
-
       --card: rgba(255,255,255,0.06);
       --card2: rgba(255,255,255,0.04);
       --stroke: rgba(255,255,255,0.12);
       --stroke2: rgba(255,255,255,0.10);
-
       --text:#e9eefc;
       --muted: rgba(233,238,252,0.70);
-
       --teal:#33e6d1;
       --tealGlow: rgba(51,230,209,0.35);
-
       --pos:#77ffb5;
       --neg:#ff7a7a;
-
       --radius: 18px;
     }
-
     *{ box-sizing:border-box; }
     body{
       margin:0;
@@ -40,12 +33,9 @@
         radial-gradient(900px 600px at 20% 80%, rgba(120,170,255,0.09), transparent 55%),
         linear-gradient(180deg, var(--bg0), var(--bg1));
     }
-
-    /* faint grid overlay */
     body:before{
       content:"";
-      position:fixed;
-      inset:0;
+      position:fixed; inset:0;
       pointer-events:none;
       background:
         linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
@@ -54,33 +44,22 @@
       opacity:0.12;
       mask-image: radial-gradient(circle at 55% 45%, black 55%, transparent 78%);
     }
-
-    .wrap{
-      height:100%;
-      padding: 10px;
-      display:flex;
-      flex-direction:column;
-      gap: 10px;
-    }
+    .wrap{ height:100%; padding:10px; display:flex; flex-direction:column; gap:10px; }
 
     .tile{
-      flex:1;
-      min-height:0;
+      flex:1; min-height:0;
       border-radius: var(--radius);
       background: var(--card);
       border: 1px solid var(--stroke);
       overflow:hidden;
-      display:flex;
-      flex-direction:column;
+      display:flex; flex-direction:column;
       position:relative;
     }
-
     .tile:before{
       content:"";
       position:absolute;
       inset:-120px -120px auto auto;
-      width: 260px;
-      height: 260px;
+      width:260px; height:260px;
       background: radial-gradient(circle, rgba(51,230,209,0.16), transparent 65%);
       transform: rotate(20deg);
       pointer-events:none;
@@ -93,7 +72,6 @@
       gap:12px;
       padding: 12px 12px 8px 12px;
     }
-
     .name{
       font-weight: 950;
       letter-spacing: 0.6px;
@@ -103,22 +81,15 @@
       display:flex;
       align-items:center;
       gap:8px;
+      white-space:nowrap;
     }
-
     .dot{
       width:8px;height:8px;border-radius:99px;
       background: var(--teal);
       box-shadow: 0 0 14px var(--tealGlow);
       flex:none;
     }
-
-    .priceBox{
-      text-align:right;
-      display:flex;
-      flex-direction:column;
-      gap: 4px;
-    }
-
+    .priceBox{ text-align:right; display:flex; flex-direction:column; gap:4px; }
     .price{
       font-size: 26px;
       font-weight: 950;
@@ -126,24 +97,12 @@
       font-variant-numeric: tabular-nums;
       text-shadow: 0 8px 22px rgba(0,0,0,0.35);
     }
-
-    .chg{
-      font-size: 12px;
-      font-weight: 900;
-      font-variant-numeric: tabular-nums;
-    }
-
+    .chg{ font-size: 12px; font-weight: 900; font-variant-numeric: tabular-nums; }
     .pos{ color: var(--pos); }
     .neg{ color: var(--neg); }
     .muted{ color: var(--muted); }
 
-    .chartWrap{
-      flex:1;
-      min-height:0;
-      padding: 0 10px 10px 10px;
-      display:flex;
-    }
-
+    .chartWrap{ flex:1; min-height:0; padding: 0 10px 10px 10px; display:flex; }
     canvas{
       width:100%;
       height:100%;
@@ -163,7 +122,6 @@
       font-size: 11px;
       color: rgba(233,238,252,0.72);
     }
-
     .pill{
       display:inline-flex;
       align-items:center;
@@ -176,12 +134,60 @@
       color: rgba(233,238,252,0.90);
       white-space:nowrap;
     }
+
+    /* Range toggle */
+    .rangeBar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding: 8px 10px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+    .rangeLeft{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      color: rgba(233,238,252,0.78);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      white-space:nowrap;
+    }
+    .btns{ display:flex; gap:8px; }
+    .btn{
+      appearance:none;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(0,0,0,0.18);
+      color: rgba(233,238,252,0.80);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      cursor:pointer;
+      user-select:none;
+    }
+    .btn.active{
+      background: rgba(51,230,209,0.16);
+      border-color: rgba(51,230,209,0.30);
+      color: rgba(233,238,252,0.92);
+      box-shadow: 0 0 18px rgba(51,230,209,0.18);
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
+
+    <div class="rangeBar">
+      <div class="rangeLeft"><span class="dot"></span> Window</div>
+      <div class="btns" id="rangeBtns"></div>
+    </div>
+
     <!-- BTC -->
-    <section class="tile" id="tileBTC">
+    <section class="tile">
       <div class="hdr">
         <div class="name"><span class="dot"></span> Bitcoin (BTC)</div>
         <div class="priceBox">
@@ -189,9 +195,7 @@
           <div class="chg muted" id="btcChg">Loading…</div>
         </div>
       </div>
-      <div class="chartWrap">
-        <canvas id="btcChart"></canvas>
-      </div>
+      <div class="chartWrap"><canvas id="btcChart"></canvas></div>
       <div class="footer">
         <div class="pill"><span class="dot"></span><span id="btcStatus">LIVE</span></div>
         <div id="btcUpdated">—</div>
@@ -199,7 +203,7 @@
     </section>
 
     <!-- ADA -->
-    <section class="tile" id="tileADA">
+    <section class="tile">
       <div class="hdr">
         <div class="name"><span class="dot"></span> Cardano (ADA)</div>
         <div class="priceBox">
@@ -207,9 +211,7 @@
           <div class="chg muted" id="adaChg">Loading…</div>
         </div>
       </div>
-      <div class="chartWrap">
-        <canvas id="adaChart"></canvas>
-      </div>
+      <div class="chartWrap"><canvas id="adaChart"></canvas></div>
       <div class="footer">
         <div class="pill"><span class="dot"></span><span id="adaStatus">LIVE</span></div>
         <div id="adaUpdated">—</div>
@@ -218,12 +220,17 @@
   </div>
 
 <script>
-  // We purposely avoid API keys.
-  // We'll use Coinbase spot price (public) for BTC + ADA and build a local sparkline.
-  // Price updates every 30s. Sparkline uses the last N samples.
+  const SPOT_REFRESH_MS = 30_000;
 
-  const REFRESH_MS = 30_000;
-  const MAX_POINTS = 80;
+  // Window presets: granularity + point count
+  // granularity seconds options Coinbase commonly supports: 60, 300, 900, 3600, 21600, 86400
+  const RANGES = [
+    { key:"1H",  label:"1H",  seconds: 60*60,   granularity: 60,    maxPoints: 60  },  // 60 points
+    { key:"6H",  label:"6H",  seconds: 6*60*60, granularity: 300,   maxPoints: 72  },  // 5m candles
+    { key:"24H", label:"24H", seconds: 24*60*60,granularity: 900,   maxPoints: 96  },  // 15m candles
+    { key:"7D",  label:"7D",  seconds: 7*24*60*60, granularity: 3600, maxPoints: 168 } // 1h candles
+  ];
+  let activeRange = "6H";
 
   const state = {
     BTC: { points: [], lastPrice: null, lastTs: 0 },
@@ -234,29 +241,41 @@
     if(n == null || !isFinite(n)) return "—";
     return n.toLocaleString(undefined, { style:"currency", currency:"USD", minimumFractionDigits:decimals, maximumFractionDigits:decimals });
   }
-
   function fmtPct(n){
     if(n == null || !isFinite(n)) return "—";
     return (n >= 0 ? "+" : "") + n.toFixed(2) + "%";
   }
-
   function clsFor(n){ return n > 0 ? "pos" : (n < 0 ? "neg" : "muted"); }
 
   async function fetchCoinbaseSpot(pair){
-    // Coinbase public spot endpoint (no key)
-    // Example: https://api.coinbase.com/v2/prices/BTC-USD/spot
+    // Public, no key
     const url = `https://api.coinbase.com/v2/prices/${pair}/spot?t=${Date.now()}`;
     const r = await fetch(url, { cache:"no-store" });
     if(!r.ok) throw new Error("spot failed " + r.status);
     const data = await r.json();
-    const amt = Number(data?.data?.amount);
-    return amt;
+    return Number(data?.data?.amount);
   }
 
-  function pushPoint(sym, price){
-    const s = state[sym];
-    s.points.push(price);
-    if(s.points.length > MAX_POINTS) s.points.shift();
+  async function fetchCandles(productId, secondsBack, granularity){
+    // Coinbase Advanced Trade candles endpoint (public)
+    // If Coinbase changes access rules, we can swap to Kraken quickly.
+    const end = Math.floor(Date.now()/1000);
+    const start = end - secondsBack;
+
+    const url =
+      `https://api.exchange.coinbase.com/products/${productId}/candles?granularity=${granularity}&start=${start}&end=${end}`;
+
+    const r = await fetch(url, { cache:"no-store" });
+    if(!r.ok) throw new Error("candles failed " + r.status);
+
+    // Format: [ time, low, high, open, close, volume ] newest->oldest
+    const rows = await r.json();
+    if(!Array.isArray(rows)) throw new Error("candles malformed");
+
+    // reverse to oldest->newest, take close
+    rows.reverse();
+    const closes = rows.map(x => Number(x[4])).filter(n => isFinite(n));
+    return closes;
   }
 
   function drawSparkline(canvas, points){
@@ -266,14 +285,10 @@
     const rect = canvas.getBoundingClientRect();
     canvas.width = Math.max(2, Math.floor(rect.width * dpr));
     canvas.height = Math.max(2, Math.floor(rect.height * dpr));
+    const w = canvas.width, h = canvas.height;
 
-    const w = canvas.width;
-    const h = canvas.height;
-
-    // Background
     ctx.clearRect(0,0,w,h);
 
-    // If not enough points, show a little loading ring
     if(!points || points.length < 2){
       ctx.globalAlpha = 0.7;
       ctx.strokeStyle = "rgba(51,230,209,0.55)";
@@ -285,12 +300,9 @@
       return;
     }
 
-    // Normalize points
     let min = Math.min(...points);
     let max = Math.max(...points);
-    if(max - min < 1e-9){
-      max = min + 1;
-    }
+    if(max - min < 1e-9) max = min + 1;
 
     const pad = 14 * dpr;
     const innerW = w - pad*2;
@@ -298,27 +310,25 @@
 
     const xStep = innerW / (points.length - 1);
 
-    // Path
-    ctx.lineJoin = "round";
-    ctx.lineCap = "round";
-
-    // Glow
+    // Glow stroke
     ctx.beginPath();
     for(let i=0;i<points.length;i++){
       const x = pad + xStep*i;
-      const t = (points[i] - min) / (max - min);
+      const t = (points[i]-min)/(max-min);
       const y = pad + (1 - t) * innerH;
       if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
     }
     ctx.strokeStyle = "rgba(51,230,209,0.20)";
     ctx.lineWidth = 10 * dpr;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
     ctx.stroke();
 
     // Main line
     ctx.beginPath();
     for(let i=0;i<points.length;i++){
       const x = pad + xStep*i;
-      const t = (points[i] - min) / (max - min);
+      const t = (points[i]-min)/(max-min);
       const y = pad + (1 - t) * innerH;
       if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
     }
@@ -326,7 +336,7 @@
     ctx.lineWidth = 3 * dpr;
     ctx.stroke();
 
-    // Fill under
+    // Fill
     ctx.globalAlpha = 0.20;
     ctx.lineTo(pad + xStep*(points.length-1), pad + innerH);
     ctx.lineTo(pad, pad + innerH);
@@ -346,68 +356,122 @@
     const stEl    = document.getElementById(isBTC ? "btcStatus" : "adaStatus");
     const canvas  = document.getElementById(isBTC ? "btcChart" : "adaChart");
 
-    const price = s.lastPrice;
+    // Price formatting
+    priceEl.textContent = (sym === "BTC") ? fmtUsd(s.lastPrice, 2) : fmtUsd(s.lastPrice, 4);
 
-    // Price formatting: BTC usually 2 decimals, ADA 4
-    priceEl.textContent = (sym === "BTC")
-      ? fmtUsd(price, 2)
-      : fmtUsd(price, 4);
-
-    // Change since last sample (not true 24h — it’s “since last refresh”)
-    // If you want true 24h % we can add a second endpoint later.
-    if(s.points.length >= 2){
-      const prev = s.points[s.points.length - 2];
-      const pct = prev ? ((price - prev) / prev) * 100 : null;
-      chgEl.textContent = `${fmtPct(pct)} (since last)`;
+    // Change: compare last price to first point in the current window (gives a meaningful “window change”)
+    if(s.points.length >= 2 && isFinite(s.lastPrice)){
+      const first = s.points[0];
+      const pct = first ? ((s.lastPrice - first) / first) * 100 : null;
+      chgEl.textContent = `${fmtPct(pct)} (${activeRange})`;
       chgEl.className = "chg " + clsFor(pct);
     } else {
-      chgEl.textContent = "Collecting data…";
+      chgEl.textContent = "Loading window…";
       chgEl.className = "chg muted";
     }
 
     updEl.textContent = "Updated " + new Date(s.lastTs).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
     stEl.textContent = "LIVE";
-
     drawSparkline(canvas, s.points);
   }
 
-  async function tickOnce(){
-    // Fetch both in parallel
+  function setStatusAll(text){
+    document.getElementById("btcStatus").textContent = text;
+    document.getElementById("adaStatus").textContent = text;
+  }
+
+  async function seedWindow(){
+    const range = RANGES.find(r => r.key === activeRange) || RANGES[1];
+
+    setStatusAll("SYNC");
+
+    try{
+      const [btcCloses, adaCloses] = await Promise.all([
+        fetchCandles("BTC-USD", range.seconds, range.granularity),
+        fetchCandles("ADA-USD", range.seconds, range.granularity)
+      ]);
+
+      // Trim to maxPoints (keep most recent)
+      const btcPts = btcCloses.slice(-range.maxPoints);
+      const adaPts = adaCloses.slice(-range.maxPoints);
+
+      state.BTC.points = btcPts;
+      state.ADA.points = adaPts;
+
+      // Set lastPrice to last candle close for instant display until spot updates
+      state.BTC.lastPrice = btcPts[btcPts.length - 1] ?? null;
+      state.ADA.lastPrice = adaPts[adaPts.length - 1] ?? null;
+
+      const now = Date.now();
+      state.BTC.lastTs = now;
+      state.ADA.lastTs = now;
+
+      render("BTC");
+      render("ADA");
+      setStatusAll("LIVE");
+    } catch(e){
+      console.error(e);
+      setStatusAll("SYNC");
+      document.getElementById("btcChg").textContent = "Window fetch failed…";
+      document.getElementById("adaChg").textContent = "Window fetch failed…";
+    }
+  }
+
+  async function tickSpot(){
     try{
       const [btc, ada] = await Promise.all([
         fetchCoinbaseSpot("BTC-USD"),
         fetchCoinbaseSpot("ADA-USD")
       ]);
 
-      state.BTC.lastPrice = btc;
-      state.BTC.lastTs = Date.now();
-      pushPoint("BTC", btc);
+      // Append spot to the current window (keeps it “live”)
+      const range = RANGES.find(r => r.key === activeRange) || RANGES[1];
+      const now = Date.now();
 
-      state.ADA.lastPrice = ada;
-      state.ADA.lastTs = Date.now();
-      pushPoint("ADA", ada);
+      state.BTC.lastPrice = btc; state.BTC.lastTs = now;
+      state.ADA.lastPrice = ada; state.ADA.lastTs = now;
 
-      render("BTC");
-      render("ADA");
+      state.BTC.points.push(btc);
+      state.ADA.points.push(ada);
+
+      // Keep within maxPoints
+      if(state.BTC.points.length > range.maxPoints) state.BTC.points = state.BTC.points.slice(-range.maxPoints);
+      if(state.ADA.points.length > range.maxPoints) state.ADA.points = state.ADA.points.slice(-range.maxPoints);
+
+      render("BTC"); render("ADA");
     } catch(e){
       console.error(e);
-      // show degraded status
-      document.getElementById("btcStatus").textContent = "SYNC";
-      document.getElementById("adaStatus").textContent = "SYNC";
-      document.getElementById("btcChg").textContent = "API hiccup…";
-      document.getElementById("adaChg").textContent = "API hiccup…";
+      setStatusAll("SYNC");
+    }
+  }
+
+  function buildRangeButtons(){
+    const host = document.getElementById("rangeBtns");
+    host.innerHTML = "";
+    for(const r of RANGES){
+      const b = document.createElement("button");
+      b.className = "btn" + (r.key === activeRange ? " active" : "");
+      b.textContent = r.label;
+      b.onclick = async () => {
+        activeRange = r.key;
+        [...host.children].forEach(x => x.classList.remove("active"));
+        b.classList.add("active");
+        await seedWindow();
+      };
+      host.appendChild(b);
     }
   }
 
   function handleResize(){
-    // Redraw charts on resize
     render("BTC");
     render("ADA");
   }
 
   (async function init(){
-    await tickOnce();
-    setInterval(tickOnce, REFRESH_MS);
+    buildRangeButtons();
+    await seedWindow();
+    await tickSpot();
+    setInterval(tickSpot, SPOT_REFRESH_MS);
     window.addEventListener("resize", handleResize);
   })();
 </script>
