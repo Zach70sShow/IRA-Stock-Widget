@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Roth Ticker</title>
+  <style>
+    :root { color-scheme: dark; }
+    body{
+      margin:0;
+      font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif;
+      background:#0b1020;
+      color:#e9eefc;
+      height:100vh;
+      overflow:hidden;
+    }
+    .wrap{ height:100%; padding:16px 18px; display:flex; flex-direction:column; gap:14px; }
+    .top{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+    .acct{ font-weight:800; letter-spacing:.3px; font-size:18px; opacity:.95; }
+    .stamp{ font-size:12px; opacity:.75; white-space:nowrap; }
+
+    .card{
+      flex:1;
+      border-radius:22px;
+      background: rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.12);
+      padding:18px 20px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    .heroRow{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
+    .sym{ font-size:52px; font-weight:900; letter-spacing:1px; line-height:1; }
+    .weight{ font-size:14px; opacity:.75; margin-top:8px; }
+    .priceBox{ text-align:right; }
+    .price{ font-size:54px; font-weight:900; line-height:1; }
+    .chg{ margin-top:10px; font-size:20px; font-weight:800; font-variant-numeric: tabular-nums; }
+
+    .pos{ color:#77ffb5; }
+    .neg{ color:#ff7a7a; }
+    .muted{ opacity:.75; }
+
+    .bar{
+      height:12px;
+      border-radius:999px;
+      background: rgba(255,255,255,0.10);
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,0.10);
+    }
+    .bar > div{
+      height:100%;
+      width:0%;
+      background: rgba(233,238,252,0.85);
+      border-radius:999px;
+      transition: width .35s ease;
+    }
+
+    .bottom{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:12px;
+      font-size:12px;
+      opacity:.8;
+      font-variant-numeric: tabular-nums;
+    }
+    .bigHint{
+      font-size:14px;
+      opacity:.7;
+      margin-top:8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="acct" id="acct">Portfolio</div>
+      <div class="stamp" id="stamp">—</div>
+    </div>
+
+    <div class="card">
+      <div>
+        <div class="heroRow">
+          <div>
+            <div class="sym" id="sym">—</div>
+            <div class="weight" id="wgt">—</div>
+          </div>
+          <div class="priceBox">
+            <div class="price" id="price">—</div>
+            <div class="chg" id="chg">—</div>
+          </div>
+        </div>
+
+        <div class="bigHint" id="hint">Cycling holdings…</div>
+      </div>
+
+      <div>
+        <div class="bar"><div id="barFill"></div></div>
+        <div class="bottom">
+          <div>Est. total value: <strong id="total">—</strong></div>
+          <div class="muted">Next: <span id="next">—</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const fmtUsd = (n) =>
+    (n == null || !isFinite(n)) ? "—" :
+    n.toLocaleString(undefined, { style:"currency", currency:"USD" });
+
+  const fmtPct = (n) =>
+    (n == null || !isFinite(n)) ? "—" :
+    (n >= 0 ? "+" : "") + n.toFixed(2) + "%";
+
+  const fmtSignedUsd = (n) =>
+    (n == null || !isFinite(n)) ? "—" :
+    (n >= 0 ? "+" : "") + fmtUsd(n);
+
+  function clsFor(n){
+    return n > 0 ? "pos" : (n < 0 ? "neg" : "");
+  }
+
+  let config = null;
+  let quotes = {};     // symbol -> { price, change, changesPercentage }
+  let idx = 0;
+  let cycleTimer = null;
+  let refreshTimer = null;
+
+  async function loadConfig(){
+    const r = await fetch("./portfolio.json", { cache: "no-store" });
+    config = await r.json();
+    document.getElementById("acct").textContent = config.accountName || "Portfolio";
+  }
+
+  async function fetchQuotes(){
+    const symbols = config.holdings.map(h => h.symbol).join(",");
+    const r = await fetch(`/api/quotes?symbols=${encodeURIComponent(symbols)}`, { cache: "no-store" });
+    if(!r.ok) throw new Error("Quote fetch failed: " + r.status);
+    const data = await r.json();
+    quotes = data.quotes || {};
+    document.getElementById("stamp").textContent =
+      "Updated " + new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
+  }
+
+  function computeTotal(){
+    let total = 0;
+    for(const h of config.holdings){
+      const q = quotes[h.symbol];
+      if(q && isFinite(q.price) && isFinite(h.qty)){
+        total += q.price * h.qty;
+      }
+    }
+    return total;
+  }
+
+  function render(){
+    const h = config.holdings[idx];
+    const nextH = config.holdings[(idx + 1) % config.holdings.length];
+    const q = quotes[h.symbol];
+
+    document.getElementById("sym").textContent = h.symbol;
+    document.getElementById("wgt").textContent =
+      (h.weight != null ? `Weight: ${h.weight.toFixed(2)}%` : "Weight: —");
+
+    const priceEl = document.getElementById("price");
+    const chgEl = document.getElementById("chg");
+
+    if(q){
+      priceEl.textContent = fmtUsd(q.price);
+      chgEl.textContent = `${fmtSignedUsd(q.change)}  (${fmtPct(q.changesPercentage)})`;
+      chgEl.className = "chg " + clsFor(q.change);
+      document.getElementById("hint").textContent =
+        `Qty: ${h.qty ?? "—"}  •  Est. position: ${fmtUsd((h.qty ?? 0) * q.price)}`;
+    } else {
+      priceEl.textContent = "—";
+      chgEl.textContent = "—";
+      chgEl.className = "chg muted";
+      document.getElementById("hint").textContent = "Waiting for quotes…";
+    }
+
+    document.getElementById("total").textContent = fmtUsd(computeTotal());
+    document.getElementById("next").textContent = nextH.symbol;
+
+    // progress bar toward next cycle
+    const fill = document.getElementById("barFill");
+    fill.style.width = "0%";
+    requestAnimationFrame(() => { fill.style.width = "100%"; });
+  }
+
+  function startCycle(){
+    const cycleMs = (config.cycleSeconds ?? 5) * 1000;
+    if(cycleTimer) clearInterval(cycleTimer);
+    render();
+    cycleTimer = setInterval(() => {
+      idx = (idx + 1) % config.holdings.length;
+      render();
+    }, cycleMs);
+  }
+
+  function startRefresh(){
+    const refreshMs = (config.refreshSeconds ?? 90) * 1000;
+    if(refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = setInterval(async () => {
+      try { await fetchQuotes(); render(); }
+      catch(e){ console.error(e); }
+    }, refreshMs);
+  }
+
+  (async function init(){
+    await loadConfig();
+    try { await fetchQuotes(); } catch(e){ console.error(e); }
+    startCycle();
+    startRefresh();
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "accountName": "ROTH IRA",
+  "holdings": [
+    { "symbol": "BROS", "qty": 6.855, "weight": 1.14 },
+    { "symbol": "CELH", "qty": 6.654, "weight": 0.88 },
+    { "symbol": "CLF",  "qty": 9.778, "weight": 0.36 },
+    { "symbol": "HE",   "qty": 33.042, "weight": 1.15 },
+    { "symbol": "HOOD", "qty": 22.361, "weight": 7.58 },
+    { "symbol": "JNJ",  "qty": 2.857, "weight": 1.61 },
+    { "symbol": "LMT",  "qty": 1.494, "weight": 2.10 },
+    { "symbol": "MCD",  "qty": 2.938, "weight": 2.43 },
+    { "symbol": "MMM",  "qty": 8.845, "weight": 4.00 },
+    { "symbol": "MSFT", "qty": 6.454, "weight": 8.41 },
+    { "symbol": "NOC",  "qty": 2.063, "weight": 3.47 },
+    { "symbol": "PGR",  "qty": 1.757, "weight": 1.03 },
+    { "symbol": "SCHD", "qty": 166.694, "weight": 12.82 },
+    { "symbol": "T",    "qty": 41.417, "weight": 2.81 },
+    { "symbol": "TFC",  "qty": 6.445, "weight": 0.90 },
+    { "symbol": "TTCFQ","qty": 44.598, "weight": 0.00 },
+    { "symbol": "V",    "qty": 7.954, "weight": 7.76 },
+    { "symbol": "VICI", "qty": 13.239, "weight": 1.03 },
+    { "symbol": "VTI",  "qty": 43.394, "weight": 40.53 }
+  ],
+  "cycleSeconds": 5,
+  "refreshSeconds": 90
+}
