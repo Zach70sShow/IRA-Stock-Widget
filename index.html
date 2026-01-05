@@ -101,6 +101,7 @@
       display:flex;
       flex-direction:column;
       gap: 14px;
+      min-height: 0;
     }
 
     /* HERO row */
@@ -109,6 +110,12 @@
       justify-content:space-between;
       align-items:flex-start;
       gap:16px;
+      min-width: 0; /* allow proper shrinking */
+    }
+    .heroRow > *{ min-width:0; } /* extra safety */
+
+    .leftBlock{
+      min-width:0; /* CRITICAL: prevents overflow from long text */
     }
 
     .leftBlock .sym{
@@ -127,6 +134,16 @@
       margin-top: 10px;
       font-size: 16px;
       color: rgba(233,238,252,0.70);
+
+      /* prevent overflow / keep layout stable */
+      max-width: 520px;
+      overflow: hidden;
+
+      display: -webkit-box;
+      -webkit-line-clamp: 2;        /* show up to 2 lines */
+      -webkit-box-orient: vertical; /* clamp behavior */
+
+      word-break: break-word;
     }
 
     /* Price block */
@@ -138,6 +155,7 @@
       border: 1px solid var(--stroke2);
       box-shadow: 0 10px 30px rgba(0,0,0,0.25);
       min-width: 280px;
+      max-width: 560px;
     }
 
     .price{
@@ -146,6 +164,7 @@
       line-height: 0.95;
       margin:0;
       text-shadow: 0 8px 24px rgba(0,0,0,0.35);
+      white-space: nowrap;
     }
 
     .chg{
@@ -157,6 +176,7 @@
       justify-content:flex-end;
       align-items:center;
       gap:10px;
+      flex-wrap: wrap;
     }
 
     .pillRow{
@@ -188,7 +208,7 @@
       box-shadow: 0 0 12px rgba(51,230,209,0.5);
     }
 
-    /* #5 breathing LIVE indicator (pauses when SYNC) */
+    /* breathing LIVE indicator (pauses when SYNC) */
     @keyframes breathe {
       0%   { transform: scale(1);   opacity: 0.75; box-shadow: 0 0 10px rgba(51,230,209,0.25); }
       50%  { transform: scale(1.45);opacity: 1;    box-shadow: 0 0 22px rgba(51,230,209,0.55); }
@@ -202,7 +222,7 @@
     .pos{ color: var(--pos); }
     .neg{ color: var(--neg); }
 
-    /* #2 Market badge styles */
+    /* Market badge styles */
     .pill.market{
       background: rgba(255,255,255,0.06);
       border: 1px solid rgba(255,255,255,0.14);
@@ -242,6 +262,7 @@
       gap: 10px;
       position:relative;
       overflow:hidden;
+      min-height: 0;
     }
 
     .pulse:before{
@@ -264,6 +285,7 @@
       letter-spacing: 0.6px;
       color: rgba(233,238,252,0.86);
       text-transform: uppercase;
+      min-width: 0;
     }
     .pulseTitle span{
       display:inline-flex;
@@ -289,6 +311,7 @@
       justify-content:space-between;
       gap:8px;
       min-height: 0;
+      overflow:hidden;
     }
 
     .tileLabel{
@@ -297,6 +320,9 @@
       letter-spacing: 0.4px;
       color: rgba(233,238,252,0.70);
       text-transform: uppercase;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
     }
 
     .tileValue{
@@ -304,12 +330,18 @@
       font-weight: 950;
       line-height: 1.0;
       font-variant-numeric: tabular-nums;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
     }
 
     .tileSub{
       font-size: 12px;
       color: rgba(233,238,252,0.70);
       font-variant-numeric: tabular-nums;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
     }
 
     /* Bottom progress / footer */
@@ -345,6 +377,13 @@
       font-size: 12px;
       color: rgba(233,238,252,0.80);
       font-variant-numeric: tabular-nums;
+      min-width: 0;
+    }
+    .bottomRow > div{
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      min-width:0;
     }
   </style>
 </head>
@@ -366,7 +405,6 @@
           </div>
 
           <div class="priceBox">
-            <!-- #2: Add market badge next to LIVE -->
             <div class="pillRow">
               <div class="pill"><span class="dot" id="liveDot"></span><span id="status">LIVE</span></div>
               <div class="pill market" id="marketBadge"><span class="mDot"></span><span id="marketText">—</span></div>
@@ -444,11 +482,11 @@
   let cycleTimer = null;
   let refreshTimer = null;
 
-  // #4 Weighted cycling state
+  // Weighted cycling state
   let weightedSeq = [];
   let weightedPos = 0;
 
-  // #5 Live dot control (pause breathe when SYNC)
+  // Live dot control (pause breathe when SYNC)
   function setLiveState(isLive){
     const dot = document.getElementById("liveDot");
     if(!dot) return;
@@ -456,7 +494,7 @@
     dot.style.opacity = isLive ? "1" : "0.6";
   }
 
-  // #2 Market open/closed (no API; ignores holidays)
+  // Market open/closed (no API; ignores holidays)
   function isMarketOpenET(now = new Date()){
     const et = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
     const day = et.getDay(); // 0 Sun ... 6 Sat
@@ -502,7 +540,6 @@
     document.getElementById("pulseHint").textContent =
       `${Object.keys(quotes).length}/${config.holdings.length} symbols updated`;
 
-    // success -> breathe
     setLiveState(true);
   }
 
@@ -590,10 +627,11 @@
       priceEl.textContent = fmtUsd(q.price);
       chgEl.textContent = `${fmtSignedUsd(q.change)}  (${fmtPct(q.changesPercentage)})`;
       chgEl.className = "chg " + clsFor(q.change);
-      chgEl.style.color = ""; // clear any forced muted color
+      chgEl.style.color = "";
 
       const qty = Number(h.qty ?? 0);
       metaEl.textContent = `Qty: ${qty.toLocaleString(undefined,{maximumFractionDigits:3})} • Est. position: ${fmtUsd(qty * q.price)}`;
+
       statusEl.textContent = "LIVE";
       setLiveState(true);
     } else {
@@ -602,6 +640,7 @@
       chgEl.className = "chg";
       chgEl.style.color = "rgba(233,238,252,0.70)";
       metaEl.textContent = "Waiting for quote data…";
+
       statusEl.textContent = "SYNC";
       setLiveState(false);
     }
@@ -617,9 +656,9 @@
     renderPulse();
   }
 
-  // #4 Weighted sequence builder
+  // Weighted sequence builder
   function buildWeightedSequence(holdings){
-    const slots = 120; // smooth cycling; tweak if you want
+    const slots = 120; // smooth cycling
     const totalW = holdings.reduce((a,h)=>a + (Number(h.weight)||0), 0) || 1;
 
     const seq = [];
@@ -641,7 +680,6 @@
     const cycleMs = (config.cycleSeconds ?? 5) * 1000;
     if(cycleTimer) clearInterval(cycleTimer);
 
-    // Build weighted playlist once at start (or rebuild if you want on refresh)
     weightedSeq = buildWeightedSequence(config.holdings);
     weightedPos = 0;
 
@@ -672,10 +710,13 @@
 
   (async function init(){
     await loadConfig();
+
     updateMarketBadge();
     setInterval(updateMarketBadge, 60_000);
 
-    try { await fetchQuotes(); } catch(e){
+    try {
+      await fetchQuotes();
+    } catch(e){
       console.error(e);
       document.getElementById("status").textContent = "SYNC";
       setLiveState(false);
