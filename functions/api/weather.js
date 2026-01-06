@@ -1,73 +1,109 @@
-export async function onRequest({ request, env, ctx }) {
-  const url = new URL(request.url);
+export async function onRequestGet(ctx) {
+  const url = new URL(ctx.request.url);
+  const cacheKey = new Request(url.origin + url.pathname + url.search);
+  const cache = caches.default;
 
-  // If you already use fixed Phoenix coords, you can hardcode them here.
-  // Otherwise allow lat/lon from query params.
-  const lat = Number(url.searchParams.get("lat") ?? 33.4484);
-  const lon = Number(url.searchParams.get("lon") ?? -112.074);
-
-  // ---- CACHE KEY (same request = same cache) ----
-  const cacheKey = new Request(
-    `${url.origin}/api/weather?lat=${lat.toFixed(3)}&lon=${lon.toFixed(3)}`,
-    { method: "GET" }
-  );
-
-  // 1) Try cache first
-  const cached = await caches.default.match(cacheKey);
+  const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
-  // 2) If not cached, fetch upstream
-  const upstream = `https://api.open-meteo.com/v1/forecast` +
-    `?latitude=${lat}&longitude=${lon}` +
-    `&current=temperature_2m,wind_speed_10m` +
-    `&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset` +
-    `&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto`;
+  try {
+    // Phoenix coords
+    const lat = 33.4484;
+    const lon = -112.0740;
 
-  const r = await fetch(upstream, {
-    headers: { "accept": "application/json" }
-  });
+    // Weather (current + daily sunrise/sunset + tomorrow hi/low)
+    const wUrl = new URL("https://api.open-meteo.com/v1/forecast");
+    wUrl.searchParams.set("latitude", String(lat));
+    wUrl.searchParams.set("longitude", String(lon));
+    wUrl.searchParams.set("temperature_unit", "fahrenheit");
+    wUrl.searchParams.set("wind_speed_unit", "mph");
+    wUrl.searchParams.set("timezone", "America/Phoenix");
+    wUrl.searchParams.set("current", "temperature_2m,wind_speed_10m,weather_code");
+    wUrl.searchParams.set("daily", "temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max");
+    wUrl.searchParams.set("forecast_days", "2");
 
-  if (!r.ok) {
-    // Pass through upstream errors (429 etc)
-    return new Response(JSON.stringify({
-      ok: false,
-      error: `Weather fetch failed (${r.status})`
-    }), {
-      status: 200,
-      headers: { "content-type": "application/json" }
-    });
+    const wRes = await fetch(wUrl.toString(), { cf: { cacheTtl: 120, cacheEverything: true } });
+    const w = await wRes.json();
+
+    // AQI via Open-Meteo Air Quality
+    const aUrl = new URL("https://air-quality-api.open-meteo.com/v1/air-quality");
+    aUrl.searchParams.set("latitude", String(lat));
+    aUrl.searchParams.set("longitude", String(lon));
+    aUrl.searchParams.set("timezone", "America/Phoenix");
+    aUrl.searchParams.set("current", "us_aqi");
+
+    const aRes = await fetch(aUrl.toString(), { cf: { cacheTtl: 300, cacheEverything: true } });
+    const a = await aRes.json().catch(() => null);
+
+    const nowTemp = w?.current?.temperature_2m ?? null;
+    const nowWind = w?.current?.wind_speed_10m ?? null;
+
+    const rainChance = w?.daily?.precipitation_probability_max?.[0] ?? null;
+
+    const sunriseISO = w?.daily?.sunrise?.[0] ?? null;
+    const sunsetISO  = w?.daily?.sunset?.[0] ?? null;
+
+    const tomorrowHigh = w?.daily?.temperature_2m_max?.[1] ?? null;
+    const tomorrowLow  = w?.daily?.temperature_2m_min?.[1] ?? null;
+
+    const aqiVal = a?.current?.us_aqi ?? null;
+
+    const payload = {
+      ok: true,
+      now: {
+        tempF: (nowTemp!=null ? Math.round(nowTemp) : null),
+        windMph: (nowWind!=null ? Math.round(nowWind) : null),
+        rainChancePct: rainChance
+      },
+      tomorrow: {
+        highF: (tomorrowHigh!=null ? Math.round(tomorrowHigh) : null),
+        lowF: (tomorrowLow!=null ? Math.round(tomorrowLow) : null),
+        summary: "—"
+      },
+      aqi: {
+        value: (aqiVal!=null ? Math.round(aqiVal) : null),
+        label: aqiLabel(aqiVal)
+      },
+      sunrise: fmtShortTime(sunriseISO),
+      sunset: fmtShortTime(sunsetISO),
+      updatedAt: new Date().toISOString()
+    };
+
+    // Move sunrise/sunset into now for edge.html expectations
+    payload.now.sunrise = payload.sunrise;
+    payload.now.sunset  = payload.sunset;
+
+    const res = json(payload, 200, { "Cache-Control":"public, max-age=0" });
+    ctx.waitUntil(cache.put(cacheKey, res.clone()));
+    return res;
+
+  } catch (e) {
+    const res = json({ ok:false, error: "Weather fetch failed (" + (e?.message || e) + ")" }, 200, { "Cache-Control":"no-store" });
+    return res;
   }
+}
 
-  const raw = await r.json();
+function aqiLabel(v){
+  if (v==null || !isFinite(v)) return "—";
+  if (v <= 50) return "Good";
+  if (v <= 100) return "Moderate";
+  if (v <= 150) return "Unhealthy (SG)";
+  if (v <= 200) return "Unhealthy";
+  if (v <= 300) return "Very Unhealthy";
+  return "Hazardous";
+}
 
-  // Shape the response into a small JSON your UI can use
-  const data = {
-    ok: true,
-    now: {
-      temp: raw?.current?.temperature_2m ?? null,
-      wind: raw?.current?.wind_speed_10m ?? null
-    },
-    tomorrow: {
-      high: raw?.daily?.temperature_2m_max?.[1] ?? null,
-      low: raw?.daily?.temperature_2m_min?.[1] ?? null
-    },
-    sun: {
-      sunrise: raw?.daily?.sunrise?.[0] ?? null,
-      sunset: raw?.daily?.sunset?.[0] ?? null
-    },
-    updatedAt: new Date().toISOString()
-  };
+function fmtShortTime(iso){
+  if (!iso) return "—";
+  try{
+    const d = new Date(iso);
+    return d.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
+  }catch{ return "—"; }
+}
 
-  const response = new Response(JSON.stringify(data), {
-    headers: {
-      "content-type": "application/json",
-      // 60s cache inside Cloudflare
-      "cache-control": "public, max-age=60"
-    }
+function json(obj, status=200, headers={}) {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: { "content-type":"application/json; charset=utf-8", ...headers }
   });
-
-  // 3) Save into Cloudflare cache (happens in the background)
-  ctx.waitUntil(caches.default.put(cacheKey, response.clone()));
-
-  return response;
 }
