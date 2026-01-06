@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Edge Dashboard</title>
+  <style>
+    :root{
+      color-scheme: dark;
+      --bg0:#060b14; --bg1:#0a1020;
+      --card:rgba(255,255,255,0.06);
+      --card2:rgba(255,255,255,0.04);
+      --stroke:rgba(255,255,255,0.12);
+      --stroke2:rgba(255,255,255,0.10);
+      --text:#e9eefc;
+      --muted:rgba(233,238,252,0.72);
+      --teal:#33e6d1;
+      --pos:#77ffb5;
+      --neg:#ff7a7a;
+      --radius:22px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; height:100vh; overflow:hidden;
+      font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1100px 700px at 70% 30%, rgba(51,230,209,0.10), transparent 60%),
+        radial-gradient(1000px 650px at 20% 80%, rgba(120,170,255,0.10), transparent 55%),
+        linear-gradient(180deg,var(--bg0),var(--bg1));
+    }
+    body:before{
+      content:""; position:fixed; inset:0; pointer-events:none;
+      background:
+        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size:44px 44px;
+      opacity:0.12;
+      mask-image: radial-gradient(circle at 55% 45%, black 55%, transparent 78%);
+    }
+
+    .wrap{height:100%; padding:12px 14px; display:flex; flex-direction:column; gap:10px;}
+    .topStrip{
+      border-radius:18px;
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.12);
+      padding:10px 12px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      min-height:46px;
+    }
+    .topLeft{
+      display:flex; align-items:baseline; gap:12px; min-width:0;
+    }
+    .time{
+      font-weight:950; font-size:22px; letter-spacing:0.4px;
+      white-space:nowrap;
+    }
+    .topMeta{
+      color:var(--muted);
+      font-size:13px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      min-width:0;
+    }
+    .topRight{
+      display:flex; align-items:center; gap:10px; white-space:nowrap;
+      font-size:13px; color:rgba(233,238,252,0.86);
+      font-variant-numeric:tabular-nums;
+    }
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:6px 10px; border-radius:999px;
+      font-size:12px; font-weight:900;
+      background:rgba(51,230,209,0.10);
+      border:1px solid rgba(51,230,209,0.22);
+      color:rgba(233,238,252,0.92);
+    }
+    .dot{
+      width:8px; height:8px; border-radius:999px;
+      background:var(--teal);
+      box-shadow:0 0 14px rgba(51,230,209,0.35);
+      animation:breathe 1.6s ease-in-out infinite;
+      transform-origin:center;
+    }
+    @keyframes breathe{
+      0%{transform:scale(1);opacity:.75}
+      50%{transform:scale(1.45);opacity:1}
+      100%{transform:scale(1);opacity:.75}
+    }
+
+    .card{
+      flex:1; min-height:0;
+      border-radius:var(--radius);
+      background:var(--card);
+      border:1px solid var(--stroke);
+      overflow:hidden;
+      display:flex; flex-direction:column;
+      position:relative;
+    }
+    .cardInner{
+      flex:1; min-height:0;
+      padding:14px;
+      display:flex; flex-direction:column; gap:10px;
+    }
+
+    .panelTitle{
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+      font-size:13px; font-weight:950;
+      letter-spacing:0.6px;
+      color:rgba(233,238,252,0.86);
+      text-transform:uppercase;
+      min-width:0;
+    }
+    .panelTitle .hint{
+      font-size:12px; font-weight:800; color:rgba(233,238,252,0.65);
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;
+    }
+
+    .panel{
+      flex:1; min-height:0;
+      border-radius:18px;
+      background:var(--card2);
+      border:1px solid rgba(255,255,255,0.10);
+      padding:12px;
+      overflow:hidden;
+      display:none;
+      position:relative;
+    }
+    .panel.active{display:block;}
+
+    .grid2{
+      display:grid; grid-template-columns:1fr 1fr; gap:10px;
+      height:100%;
+    }
+    .tile{
+      border-radius:16px;
+      background:rgba(255,255,255,0.05);
+      border:1px solid rgba(255,255,255,0.10);
+      padding:12px;
+      display:flex; flex-direction:column; justify-content:space-between;
+      min-height:0;
+      overflow:hidden;
+    }
+    .label{
+      font-size:12px; font-weight:900; letter-spacing:0.4px;
+      color:rgba(233,238,252,0.70);
+      text-transform:uppercase;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .value{
+      font-size:34px; font-weight:950; line-height:1.0;
+      font-variant-numeric:tabular-nums;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .sub{
+      font-size:12px; color:rgba(233,238,252,0.70);
+      font-variant-numeric:tabular-nums;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .pos{color:var(--pos)}
+    .neg{color:var(--neg)}
+
+    .list{
+      display:flex; flex-direction:column; gap:10px;
+      height:100%;
+    }
+    .headline{
+      border-radius:14px;
+      background:rgba(255,255,255,0.05);
+      border:1px solid rgba(255,255,255,0.10);
+      padding:12px;
+      display:flex; flex-direction:column; gap:8px;
+      overflow:hidden;
+    }
+    .headline .h{
+      font-size:16px; font-weight:900; line-height:1.2;
+      overflow:hidden;
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+    }
+    .headline .m{
+      font-size:12px; color:rgba(233,238,252,0.70);
+      display:flex; justify-content:space-between; gap:10px;
+      white-space:nowrap; overflow:hidden;
+    }
+
+    .imgBox{
+      border-radius:16px;
+      background:rgba(0,0,0,0.12);
+      border:1px solid rgba(255,255,255,0.10);
+      overflow:hidden;
+      height: 54%;
+      min-height: 120px;
+      display:flex; align-items:center; justify-content:center;
+      position:relative;
+    }
+    .imgBox img{ width:100%; height:100%; object-fit:cover; opacity:0.95; }
+    .imgBox .overlay{
+      position:absolute; inset:auto 10px 10px 10px;
+      display:flex; justify-content:space-between; gap:10px;
+      color:rgba(233,238,252,0.92);
+      font-size:12px; font-weight:900;
+      text-shadow:0 8px 22px rgba(0,0,0,0.45);
+    }
+
+    .footer{
+      padding:10px 14px 12px 14px;
+      border-top:1px solid rgba(255,255,255,0.10);
+      background:rgba(0,0,0,0.18);
+      display:flex; justify-content:space-between; gap:12px;
+      font-size:12px; color:rgba(233,238,252,0.78);
+      font-variant-numeric:tabular-nums;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topStrip">
+      <div class="topLeft">
+        <div class="time" id="time">—</div>
+        <div class="topMeta" id="topMeta">Loading…</div>
+      </div>
+      <div class="topRight">
+        <span class="pill"><span class="dot" id="liveDot"></span><span id="liveText">LIVE</span></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cardInner">
+        <div class="panelTitle">
+          <span><span class="dot" style="animation:none;opacity:1;transform:none"></span> <span id="panelName">Market</span></span>
+          <span class="hint" id="panelHint">—</span>
+        </div>
+
+        <!-- MARKET PANEL -->
+        <div class="panel active" id="p-market">
+          <div class="grid2" style="grid-template-rows:auto 1fr; grid-template-columns:1fr 1fr;">
+            <div class="tile" style="grid-column:1/3;">
+              <div class="label">S&amp;P 500 Proxy (SPY) • Vol Proxy (VXX)</div>
+              <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-end;">
+                <div>
+                  <div class="value" id="spyVal">—</div>
+                  <div class="sub" id="spySub">—</div>
+                </div>
+                <div style="text-align:right;">
+                  <div class="value" id="vxxVal" style="font-size:28px;">—</div>
+                  <div class="sub" id="vxxSub">—</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="tile">
+              <div class="label">Sectors (tiny movers)</div>
+              <div class="sub" id="sectors">Loading…</div>
+              <div class="sub" style="opacity:.75;">XLK XLF XLE XLI XLY XLP</div>
+            </div>
+
+            <div class="headline">
+              <div class="label">1 Market Headline</div>
+              <div class="h" id="mktHeadline">Loading…</div>
+              <div class="m">
+                <span id="mktSource">—</span>
+                <span id="mktWhen">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WEATHER PANEL -->
+        <div class="panel" id="p-weather">
+          <div class="list">
+            <div class="tile" style="height:46%;">
+              <div class="label">Phoenix Weather</div>
+              <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-end;">
+                <div>
+                  <div class="value" id="wxNow">—</div>
+                  <div class="sub" id="wxNowSub">—</div>
+                </div>
+                <div style="text-align:right;">
+                  <div class="value" id="wxTomorrow" style="font-size:28px;">—</div>
+                  <div class="sub" id="wxTomorrowSub">Tomorrow</div>
+                </div>
+              </div>
+              <div class="sub" id="wxExtras" style="margin-top:10px;">—</div>
+            </div>
+
+            <div class="imgBox">
+              <img id="radarImg" alt="Radar" />
+              <div class="overlay">
+                <span id="radarLabel">Radar (RainViewer)</span>
+                <span id="radarWhen">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- HEADLINES PANEL -->
+        <div class="panel" id="p-headlines">
+          <div class="list" id="newsList"></div>
+        </div>
+
+        <!-- INTERNET HEALTH PANEL -->
+        <div class="panel" id="p-net">
+          <div class="grid2">
+            <div class="tile">
+              <div class="label">Cloudflare</div>
+              <div class="value" id="cfPing">—</div>
+              <div class="sub" id="cfPingSub">—</div>
+            </div>
+            <div class="tile">
+              <div class="label">Google</div>
+              <div class="value" id="ggPing">—</div>
+              <div class="sub" id="ggPingSub">—</div>
+            </div>
+            <div class="tile" style="grid-column:1/3;">
+              <div class="label">Status</div>
+              <div class="value" id="netStatus" style="font-size:28px;">—</div>
+              <div class="sub" id="netStatusSub">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CITIES PANEL -->
+        <div class="panel" id="p-cities">
+          <div class="list" id="citiesList"></div>
+        </div>
+
+      </div>
+
+      <div class="footer">
+        <div id="footerLeft">—</div>
+        <div id="footerRight">—</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ---------- Timing (low API usage) ----------
+  const PANEL_MS = 12_000;
+
+  const TOPSTRIP_REFRESH_MS = 5 * 60_000;
+  const MARKET_REFRESH_MS   = 2 * 60_000;
+  const WEATHER_REFRESH_MS  = 5 * 60_000;
+  const NEWS_REFRESH_MS     = 5 * 60_000;
+  const NET_REFRESH_MS      = 5 * 60_000;
+  const CITIES_REFRESH_MS   = 10 * 60_000;
+
+  // Rotation weights (shows some panels less often)
+  const ROTATION = [
+    "market","weather","headlines","market","weather","cities","market","headlines","net"
+  ];
+
+  const PANELS = {
+    market:    { id:"p-market",    name:"Market",   hint:"SPY + VXX + sectors + 1 headline" },
+    weather:   { id:"p-weather",   name:"Weather",  hint:"Now + tomorrow + radar" },
+    headlines: { id:"p-headlines", name:"Headlines",hint:"US + World + Business" },
+    net:       { id:"p-net",       name:"Internet", hint:"Latency checks" },
+    cities:    { id:"p-cities",    name:"Cities",   hint:"Time + temp" }
+  };
+
+  const fmt1 = n => (n==null||!isFinite(n)) ? "—" : n.toFixed(1);
+  const fmt0 = n => (n==null||!isFinite(n)) ? "—" : Math.round(n).toString();
+  const fmtPct = n => (n==null||!isFinite(n)) ? "—" : (n>=0?"+":"")+n.toFixed(2)+"%";
+  const clsFor = n => n>0 ? "pos" : (n<0 ? "neg" : "");
+
+  // ---------- State ----------
+  let cache = {
+    top: null,
+    market: null,
+    weather: null,
+    news: null,
+    net: null,
+    cities: null,
+    lastOk: Date.now()
+  };
+
+  // ---------- Helpers ----------
+  function setLive(ok){
+    const dot = document.getElementById("liveDot");
+    const txt = document.getElementById("liveText");
+    dot.style.animationPlayState = ok ? "running" : "paused";
+    dot.style.opacity = ok ? "1" : "0.6";
+    txt.textContent = ok ? "LIVE" : "SYNC";
+  }
+
+  function setTime(){
+    const now = new Date();
+    document.getElementById("time").textContent =
+      now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+    document.getElementById("footerRight").textContent =
+      "Updated " + new Date(cache.lastOk).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+  }
+
+  // ---------- Fetchers ----------
+  async function loadTopStrip(){
+    const r = await fetch(`/api/topstrip?t=${Date.now()}`, {cache:"no-store"});
+    if(!r.ok) throw new Error("topstrip " + r.status);
+    cache.top = await r.json();
+
+    const meta = [];
+    meta.push(cache.top.city || "Phoenix");
+    if(isFinite(cache.top.tempF)) meta.push(`${Math.round(cache.top.tempF)}°`);
+    if(isFinite(cache.top.windMph)) meta.push(`Wind ${Math.round(cache.top.windMph)} mph`);
+    if(isFinite(cache.top.aqiUS)) meta.push(`AQI ${Math.round(cache.top.aqiUS)} (${cache.top.aqiLabel || "—"})`);
+
+    document.getElementById("topMeta").textContent = meta.join("  •  ");
+    document.getElementById("footerLeft").textContent = "Edge Dashboard";
+  }
+
+  async function loadMarket(){
+    const r = await fetch(`/api/market?t=${Date.now()}`, {cache:"no-store"});
+    if(!r.ok) throw new Error("market " + r.status);
+    cache.market = await r.json();
+
+    // SPY
+    document.getElementById("spyVal").textContent =
+      (cache.market.spy?.price != null) ? `$${fmt1(cache.market.spy.price)}` : "—";
+    const spyChg = cache.market.spy?.pct;
+    const spySub = document.getElementById("spySub");
+    spySub.textContent = (spyChg!=null) ? `${fmtPct(spyChg)} today` : "—";
+    spySub.className = "sub " + clsFor(spyChg);
+
+    // VXX
+    document.getElementById("vxxVal").textContent =
+      (cache.market.vxx?.price != null) ? `VXX $${fmt1(cache.market.vxx.price)}` : "—";
+    const vxxChg = cache.market.vxx?.pct;
+    const vxxSub = document.getElementById("vxxSub");
+    vxxSub.textContent = (vxxChg!=null) ? `${fmtPct(vxxChg)} today` : "—";
+    vxxSub.className = "sub " + clsFor(vxxChg);
+
+    // Sectors tiny string
+    const parts = (cache.market.sectors || []).map(s => {
+      const p = s.pct;
+      const sign = (p>=0?"+":"");
+      return `${s.sym} ${sign}${p.toFixed(1)}%`;
+    });
+    document.getElementById("sectors").textContent = parts.join("   ");
+
+    // Headline
+    document.getElementById("mktHeadline").textContent = cache.market.headline?.title || "—";
+    document.getElementById("mktSource").textContent = cache.market.headline?.source || "Google News";
+    document.getElementById("mktWhen").textContent   = cache.market.headline?.when || "";
+  }
+
+  async function loadWeather(){
+    const r = await fetch(`/api/weather?t=${Date.now()}`, {cache:"no-store"});
+    if(!r.ok) throw new Error("weather " + r.status);
+    cache.weather = await r.json();
+
+    document.getElementById("wxNow").textContent =
+      isFinite(cache.weather.tempF) ? `${Math.round(cache.weather.tempF)}°` : "—";
+
+    const nowSub = [];
+    if(isFinite(cache.weather.windMph)) nowSub.push(`Wind ${Math.round(cache.weather.windMph)} mph`);
+    if(isFinite(cache.weather.precipProb)) nowSub.push(`Rain ${Math.round(cache.weather.precipProb)}%`);
+    document.getElementById("wxNowSub").textContent = nowSub.join(" • ") || "—";
+
+    document.getElementById("wxTomorrow").textContent =
+      (isFinite(cache.weather.tomorrowHiF) && isFinite(cache.weather.tomorrowLoF))
+      ? `${Math.round(cache.weather.tomorrowHiF)}° / ${Math.round(cache.weather.tomorrowLoF)}°`
+      : "—";
+
+    const extras = [];
+    if(cache.weather.sunrise) extras.push(`Sunrise ${cache.weather.sunrise}`);
+    if(cache.weather.sunset) extras.push(`Sunset ${cache.weather.sunset}`);
+    if(isFinite(cache.weather.aqiUS)) extras.push(`AQI ${Math.round(cache.weather.aqiUS)} (${cache.weather.aqiLabel || "—"})`);
+    document.getElementById("wxExtras").textContent = extras.join(" • ") || "—";
+
+    // Radar image (static snapshot url)
+    if(cache.weather.radar?.img){
+      document.getElementById("radarImg").src = cache.weather.radar.img;
+      document.getElementById("radarWhen").textContent = cache.weather.radar.when || "";
+    } else {
+      document.getElementById("radarImg").removeAttribute("src");
+      document.getElementById("radarWhen").textContent = "—";
+    }
+  }
+
+  function renderNewsList(items){
+    const host = document.getElementById("newsList");
+    host.innerHTML = "";
+    (items || []).slice(0,5).forEach(it => {
+      const div = document.createElement("div");
+      div.className = "headline";
+      div.innerHTML = `
+        <div class="h">${escapeHtml(it.title || "—")}</div>
+        <div class="m"><span>${escapeHtml(it.source || "Google News")}</span><span>${escapeHtml(it.when || "")}</span></div>
+      `;
+      host.appendChild(div);
+    });
+  }
+
+  async function loadNews(){
+    const r = await fetch(`/api/news?t=${Date.now()}`, {cache:"no-store"});
+    if(!r.ok) throw new Error("news " + r.status);
+    cache.news = await r.json();
+    renderNewsList(cache.news.items || []);
+  }
+
+  async function loadNet(){
+    const r = await fetch(`/api/net?t=${Date.now()}`, {cache:"no-store"});
+    if(!r.ok) throw new Error("net " + r.status);
+    cache.net = await r.json();
+
+    const cf = cache.net.cloudflareMs;
+    const gg = cache.net.googleMs;
+
+    document.getElementById("cfPing").textContent = (cf!=null) ? `${Math.round(cf)}ms` : "—";
+    document.getElementById("ggPing").textContent = (gg!=null) ? `${Math.round(gg)}ms` : "—";
+
+    document.getElementById("cfPingSub").textContent = cache.net.cloudflareOk ? "OK" : "Issue";
+    document.getElementById("ggPingSub").textContent = cache.net.googleOk ? "OK" : "Issue";
+
+    const good = cache.net.cloudflareOk && cache.net.googleOk;
+    document.getElementById("netStatus").textContent = good ? "Healthy" : "Degraded";
+    document.getElementById("netStatus").className = "value " + (good ? "pos" : "neg");
+    document.getElementById("netStatusSub").textContent = cache.net.note || "";
+  }
+
+  function renderCities(items){
+    const host = document.getElementById("citiesList");
+    host.innerHTML = "";
+    (items || []).forEach(it => {
+      const div = document.createElement("div");
+      div.className = "headline";
+      div.innerHTML = `
+        <div class="label">${escapeHtml(it.name || "—")}</div>
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:baseline;">
+          <div class="value" style="font-size:28px;">${escapeHtml(it.time || "—")}</div>
+          <div class="value" style="font-size:28px;">${isFinite(it.tempF) ? Math.round(it.tempF) + "°" : "—"}</div>
+        </div>
+        <div class="sub">${escapeHtml(it.extra || "")}</div>
+      `;
+      host.appendChild(div);
+    });
+  }
+
+  async function loadCities(){
+    const r = await fetch(`/api/cities?t=${Date.now()}`, {cache:"no-store"});
+    if(!r.ok) throw new Error("cities " + r.status);
+    cache.cities = await r.json();
+    renderCities(cache.cities.items || []);
+  }
+
+  function escapeHtml(s){
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  // ---------- Panel rotation ----------
+  let rotPos = 0;
+  function showPanel(key){
+    for(const k in PANELS){
+      document.getElementById(PANELS[k].id).classList.toggle("active", k===key);
+    }
+    document.getElementById("panelName").textContent = PANELS[key].name;
+    document.getElementById("panelHint").textContent = PANELS[key].hint;
+  }
+
+  // ---------- Init ----------
+  async function safe(fn){
+    try{
+      await fn();
+      cache.lastOk = Date.now();
+      setLive(true);
+    } catch(e){
+      console.error(e);
+      setLive(false);
+    }
+  }
+
+  (async function init(){
+    setTime();
+    setInterval(setTime, 1000);
+
+    // initial loads
+    await safe(loadTopStrip);
+    await safe(loadMarket);
+    await safe(loadWeather);
+    await safe(loadNews);
+    await safe(loadNet);
+    await safe(loadCities);
+
+    // refresh loops
+    setInterval(()=>safe(loadTopStrip), TOPSTRIP_REFRESH_MS);
+    setInterval(()=>safe(loadMarket),   MARKET_REFRESH_MS);
+    setInterval(()=>safe(loadWeather),  WEATHER_REFRESH_MS);
+    setInterval(()=>safe(loadNews),     NEWS_REFRESH_MS);
+    setInterval(()=>safe(loadNet),      NET_REFRESH_MS);
+    setInterval(()=>safe(loadCities),   CITIES_REFRESH_MS);
+
+    // rotation loop
+    showPanel(ROTATION[0]);
+    setInterval(()=>{
+      rotPos = (rotPos + 1) % ROTATION.length;
+      showPanel(ROTATION[rotPos]);
+    }, PANEL_MS);
+  })();
+</script>
+</body>
+</html>
