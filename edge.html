@@ -8,8 +8,8 @@
     :root{
       color-scheme: dark;
 
-      --bg0: #060b14;
-      --bg1: #0a1020;
+      --bg0:#060b14;
+      --bg1:#0a1020;
       --card: rgba(255,255,255,0.06);
       --card2: rgba(255,255,255,0.04);
       --stroke: rgba(255,255,255,0.12);
@@ -18,19 +18,19 @@
       --muted: rgba(233,238,252,0.72);
 
       --teal: #33e6d1;
-      --teal2: rgba(51,230,209,0.25);
+      --teal2: rgba(51,230,209,0.18);
 
-      --pos: #77ffb5;
-      --neg: #ff7a7a;
+      --pos:#77ffb5;
+      --neg:#ff7a7a;
 
       --radius: 22px;
-      --pad: 12px;
     }
 
     *{ box-sizing:border-box; }
-    html, body{ height:100%; }
+    html,body{ height:100%; }
     body{
       margin:0;
+      height:100%;
       overflow:hidden;
       font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif;
       color: var(--text);
@@ -61,54 +61,45 @@
     }
 
     /* Top strip */
-    .topStrip{
-      border-radius: 18px;
-      background: rgba(0,0,0,0.28);
-      border: 1px solid rgba(255,255,255,0.10);
-      padding: 10px 12px;
+    .topstrip{
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap: 12px;
-      box-shadow: 0 14px 40px rgba(0,0,0,0.25);
-      min-height: 54px;
+      gap:10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      box-shadow: 0 12px 34px rgba(0,0,0,0.28);
+      min-height: 56px;
     }
-    .tsLeft{
-      display:flex;
-      align-items:baseline;
-      gap: 12px;
-      min-width: 0;
-    }
-    .clock{
+    .time{
       font-weight: 950;
-      letter-spacing: 0.6px;
-      font-variant-numeric: tabular-nums;
-      font-size: clamp(22px, 3.2vw, 34px);
+      letter-spacing: 0.5px;
+      font-size: clamp(22px, 4.2vw, 34px);
       line-height: 1;
       white-space:nowrap;
     }
-    .tsMeta{
-      color: rgba(233,238,252,0.78);
-      font-size: clamp(12px, 1.6vw, 14px);
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow: ellipsis;
-      max-width: 65vw;
-    }
-    .tsRight{
+    .meta{
       display:flex;
       align-items:center;
-      gap: 10px;
-      flex: 0 0 auto;
+      gap:10px;
+      color: rgba(233,238,252,0.84);
+      font-size: clamp(12px, 2.2vw, 14px);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      flex:1;
+      min-width:0;
     }
     .pill{
       display:inline-flex;
       align-items:center;
       gap:8px;
-      padding: 7px 11px;
+      padding: 6px 12px;
       border-radius: 999px;
       font-size: 13px;
-      font-weight: 850;
+      font-weight: 900;
       background: rgba(51,230,209,0.10);
       border: 1px solid rgba(51,230,209,0.22);
       color: rgba(233,238,252,0.92);
@@ -120,7 +111,7 @@
       box-shadow: 0 0 12px rgba(51,230,209,0.5);
     }
 
-    /* Main card */
+    /* Main panel card */
     .card{
       flex:1;
       border-radius: var(--radius);
@@ -129,1083 +120,681 @@
       overflow:hidden;
       display:flex;
       flex-direction:column;
-      position:relative;
-      box-shadow: 0 18px 55px rgba(0,0,0,0.30);
+      min-height:0;
     }
-
-    .hdr{
-      padding: 10px 14px;
-      border-bottom: 1px solid rgba(255,255,255,0.10);
-      background: rgba(0,0,0,0.18);
+    .cardHeader{
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap: 10px;
+      gap:12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.18);
     }
-    .title{
+    .hLeft{
       font-weight: 950;
-      letter-spacing: 0.7px;
+      letter-spacing: 0.6px;
       text-transform: uppercase;
       font-size: 14px;
-      color: rgba(233,238,252,0.90);
+      opacity:0.92;
       white-space:nowrap;
     }
-    .subTitle{
-      font-size: 12px;
-      font-weight: 850;
-      letter-spacing: 0.5px;
+    .hRight{
+      font-weight: 900;
+      letter-spacing: 0.6px;
       text-transform: uppercase;
-      color: rgba(233,238,252,0.55);
+      font-size: 12px;
+      color: rgba(233,238,252,0.70);
       white-space:nowrap;
-      overflow:hidden;
-      text-overflow: ellipsis;
-      max-width: 55%;
-      text-align:right;
     }
 
-    .content{
+    .cardBody{
       flex:1;
-      padding: 12px 14px;
+      padding: 14px 16px;
       min-height:0;
       display:flex;
       flex-direction:column;
-      gap: 10px;
+      gap: 12px;
     }
 
-    /* footer strip (keeps "updated" visible even on small Edge) */
-    .ftr{
+    .footer{
       padding: 10px 14px;
       border-top: 1px solid rgba(255,255,255,0.10);
       background: rgba(0,0,0,0.18);
       display:flex;
-      align-items:center;
       justify-content:space-between;
-      gap: 10px;
+      gap:12px;
       font-size: 12px;
-      color: rgba(233,238,252,0.65);
+      color: rgba(233,238,252,0.75);
       font-variant-numeric: tabular-nums;
+      white-space:nowrap;
     }
 
-    /* Generic tiles */
-    .grid2{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      flex:1;
-      min-height:0;
-    }
-    .tile{
+    /* Layout helpers */
+    .row{ display:flex; gap:12px; min-height:0; }
+    .col{ flex:1; min-width:0; min-height:0; }
+
+    .box{
       border-radius: 18px;
       background: rgba(255,255,255,0.05);
       border: 1px solid rgba(255,255,255,0.10);
       padding: 12px 12px 10px 12px;
-      display:flex;
-      flex-direction:column;
-      justify-content:space-between;
-      gap: 8px;
       min-height: 0;
+      position: relative;
       overflow:hidden;
-      position:relative;
     }
-    .tile:before{
-      content:"";
-      position:absolute;
-      inset:-70px -70px auto auto;
-      width: 220px;
-      height: 220px;
-      background: radial-gradient(circle, rgba(51,230,209,0.12), transparent 65%);
-      transform: rotate(25deg);
-      pointer-events:none;
-    }
-    .tileLabel{
+    .boxTitle{
       font-size: 12px;
-      font-weight: 850;
+      font-weight: 900;
       letter-spacing: 0.5px;
       text-transform: uppercase;
-      color: rgba(233,238,252,0.62);
-    }
-    .tileValue{
-      font-size: clamp(28px, 4vw, 44px);
-      font-weight: 950;
-      line-height: 1.0;
-      font-variant-numeric: tabular-nums;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow: ellipsis;
-    }
-    .tileSub{
-      font-size: 12px;
       color: rgba(233,238,252,0.70);
+      margin-bottom: 8px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .big{
+      font-size: clamp(34px, 6.4vw, 64px);
+      font-weight: 950;
+      line-height: 1;
+      letter-spacing: 0.2px;
       font-variant-numeric: tabular-nums;
       white-space:nowrap;
       overflow:hidden;
-      text-overflow: ellipsis;
+      text-overflow:ellipsis;
+    }
+    .sub{
+      margin-top: 6px;
+      font-size: 13px;
+      color: rgba(233,238,252,0.72);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
     .pos{ color: var(--pos); }
     .neg{ color: var(--neg); }
 
-    /* Market top row */
-    .marketTop{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    .bigQuote{
-      border-radius: 18px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.10);
-      padding: 12px 12px;
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-end;
-      gap: 10px;
-      overflow:hidden;
-      position:relative;
-    }
-    .bigQuote .k{
-      font-size: 12px;
-      font-weight: 900;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      color: rgba(233,238,252,0.70);
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow: ellipsis;
-      max-width: 62%;
-    }
-    .bigQuote .p{
-      font-size: clamp(34px, 5vw, 54px);
-      font-weight: 950;
-      line-height: 1;
-      font-variant-numeric: tabular-nums;
-      white-space:nowrap;
-    }
-    .bigQuote .d{
-      font-size: 12px;
-      font-weight: 850;
-      color: rgba(233,238,252,0.70);
-      font-variant-numeric: tabular-nums;
-      margin-top: 6px;
-    }
-
-    /* Sectors block: fill the box better */
-    .sectors{
-      display:flex;
-      flex-direction:column;
-      gap: 10px;
-      min-height:0;
-    }
-    .sectorList{
-      flex:1;
-      min-height:0;
-      display:flex;
-      flex-wrap:wrap;
-      gap: 8px;
-      align-content:flex-start;
-      padding-top: 2px;
-      overflow:hidden;
-    }
-    .chip{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding: 10px 12px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.10);
-      font-weight: 900;
-      font-size: 14px;
-      color: rgba(233,238,252,0.92);
-      font-variant-numeric: tabular-nums;
-      white-space:nowrap;
-    }
-    .chip small{
-      font-weight: 900;
-      opacity: 0.85;
-      font-size: 13px;
-    }
-
-    /* Headlines list - NEVER cut off on Edge: we use internal scrolling and clamp */
+    /* Headlines list */
     .list{
       display:flex;
       flex-direction:column;
-      gap: 10px;
-      flex:1;
+      gap:10px;
       min-height:0;
-      overflow:auto;
-      padding-right: 4px;
-    }
-    .list::-webkit-scrollbar{ width: 10px; }
-    .list::-webkit-scrollbar-thumb{
-      background: rgba(255,255,255,0.10);
-      border: 2px solid rgba(0,0,0,0.0);
-      background-clip: padding-box;
-      border-radius: 999px;
-    }
-
-    .row{
-      border-radius: 18px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.10);
-      padding: 12px 12px;
       overflow:hidden;
     }
-    .row .h{
-      font-weight: 950;
-      font-size: 16px;
+    .item{
+      border-radius: 16px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      padding: 12px 12px 10px 12px;
+      min-height: 0;
+      overflow:hidden;
+    }
+    .itemTitle{
+      font-weight: 900;
+      font-size: clamp(14px, 2.3vw, 18px);
       line-height: 1.15;
       display:-webkit-box;
-      -webkit-line-clamp: 2;         /* prevents cut-off */
+      -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow:hidden;
     }
-    .row .s{
+    .itemSource{
       margin-top: 6px;
       font-size: 12px;
-      color: rgba(233,238,252,0.65);
+      color: rgba(233,238,252,0.62);
       white-space:nowrap;
       overflow:hidden;
-      text-overflow: ellipsis;
+      text-overflow:ellipsis;
     }
 
-    /* Weather panel */
-    .wxHero{
-      border-radius: 18px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.10);
-      padding: 12px;
+    /* Cities rows */
+    .rows{
       display:flex;
-      justify-content:space-between;
-      align-items:flex-end;
-      gap: 10px;
+      flex-direction:column;
+      gap:10px;
       overflow:hidden;
-      position:relative;
-    }
-    .wxHero .city{
-      font-weight: 950;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      font-size: 12px;
-      color: rgba(233,238,252,0.70);
-      margin-bottom: 6px;
-    }
-    .wxHero .tempNow{
-      font-size: clamp(44px, 6vw, 66px);
-      font-weight: 950;
-      line-height: 1;
-      font-variant-numeric: tabular-nums;
-    }
-    .wxHero .right{
-      text-align:right;
-      min-width: 120px;
-    }
-    .wxHero .tom{
-      font-size: clamp(22px, 3.2vw, 34px);
-      font-weight: 950;
-      font-variant-numeric: tabular-nums;
-      white-space:nowrap;
-    }
-    .wxHero .tomSub{
-      font-size: 12px;
-      color: rgba(233,238,252,0.70);
-      font-weight: 850;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-top: 2px;
-    }
-    .wxHero .mini{
-      font-size: 12px;
-      color: rgba(233,238,252,0.70);
-      font-variant-numeric: tabular-nums;
-      margin-top: 6px;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow: ellipsis;
-      max-width: 50vw;
-    }
-
-    /* Radar placeholder with map texture + scanning animation */
-    .radar{
-      flex:1;
       min-height:0;
-      border-radius: 18px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.10);
-      position:relative;
-      overflow:hidden;
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      padding: 10px 12px;
     }
-    .radar .label{
-      font-size: 12px;
-      font-weight: 900;
-      color: rgba(233,238,252,0.75);
-      letter-spacing: 0.5px;
-    }
-    .radar .time{
-      font-size: 12px;
-      font-weight: 900;
-      color: rgba(233,238,252,0.65);
-      font-variant-numeric: tabular-nums;
-    }
-    .radar:before{
-      /* “map-ish” texture: grid + contour-ish lines */
-      content:"";
-      position:absolute; inset:0;
-      background:
-        radial-gradient(circle at 20% 30%, rgba(51,230,209,0.12), transparent 45%),
-        radial-gradient(circle at 75% 65%, rgba(120,170,255,0.10), transparent 48%),
-        repeating-linear-gradient(0deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 34px),
-        repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 34px),
-        radial-gradient(circle at 30% 60%, rgba(255,255,255,0.06) 0 2px, transparent 3px 100%),
-        radial-gradient(circle at 70% 40%, rgba(255,255,255,0.05) 0 2px, transparent 3px 100%);
-      opacity:0.65;
-      filter: saturate(0.95) contrast(1.05);
-      pointer-events:none;
-    }
-    .radar:after{
-      /* scan line */
-      content:"";
-      position:absolute;
-      left:-20%;
-      right:-20%;
-      height: 18%;
-      top:-20%;
-      background: linear-gradient(180deg, transparent, rgba(51,230,209,0.18), transparent);
-      transform: skewY(-7deg);
-      animation: scan 3.8s linear infinite;
-      pointer-events:none;
-      mix-blend-mode: screen;
-      opacity:0.75;
-    }
-    @keyframes scan{
-      0%{ top:-30%; }
-      100%{ top:120%; }
-    }
-    .radarBadge{
-      position:absolute;
-      top: 10px;
-      right: 12px;
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding: 7px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 900;
-      letter-spacing: 0.4px;
-      background: rgba(0,0,0,0.30);
-      border: 1px solid rgba(255,255,255,0.12);
-      color: rgba(233,238,252,0.80);
-      z-index: 2;
-    }
-    .radarBadge b{ color: var(--teal); }
-
-    /* Cities list */
     .cityRow{
       display:flex;
+      align-items:center;
       justify-content:space-between;
-      align-items:baseline;
-      gap: 10px;
+      gap:12px;
+      padding: 12px 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      overflow:hidden;
     }
     .cityName{
       font-weight: 950;
-      font-size: 15px;
-      color: rgba(233,238,252,0.92);
+      letter-spacing: 0.2px;
+      font-size: clamp(14px, 2.5vw, 18px);
       white-space:nowrap;
       overflow:hidden;
-      text-overflow: ellipsis;
-      max-width: 55%;
+      text-overflow:ellipsis;
+      min-width:0;
+      flex:1;
+    }
+    .cityRight{
+      display:flex;
+      align-items:baseline;
+      gap:14px;
+      white-space:nowrap;
+      font-variant-numeric: tabular-nums;
     }
     .cityTime{
-      font-weight: 950;
-      font-variant-numeric: tabular-nums;
-      font-size: 15px;
-      color: rgba(233,238,252,0.92);
-      white-space:nowrap;
+      font-size: clamp(14px, 2.6vw, 18px);
+      color: rgba(233,238,252,0.85);
+      font-weight: 900;
     }
     .cityTemp{
+      font-size: clamp(16px, 3.0vw, 20px);
       font-weight: 950;
-      font-variant-numeric: tabular-nums;
-      font-size: 18px;
-      white-space:nowrap;
     }
 
-    /* “Panel error” styling */
-    .errBox{
+    /* Radar placeholder */
+    .radar{
+      flex:1;
       border-radius: 18px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.12);
-      padding: 14px 14px;
-      color: rgba(233,238,252,0.90);
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.10);
+      position:relative;
+      overflow:hidden;
+      min-height: 140px;
     }
-    .errBox .k{
+    .radar:before{
+      content:"";
+      position:absolute; inset:0;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(51,230,209,0.10), transparent 58%),
+        repeating-radial-gradient(circle at 50% 50%,
+          rgba(233,238,252,0.05) 0px,
+          rgba(233,238,252,0.05) 1px,
+          transparent 16px,
+          transparent 26px
+        );
+      opacity:0.55;
+    }
+    .sweep{
+      position:absolute;
+      inset:-40% -40%;
+      background: conic-gradient(from 0deg,
+        rgba(51,230,209,0.0),
+        rgba(51,230,209,0.18),
+        rgba(51,230,209,0.0)
+      );
+      animation: spin 3.8s linear infinite;
+      opacity:0.55;
+      mix-blend-mode: screen;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .radarLabel{
+      position:absolute;
+      left:12px; bottom:10px;
       font-size: 12px;
-      font-weight: 950;
+      color: rgba(233,238,252,0.70);
+      font-weight: 800;
+    }
+
+    /* Panel error */
+    .err{
+      padding: 14px 14px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+    .errTop{
+      font-size: 12px;
       letter-spacing: 0.6px;
+      font-weight: 950;
       text-transform: uppercase;
       color: rgba(233,238,252,0.70);
+      margin-bottom: 8px;
+    }
+    .errMsg{
+      font-weight: 950;
+      font-size: 16px;
+      line-height: 1.25;
       margin-bottom: 6px;
     }
-    .errBox .m{
-      font-size: 16px;
-      font-weight: 950;
-      line-height: 1.15;
-    }
-    .errBox .h{
-      margin-top: 8px;
+    .errSub{
       font-size: 12px;
       color: rgba(233,238,252,0.70);
       line-height: 1.35;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
 
-    /* small toggle row for crypto (kept here in case you want later) */
-    .toggles{
-      display:flex;
-      gap: 8px;
-      align-items:center;
-      justify-content:flex-end;
-    }
-    .btn{
-      border: 1px solid rgba(255,255,255,0.14);
-      background: rgba(255,255,255,0.05);
-      color: rgba(233,238,252,0.85);
-      border-radius: 999px;
-      padding: 7px 10px;
-      font-size: 12px;
-      font-weight: 950;
-      letter-spacing: 0.4px;
-      text-transform: uppercase;
-      cursor:pointer;
-      user-select:none;
-    }
-    .btn.active{
-      border-color: rgba(51,230,209,0.30);
-      background: rgba(51,230,209,0.12);
-      color: rgba(233,238,252,0.92);
-      box-shadow: 0 0 18px rgba(51,230,209,0.12);
+    /* Small screen safety */
+    @media (max-height: 480px){
+      .topstrip{ min-height: 50px; padding: 8px 12px; }
+      .cardHeader{ padding: 10px 12px; }
+      .cardBody{ padding: 10px 12px; gap:10px; }
+      .footer{ padding: 8px 10px; }
     }
   </style>
 </head>
 
 <body>
   <div class="wrap">
-
-    <!-- TOP STRIP -->
-    <div class="topStrip">
-      <div class="tsLeft">
-        <div class="clock" id="clock">--:--</div>
-        <div class="tsMeta" id="topMeta">Loading weather…</div>
-      </div>
-      <div class="tsRight">
-        <div class="pill"><span class="dot"></span><span id="topStatus">LIVE</span></div>
-      </div>
+    <div class="topstrip">
+      <div class="time" id="clock">—:—</div>
+      <div class="meta" id="topmeta">Loading…</div>
+      <div class="pill"><span class="dot"></span><span id="liveLabel">LIVE</span></div>
     </div>
 
-    <!-- MAIN PANEL -->
     <div class="card">
-      <div class="hdr">
-        <div class="title" id="panelTitle">—</div>
-        <div class="subTitle" id="panelSub">—</div>
+      <div class="cardHeader">
+        <div class="hLeft" id="panelTitle">—</div>
+        <div class="hRight" id="panelHint">—</div>
       </div>
 
-      <div class="content" id="panelContent">
-        <!-- panel content injected -->
+      <div class="cardBody" id="panelBody">
+        <!-- content injected -->
       </div>
 
-      <div class="ftr">
+      <div class="footer">
         <div>Edge Dashboard</div>
-        <div id="updatedStamp">Updated —</div>
+        <div id="stamp">Updated —</div>
       </div>
     </div>
   </div>
 
 <script>
-/**
- * EDGE.HTML (Rotator)
- * - Fixes the issues you called out:
- *   1) Headlines/Cities never “cut off”: internal scroll + line clamp
- *   2) Cities show city names + time + temp (no blank rows)
- *   3) Weather radar area never empty: map texture + scan animation + rain hint
- *   4) Market box is filled with meaningful content: SPY + VXX + SECTOR CHIPS + 2 headlines
- *   5) Errors show clearly and don’t break the whole rotation
- *
- * IMPORTANT:
- * - This file intentionally uses NO new CSS files and is fully copy/paste.
- * - It prefers your existing /api endpoints if you have them, but includes
- *   fallbacks using free public endpoints where possible.
- */
+  // ==========
+  // Settings
+  // ==========
+  const ROTATE_SECONDS = 18;   // how long each panel stays on screen
+  const REFRESH_SECONDS = 60;  // how often we refresh data per panel (cache-friendly)
 
-// =====================
-// CONFIG (edit safely)
-// =====================
-const CONFIG = {
-  locationName: "Phoenix",
-  // Phoenix coords (change if needed)
-  lat: 33.4484,
-  lon: -112.0740,
-
-  rotateSeconds: 12,
-  refreshSeconds: 120,
-
-  // Cities you asked for (times + temps)
-  cities: [
-    { name: "Phoenix", tz: "America/Phoenix", lat: 33.4484, lon: -112.0740 },
-    { name: "Flagstaff", tz: "America/Phoenix", lat: 35.1983, lon: -111.6513 },
-    { name: "Washington, DC", tz: "America/New_York", lat: 38.9072, lon: -77.0369 },
-    { name: "Frederick, MD", tz: "America/New_York", lat: 39.4143, lon: -77.4105 },
-    { name: "Winchester, VA", tz: "America/New_York", lat: 39.1857, lon: -78.1633 },
-    { name: "Boston", tz: "America/New_York", lat: 42.3601, lon: -71.0589 },
-    { name: "Berlin", tz: "Europe/Berlin", lat: 52.5200, lon: 13.4050 },
-  ],
-
-  // Market tickers for “general market”: SPY + VXX + tiny sector proxies
-  market: {
-    primary: [
-      { symbol: "SPY", label: "S&P 500 Proxy (SPY)" },
-      { symbol: "VXX", label: "Vol Proxy (VXX)" }
-    ],
-    sectors: [
-      "XLK","XLF","XLE","XLI","XLY","XLP","XLV","XLB","XLU","XLC","XLRE"
-    ],
-    // One or two Marketplace Business headlines
-    businessFeed: "https://news.google.com/rss/search?q=site:marketplace.org+business&hl=en-US&gl=US&ceid=US:en",
-  },
-
-  // News feeds (US + World + Business)
-  feeds: {
-    us: "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en",
-    world: "https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-US&gl=US&ceid=US:en",
-    business: "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=en-US&gl=US&ceid=US:en",
-  },
-
-  // Prefer your own backend endpoints if present (Cloudflare Pages Functions)
-  endpoints: {
-    quotes: "/api/quotes?symbols=",
-    // Optional endpoints you MAY already have; if they 404 we fall back:
-    internet: "/api/internet",
-    // If you already made one for cities/news, you can wire them here later.
-  }
-};
-
-// =====================
-// Helpers
-// =====================
-const $ = (id) => document.getElementById(id);
-const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-
-const fmtUsd = (n) =>
-  (n == null || !isFinite(n)) ? "—" :
-  n.toLocaleString(undefined, { style:"currency", currency:"USD", maximumFractionDigits: (n<10?4:2) });
-
-const fmtSignedUsd = (n) =>
-  (n == null || !isFinite(n)) ? "—" :
-  (n >= 0 ? "+" : "") + fmtUsd(n);
-
-const fmtPct = (n) =>
-  (n == null || !isFinite(n)) ? "—" :
-  (n >= 0 ? "+" : "") + n.toFixed(2) + "%";
-
-function clsFor(n){ return n > 0 ? "pos" : (n < 0 ? "neg" : ""); }
-
-function nowTimeHHMM(){
-  return new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
-}
-function updatedStamp(){
-  $("updatedStamp").textContent = "Updated " + nowTimeHHMM();
-}
-function setTopStatus(text){
-  $("topStatus").textContent = text;
-}
-
-// CORS-friendly fetch for RSS via jina.ai proxy (returns plaintext)
-async function fetchTextViaJina(url){
-  // Prefer https version
-  const safe = url.startsWith("http://") ? url.replace("http://","https://") : url;
-  const proxy = "https://r.jina.ai/" + safe;
-  const r = await fetch(proxy, { cache:"no-store" });
-  if(!r.ok) throw new Error("RSS fetch failed: " + r.status);
-  return await r.text();
-}
-
-function parseRssItems(xmlText, limit=6){
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(xmlText, "text/xml");
-  const items = Array.from(doc.querySelectorAll("item")).slice(0, limit).map(it => {
-    const title = (it.querySelector("title")?.textContent || "").trim();
-    const link  = (it.querySelector("link")?.textContent || "").trim();
-    const source = (it.querySelector("source")?.textContent || "").trim()
-      || (new URL(link || "https://example.com")).hostname.replace("www.","");
-    return { title, link, source };
-  }).filter(x => x.title);
-  return items;
-}
-
-async function safeJson(url){
-  const r = await fetch(url, { cache:"no-store" });
-  const text = await r.text();
-  // If you ever get HTML back, this catches it nicely:
-  if(text.trim().startsWith("<")){
-    throw new Error("Unexpected token '<' (HTML returned). Check endpoint path / auth / CORS.");
-  }
-  return JSON.parse(text);
-}
-
-function panelError(title, err){
-  $("panelContent").innerHTML = `
-    <div class="errBox">
-      <div class="k">Panel error</div>
-      <div class="m">${escapeHtml(title)}</div>
-      <div class="h">${escapeHtml(String(err?.message || err))}</div>
-      <div class="h" style="margin-top:10px;">
-        If this started after a redeploy, it’s usually one of:
-        <br>• wrong endpoint path (404 page returned as HTML)
-        <br>• a feed/service blocked the request (proxy helps)
-        <br>• JSON field names changed
-      </div>
-    </div>
-  `;
-  updatedStamp();
-}
-
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, (c)=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
-}
-
-// =====================
-// Top strip: clock + weather + wind + AQI
-// Uses Open-Meteo (free, no key) + Open-Meteo Air Quality (free, no key)
-// =====================
-let topState = { tempF:null, windMph:null, aqi:null, aqiLabel:"—" };
-
-async function refreshTop(){
-  try{
-    // Weather (current temp + wind)
-    // Open-Meteo returns in metric by default; we convert.
-    const wUrl =
-      `https://api.open-meteo.com/v1/forecast?latitude=${CONFIG.lat}&longitude=${CONFIG.lon}` +
-      `&current=temperature_2m,wind_speed_10m` +
-      `&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto`;
-    const w = await safeJson(wUrl);
-    const tempF = w?.current?.temperature_2m;
-    const windMph = w?.current?.wind_speed_10m;
-
-    // Air quality (US AQI)
-    const aUrl =
-      `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${CONFIG.lat}&longitude=${CONFIG.lon}` +
-      `&current=us_aqi&timezone=auto`;
-    const a = await safeJson(aUrl);
-    const aqi = a?.current?.us_aqi;
-
-    topState.tempF = isFinite(tempF) ? tempF : null;
-    topState.windMph = isFinite(windMph) ? windMph : null;
-    topState.aqi = isFinite(aqi) ? aqi : null;
-
-    let aqiLabel = "—";
-    if(isFinite(aqi)){
-      if(aqi <= 50) aqiLabel = "Good";
-      else if(aqi <= 100) aqiLabel = "Moderate";
-      else if(aqi <= 150) aqiLabel = "Unhealthy (SG)";
-      else if(aqi <= 200) aqiLabel = "Unhealthy";
-      else if(aqi <= 300) aqiLabel = "Very Unhealthy";
-      else aqiLabel = "Hazardous";
-    }
-    topState.aqiLabel = aqiLabel;
-
-    const tempStr = isFinite(topState.tempF) ? `${Math.round(topState.tempF)}°` : "—";
-    const windStr = isFinite(topState.windMph) ? `Wind ${Math.round(topState.windMph)} mph` : "Wind —";
-    const aqiStr  = isFinite(topState.aqi) ? `AQI ${Math.round(topState.aqi)} (${aqiLabel})` : "AQI —";
-
-    $("topMeta").textContent = `${CONFIG.locationName} • ${tempStr} • ${windStr} • ${aqiStr}`;
-    setTopStatus("LIVE");
-  } catch(e){
-    // Don’t kill the app if top strip fails
-    $("topMeta").textContent = `${CONFIG.locationName} • Weather unavailable`;
-    setTopStatus("SYNC");
-    console.error(e);
-  }
-}
-
-function tickClock(){
-  const t = new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
-  $("clock").textContent = t;
-}
-
-// =====================
-// Panel Renderers
-// =====================
-async function renderMarket(){
-  $("panelTitle").textContent = "MARKET";
-  $("panelSub").textContent = "SPY + VXX + SECTORS + 2 HEADLINES";
-
-  // 1) Quotes via your existing /api/quotes (Alpaca-backed)
-  //    This keeps secrets server-side and avoids public rate limits.
-  const symbols = [
-    ...CONFIG.market.primary.map(x=>x.symbol),
-    ...CONFIG.market.sectors
-  ].join(",");
-
-  let qMap = {};
-  try{
-    const data = await safeJson(`${CONFIG.endpoints.quotes}${encodeURIComponent(symbols)}&t=${Date.now()}`);
-    qMap = data?.quotes || {};
-  } catch(e){
-    // If your endpoint is down, show a friendly error but still render layout
-    console.error(e);
-  }
-
-  const spy = qMap["SPY"];
-  const vxx = qMap["VXX"];
-
-  function bigBlock(sym, label){
-    const q = qMap[sym];
-    const price = q && isFinite(q.price) ? fmtUsd(q.price) : "—";
-    const pct = q && isFinite(q.changesPercentage) ? q.changesPercentage : null;
-    const pctStr = isFinite(pct) ? `${fmtPct(pct)} today` : "—";
-    const cls = isFinite(pct) ? clsFor(pct) : "";
-    return `
-      <div class="bigQuote">
-        <div style="min-width:0">
-          <div class="k">${escapeHtml(label)}</div>
-          <div class="d ${cls}">${escapeHtml(pctStr)}</div>
-        </div>
-        <div class="p">${escapeHtml(price)}</div>
-      </div>
-    `;
-  }
-
-  // 2) Sectors as big “chips” (fills the box better than tiny text)
-  //    Sort by % move descending so it feels like “movers”.
-  const sectorMoves = CONFIG.market.sectors.map(sym => {
-    const q = qMap[sym];
-    const pct = q && isFinite(q.changesPercentage) ? Number(q.changesPercentage) : null;
-    return { sym, pct };
-  }).filter(x => x.pct != null).sort((a,b)=>Math.abs(b.pct)-Math.abs(a.pct));
-
-  const chips = sectorMoves.slice(0, 10).map(x => {
-    const cls = clsFor(x.pct);
-    return `<div class="chip"><span>${x.sym}</span><small class="${cls}">${fmtPct(x.pct)}</small></div>`;
-  }).join("");
-
-  // 3) Marketplace Business headlines via Google News RSS (proxied)
-  let bizItems = [];
-  try{
-    const txt = await fetchTextViaJina(CONFIG.market.businessFeed);
-    bizItems = parseRssItems(txt, 2);
-  } catch(e){
-    console.error(e);
-  }
-
-  const headlineBox = (item) => {
-    if(!item) return `<div class="row"><div class="h">No headline returned</div><div class="s">marketplace business</div></div>`;
-    return `
-      <div class="row">
-        <div class="h">${escapeHtml(item.title)}</div>
-        <div class="s">${escapeHtml(item.source)}</div>
-      </div>
-    `;
-  };
-
-  $("panelContent").innerHTML = `
-    <div class="marketTop">
-      ${bigBlock("SPY", "S&P 500 Proxy (SPY)")}
-      ${bigBlock("VXX", "Vol Proxy (VXX)")}
-    </div>
-
-    <div class="grid2" style="flex:1;min-height:0;">
-      <div class="tile">
-        <div class="tileLabel">Sectors (movers)</div>
-        <div class="sectors">
-          <div class="sectorList">${chips || `<div style="color:rgba(233,238,252,0.60);font-weight:850;">No sector quotes yet</div>`}</div>
-          <div class="tileSub">Sorted by biggest move</div>
-        </div>
-      </div>
-
-      <div class="tile" style="gap:10px;">
-        <div class="tileLabel">Marketplace Business</div>
-        <div style="display:flex;flex-direction:column;gap:10px;min-height:0;">
-          ${headlineBox(bizItems[0])}
-          ${headlineBox(bizItems[1])}
-        </div>
-        <div class="tileSub">Source: Google News RSS</div>
-      </div>
-    </div>
-  `;
-
-  updatedStamp();
-}
-
-async function renderInternet(){
-  $("panelTitle").textContent = "SERVER INFO";
-  $("panelSub").textContent = "LATENCY CHECKS";
-
-  // This is intentionally "server-ish" so it doesn’t look like your Wi-Fi speed.
-  // We'll measure fetch latency to a few well-known endpoints from the Edge device.
-  const targets = [
-    { name: "Cloudflare", url: "https://1.1.1.1/cdn-cgi/trace" },
-    { name: "Google", url: "https://www.google.com/generate_204" }
+  // Panels in cycle order
+  // NOTE: All endpoints are absolute (/api/...) to avoid “HTML instead of JSON” from bad relative paths.
+  const PANELS = [
+    { key:"market",  title:"MARKET",     hint:"SPY + VXX + SECTORS + HEADLINES", endpoint:"/api/market",  render: renderMarket },
+    { key:"weather", title:"WEATHER",    hint:"NOW + TOMORROW + RADAR",          endpoint:"/api/weather", render: renderWeather },
+    { key:"news",    title:"HEADLINES",  hint:"US + WORLD + BUSINESS",           endpoint:"/api/news",    render: renderNews },
+    { key:"net",     title:"SERVER INFO",hint:"LATENCY CHECKS",                  endpoint:"/api/net",     render: renderNet },
+    { key:"cities",  title:"CITIES",     hint:"TIME + TEMP",                     endpoint:"/api/cities",  render: renderCities },
   ];
 
-  async function ping(url){
-    const t0 = performance.now();
-    // mode:"no-cors" avoids CORS issues; latency still measurable.
-    await fetch(url + "?t=" + Date.now(), { mode:"no-cors", cache:"no-store" });
-    const t1 = performance.now();
-    return Math.round(t1 - t0);
+  // ==========
+  // Utils
+  // ==========
+  const el = (id) => document.getElementById(id);
+
+  function fmtUsd(n, digits=2){
+    if(n==null || !isFinite(n)) return "—";
+    return n.toLocaleString(undefined,{style:"currency",currency:"USD",maximumFractionDigits:digits});
+  }
+  function fmtPct(n){
+    if(n==null || !isFinite(n)) return "—";
+    const s = (n>=0?"+":"") + Number(n).toFixed(2) + "%";
+    return s;
+  }
+  function clsFor(n){ return n>0 ? "pos" : (n<0 ? "neg" : ""); }
+
+  function setStamp(){
+    el("stamp").textContent = "Updated " + new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
   }
 
-  let results = [];
-  try{
-    results = await Promise.all(targets.map(async t => {
-      try{
-        const ms = await ping(t.url);
-        return { name: t.name, ms, ok: true };
-      } catch(e){
-        return { name: t.name, ms: null, ok: false };
-      }
-    }));
-  } catch(e){
-    console.error(e);
-  }
+  // Safe JSON fetch:
+  // - shows the URL that failed
+  // - detects HTML (starts with "<" or contains "<!doctype")
+  async function fetchJson(url){
+    const r = await fetch(url + (url.includes("?") ? "&" : "?") + "t=" + Date.now(), { cache:"no-store" });
+    const text = await r.text();
 
-  const status = results.every(r=>r.ok) ? "Healthy" : "Degraded";
-  const statusCls = results.every(r=>r.ok) ? "pos" : "neg";
+    const looksHtml = /^\s*</.test(text) || text.toLowerCase().includes("<!doctype");
+    const ct = (r.headers.get("content-type") || "").toLowerCase();
 
-  $("panelContent").innerHTML = `
-    <div class="grid2" style="grid-template-columns: 1fr 1fr; flex:0 0 auto;">
-      ${results.map(r => `
-        <div class="tile" style="min-height:140px;">
-          <div class="tileLabel">${escapeHtml(r.name)}</div>
-          <div class="tileValue">${r.ok ? `${r.ms}ms` : "—"}</div>
-          <div class="tileSub">${r.ok ? "OK" : "UNREACHABLE"}</div>
-        </div>
-      `).join("")}
-    </div>
-
-    <div class="tile" style="flex:1;min-height:0;">
-      <div class="tileLabel">Status</div>
-      <div class="tileValue ${statusCls}" style="font-size: clamp(40px, 6vw, 66px);">${status}</div>
-      <div class="tileSub">This is server reachability, not your Wi-Fi bandwidth.</div>
-      <div class="tileSub">Tip: if these spike, streams/feeds often feel “laggy”.</div>
-    </div>
-  `;
-
-  updatedStamp();
-}
-
-async function renderHeadlines(){
-  $("panelTitle").textContent = "HEADLINES";
-  $("panelSub").textContent = "US + WORLD + BUSINESS";
-
-  // Pull a mixed list from the three feeds (proxied to avoid CORS)
-  let items = [];
-  try{
-    const [usTxt, worldTxt, bizTxt] = await Promise.all([
-      fetchTextViaJina(CONFIG.feeds.us),
-      fetchTextViaJina(CONFIG.feeds.world),
-      fetchTextViaJina(CONFIG.feeds.business)
-    ]);
-    const us = parseRssItems(usTxt, 4);
-    const world = parseRssItems(worldTxt, 4);
-    const biz = parseRssItems(bizTxt, 4);
-    // Interleave for variety
-    items = [];
-    for(let i=0;i<5;i++){
-      if(us[i]) items.push(us[i]);
-      if(world[i]) items.push(world[i]);
-      if(biz[i]) items.push(biz[i]);
-      if(items.length >= 10) break;
+    if(!r.ok){
+      throw new Error(`HTTP ${r.status} from ${url} • ${looksHtml ? "returned HTML" : "returned text"}`);
     }
-    items = items.slice(0, 10);
-  } catch(e){
-    panelError("Headlines", e);
-    return;
+    if(looksHtml){
+      // This is the classic “Unexpected token <” root cause
+      const snip = text.slice(0, 120).replace(/\s+/g," ").trim();
+      throw new Error(`HTML returned from ${url} • "${snip}…"`);
+    }
+
+    // If content-type isn't JSON, still try parse; if it fails we'll show useful error
+    try { return JSON.parse(text); }
+    catch(e){
+      const snip = text.slice(0, 140).replace(/\s+/g," ").trim();
+      throw new Error(`Invalid JSON from ${url} • "${snip}…"`);
+    }
   }
 
-  $("panelContent").innerHTML = `
-    <div class="list">
-      ${items.map(it => `
-        <div class="row">
-          <div class="h">${escapeHtml(it.title)}</div>
-          <div class="s">${escapeHtml(it.source)}</div>
+  function showError(panel, err){
+    el("panelTitle").textContent = panel.title;
+    el("panelHint").textContent  = panel.hint;
+    el("panelBody").innerHTML = `
+      <div class="err">
+        <div class="errTop">Panel error</div>
+        <div class="errMsg">${escapeHtml(String(err.message || err))}</div>
+        <div class="errSub">
+          This almost always means the endpoint returned HTML (404/redirect) or the JSON shape changed.
+          <br/>Endpoint: <strong>${escapeHtml(panel.endpoint)}</strong>
         </div>
-      `).join("")}
-    </div>
-  `;
-  updatedStamp();
-}
-
-async function renderWeather(){
-  $("panelTitle").textContent = "WEATHER";
-  $("panelSub").textContent = "NOW + TOMORROW + RADAR";
-
-  try{
-    const url =
-      `https://api.open-meteo.com/v1/forecast?latitude=${CONFIG.lat}&longitude=${CONFIG.lon}` +
-      `&current=temperature_2m,wind_speed_10m,precipitation` +
-      `&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum` +
-      `&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto`;
-    const w = await safeJson(url);
-
-    const nowT = w?.current?.temperature_2m;
-    const nowWind = w?.current?.wind_speed_10m;
-    const nowP = w?.current?.precipitation;
-
-    const tmax = w?.daily?.temperature_2m_max?.[1];
-    const tmin = w?.daily?.temperature_2m_min?.[1];
-    const sunrise = w?.daily?.sunrise?.[0];
-    const sunset  = w?.daily?.sunset?.[0];
-    const pSum0 = w?.daily?.precipitation_sum?.[0];
-    const pSum1 = w?.daily?.precipitation_sum?.[1];
-
-    const sunriseStr = sunrise ? new Date(sunrise).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}) : "—";
-    const sunsetStr  = sunset ? new Date(sunset).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}) : "—";
-
-    const rainLikely = (isFinite(pSum0) && pSum0 > 0.01) || (isFinite(pSum1) && pSum1 > 0.01) || (isFinite(nowP) && nowP > 0.01);
-
-    $("panelContent").innerHTML = `
-      <div class="wxHero">
-        <div style="min-width:0">
-          <div class="city">${escapeHtml(CONFIG.locationName)} Weather</div>
-          <div class="tempNow">${isFinite(nowT) ? `${Math.round(nowT)}°` : "—"}</div>
-          <div class="mini">
-            ${isFinite(nowWind) ? `Wind ${Math.round(nowWind)} mph` : "Wind —"} •
-            ${rainLikely ? "Rain possible" : "Rain 0% (likely)"} •
-            ${isFinite(topState.aqi) ? `AQI ${Math.round(topState.aqi)} (${topState.aqiLabel})` : "AQI —"}
-          </div>
-          <div class="mini">Sunrise ${sunriseStr} • Sunset ${sunsetStr}</div>
-        </div>
-
-        <div class="right">
-          <div class="tom">${isFinite(tmax) && isFinite(tmin) ? `${Math.round(tmax)}° / ${Math.round(tmin)}°` : "— / —"}</div>
-          <div class="tomSub">Tomorrow</div>
-          <div class="mini" style="max-width:240px;">
-            ${isFinite(pSum1) ? `Precip: ${pSum1.toFixed(2)} in` : "Precip: —"}
-          </div>
-        </div>
-      </div>
-
-      <div class="radar">
-        <div class="radarBadge"><span class="dot"></span><span>Radar</span> <b>${rainLikely ? "ACTIVE" : "IDLE"}</b></div>
-        <div class="label">Radar (visual placeholder)</div>
-        <div class="time">${nowTimeHHMM()}</div>
       </div>
     `;
-
-    updatedStamp();
-  } catch(e){
-    panelError("Weather", e);
-  }
-}
-
-async function renderCities(){
-  $("panelTitle").textContent = "CITIES";
-  $("panelSub").textContent = "TIME + TEMP";
-
-  // temps via Open-Meteo, times via Intl (no API required for time)
-  // We'll fetch temps in parallel; if any fails, still show others.
-  async function cityTemp(c){
-    const url =
-      `https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lon}` +
-      `&current=temperature_2m&temperature_unit=fahrenheit&timezone=auto`;
-    const w = await safeJson(url);
-    const t = w?.current?.temperature_2m;
-    return isFinite(t) ? t : null;
+    setStamp();
   }
 
-  const temps = await Promise.all(CONFIG.cities.map(async c => {
-    try{
-      const t = await cityTemp(c);
-      return { ...c, tempF: t };
-    } catch(e){
-      return { ...c, tempF: null };
-    }
-  }));
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
+  }
 
-  const rows = temps.map(c => {
-    const time = new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit", timeZone: c.tz });
-    const tStr = isFinite(c.tempF) ? `${Math.round(c.tempF)}°` : "—";
-    return `
+  // ==========
+  // Renderers (tolerant to JSON shape)
+  // ==========
+  function renderMarket(data){
+    // Accept multiple shapes:
+    // data.spy: {price, pct}
+    // data.vxx: {price, pct}
+    // data.sectors: [{symbol, pct}]
+    // data.headlines: [{title, source}]
+    const spy = data.spy || data.SPY || (data.quotes && (data.quotes.SPY || data.quotes.spy)) || null;
+    const vxx = data.vxx || data.VXX || (data.quotes && (data.quotes.VXX || data.quotes.vxx)) || null;
+    const sectors = data.sectors || data.tinyMovers || data.movers || [];
+    const headlines = data.headlines || data.items || data.articles || [];
+
+    const sectorText = Array.isArray(sectors)
+      ? sectors.slice(0, 10).map(x => {
+          const sym = x.symbol || x.ticker || x.name || "—";
+          const pct = x.pct ?? x.changePercent ?? x.changesPercentage ?? x.change_percentage;
+          return `${sym} ${fmtPct(pct)}`;
+        }).join("  ·  ")
+      : "—";
+
+    const h = (Array.isArray(headlines) && headlines[0]) ? headlines[0] : null;
+    const hTitle = h ? (h.title || h.headline || "—") : "—";
+    const hSource = h ? (h.source || h.publisher || h.site || "") : "";
+
+    el("panelBody").innerHTML = `
       <div class="row">
-        <div class="cityRow">
-          <div class="cityName">${escapeHtml(c.name)}</div>
-          <div style="display:flex;gap:14px;align-items:baseline;">
-            <div class="cityTime">${escapeHtml(time)}</div>
-            <div class="cityTemp">${escapeHtml(tStr)}</div>
+        <div class="col box">
+          <div class="boxTitle">
+            <span>S&amp;P 500 Proxy (SPY)</span>
+          </div>
+          <div class="big">${fmtUsd(spy?.price ?? spy?.last ?? spy?.close ?? spy, 2)}</div>
+          <div class="sub ${clsFor(spy?.pct ?? spy?.changePercent ?? spy?.changesPercentage)}">
+            ${fmtPct(spy?.pct ?? spy?.changePercent ?? spy?.changesPercentage)} today
           </div>
         </div>
-        <div class="s">${escapeHtml(c.tz)}</div>
+
+        <div class="col box" style="text-align:right;">
+          <div class="boxTitle">
+            <span>Vol Proxy (VXX)</span>
+          </div>
+          <div class="big">${fmtUsd(vxx?.price ?? vxx?.last ?? vxx?.close ?? vxx, 2)}</div>
+          <div class="sub ${clsFor(vxx?.pct ?? vxx?.changePercent ?? vxx?.changesPercentage)}">
+            ${fmtPct(vxx?.pct ?? vxx?.changePercent ?? vxx?.changesPercentage)} today
+          </div>
+        </div>
+      </div>
+
+      <div class="row" style="flex:1;">
+        <div class="col box" style="flex:1.05;">
+          <div class="boxTitle"><span>Sectors (bigger + readable)</span></div>
+          <div style="font-size:clamp(12px,2.25vw,16px);line-height:1.35;color:rgba(233,238,252,0.84);overflow:hidden;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;">
+            ${escapeHtml(sectorText || "—")}
+          </div>
+          <div class="sub" style="margin-top:10px;color:rgba(233,238,252,0.55);">
+            (If you want a true sentiment bar here, we can replace this with Fear &amp; Greed / breadth.)
+          </div>
+        </div>
+
+        <div class="col box" style="flex:0.95;">
+          <div class="boxTitle"><span>Market headline</span></div>
+          <div class="itemTitle" style="-webkit-line-clamp:3;">${escapeHtml(hTitle)}</div>
+          <div class="itemSource">${escapeHtml(hSource)}</div>
+          <div class="sub" style="margin-top:10px;color:rgba(233,238,252,0.55);">
+            (Room for more — we can show 2–3 here if you want.)
+          </div>
+        </div>
       </div>
     `;
-  }).join("");
-
-  $("panelContent").innerHTML = `<div class="list">${rows}</div>`;
-  updatedStamp();
-}
-
-// =====================
-// Rotation Controller
-// =====================
-const PANELS = [
-  { key:"market",   title:"MARKET",   sub:"SPY + VXX + SECTORS + 2 HEADLINES", render: renderMarket },
-  { key:"weather",  title:"WEATHER",  sub:"NOW + TOMORROW + RADAR",            render: renderWeather },
-  { key:"headlines",title:"HEADLINES",sub:"US + WORLD + BUSINESS",             render: renderHeadlines },
-  { key:"internet", title:"SERVER INFO", sub:"LATENCY CHECKS",                 render: renderInternet },
-  { key:"cities",   title:"CITIES",   sub:"TIME + TEMP",                       render: renderCities },
-  // NOTE: IRA panel intentionally NOT included here.
-  // You told me: the far-right panel is IRA portfolio and should stay separate.
-];
-
-let panelIndex = 0;
-let rotateTimer = null;
-let refreshTimer = null;
-
-async function showPanel(i){
-  const p = PANELS[i % PANELS.length];
-  $("panelTitle").textContent = p.title;
-  $("panelSub").textContent = p.sub;
-  $("panelContent").innerHTML = `<div style="color:rgba(233,238,252,0.75);font-weight:850;">Loading…</div>`;
-  try{
-    await p.render();
-  } catch(e){
-    panelError(p.title, e);
   }
-}
 
-function startRotation(){
-  const ms = (CONFIG.rotateSeconds ?? 12) * 1000;
-  if(rotateTimer) clearInterval(rotateTimer);
-  rotateTimer = setInterval(async () => {
-    panelIndex = (panelIndex + 1) % PANELS.length;
-    await showPanel(panelIndex);
-  }, ms);
-}
+  function renderWeather(data){
+    // Shapes accepted:
+    // data.now: {temp, windMph, rainPct, aqi, sunrise, sunset}
+    // data.tomorrow: {hi, lo}
+    // data.radar: {imageUrl} optional
+    const now = data.now || data.current || data.today || data;
+    const tmr = data.tomorrow || data.nextDay || data.forecastTomorrow || {};
+    const temp = now.temp ?? now.temperature ?? now.tempF;
+    const wind = now.windMph ?? now.wind ?? now.wind_speed;
+    const rain = now.rainPct ?? now.precipPct ?? now.pop ?? now.precip_probability;
+    const aqi  = now.aqi ?? now.airQualityIndex;
+    const sunrise = now.sunrise ?? now.sunriseTime;
+    const sunset  = now.sunset ?? now.sunsetTime;
 
-function startRefresh(){
-  const ms = (CONFIG.refreshSeconds ?? 120) * 1000;
-  if(refreshTimer) clearInterval(refreshTimer);
-  refreshTimer = setInterval(async () => {
-    // Refresh top strip + current panel
-    await refreshTop();
-    await showPanel(panelIndex);
-  }, ms);
-}
+    const hi = tmr.hi ?? tmr.high ?? tmr.max;
+    const lo = tmr.lo ?? tmr.low  ?? tmr.min;
 
-// =====================
-// Init
-// =====================
-(async function init(){
-  tickClock();
-  setInterval(tickClock, 1000 * 10);
+    el("panelBody").innerHTML = `
+      <div class="row">
+        <div class="col box">
+          <div class="boxTitle"><span>Phoenix weather</span></div>
+          <div class="big">${(temp!=null && isFinite(temp)) ? `${Math.round(temp)}°` : "—"}</div>
+          <div class="sub">
+            Wind ${wind!=null ? `${Math.round(wind)} mph` : "—"} • Rain ${rain!=null ? `${Math.round(rain)}%` : "—"}
+          </div>
+          <div class="sub" style="margin-top:10px;">
+            Sunrise ${escapeHtml(sunrise || "—")} • Sunset ${escapeHtml(sunset || "—")} • AQI ${aqi!=null ? `${aqi}` : "—"}
+          </div>
+        </div>
 
-  await refreshTop();
-  await showPanel(panelIndex);
+        <div class="col box" style="text-align:right;">
+          <div class="boxTitle"><span>Tomorrow</span></div>
+          <div class="big">${(hi!=null && lo!=null) ? `${Math.round(hi)}° / ${Math.round(lo)}°` : "—"}</div>
+          <div class="sub">High / Low</div>
+        </div>
+      </div>
 
-  startRotation();
-  startRefresh();
-})();
+      <!-- Radar area (even when empty, it "feels alive") -->
+      <div class="radar">
+        <div class="sweep"></div>
+        <div class="radarLabel">Radar (scan placeholder)</div>
+      </div>
+    `;
+  }
+
+  function renderNews(data){
+    // Accept: {items:[{title,source}]} or {articles:[...]} etc.
+    const items = data.items || data.articles || data.headlines || data.news || [];
+    const list = Array.isArray(items) ? items.slice(0, 5) : [];
+
+    if(!list.length){
+      el("panelBody").innerHTML = `
+        <div class="err">
+          <div class="errTop">No headlines</div>
+          <div class="errMsg">No items returned</div>
+          <div class="errSub">If your /api/news works in a browser, this usually means the JSON keys are different than expected.</div>
+        </div>
+      `;
+      return;
+    }
+
+    el("panelBody").innerHTML = `
+      <div class="list">
+        ${list.map(x => {
+          const title = x.title || x.headline || x.name || "—";
+          const source = x.source || x.publisher || x.site || x.domain || "";
+          return `
+            <div class="item">
+              <div class="itemTitle">${escapeHtml(title)}</div>
+              <div class="itemSource">${escapeHtml(source)}</div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+  }
+
+  function renderNet(data){
+    // Accept: {cloudflareMs, googleMs} OR {checks:{cloudflare:{ms}, google:{ms}}} etc.
+    const cf = data.cloudflareMs ?? data.cfMs ?? data.cloudflare?.ms ?? data.checks?.cloudflare?.ms;
+    const gg = data.googleMs ?? data.ggMs ?? data.google?.ms ?? data.checks?.google?.ms;
+
+    const status = (data.status || data.health || (data.ok ? "Healthy" : null)) ?? "Healthy";
+    const statusSub = data.statusDetail || data.detail || "All good";
+
+    el("panelBody").innerHTML = `
+      <div class="row">
+        <div class="col box">
+          <div class="boxTitle"><span>Cloudflare</span></div>
+          <div class="big">${(cf!=null && isFinite(cf)) ? `${Math.round(cf)}ms` : "—"}</div>
+          <div class="sub">OK</div>
+        </div>
+        <div class="col box">
+          <div class="boxTitle"><span>Google</span></div>
+          <div class="big">${(gg!=null && isFinite(gg)) ? `${Math.round(gg)}ms` : "—"}</div>
+          <div class="sub">OK</div>
+        </div>
+      </div>
+
+      <div class="box" style="flex:1;">
+        <div class="boxTitle"><span>Status</span></div>
+        <div class="big pos">${escapeHtml(String(status))}</div>
+        <div class="sub">${escapeHtml(String(statusSub))}</div>
+        <div class="sub" style="margin-top:10px;color:rgba(233,238,252,0.55);">
+          This is checking *server reachability*, not your Wi-Fi speed.
+        </div>
+      </div>
+    `;
+  }
+
+  function renderCities(data){
+    // Accept: {cities:[{name,time,temp}]} OR {items:[...]} etc.
+    const arr = data.cities || data.items || data.list || [];
+    const list = Array.isArray(arr) ? arr : [];
+
+    if(!list.length){
+      el("panelBody").innerHTML = `
+        <div class="err">
+          <div class="errTop">Cities</div>
+          <div class="errMsg">No cities returned</div>
+          <div class="errSub">
+            Your /api/cities function is returning an empty list (or different keys).
+            Open <strong>/api/cities</strong> in the browser and see what keys it returns.
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    el("panelBody").innerHTML = `
+      <div class="rows">
+        ${list.slice(0, 7).map(c => {
+          const name = c.name || c.city || c.label || "—";
+          const time = c.time || c.localTime || c.clock || "—";
+          const temp = c.temp ?? c.temperature ?? c.tempF;
+          return `
+            <div class="cityRow">
+              <div class="cityName">${escapeHtml(String(name))}</div>
+              <div class="cityRight">
+                <div class="cityTime">${escapeHtml(String(time))}</div>
+                <div class="cityTemp">${(temp!=null && isFinite(temp)) ? `${Math.round(temp)}°` : "—"}</div>
+              </div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+  }
+
+  // ==========
+  // Top strip updater
+  // ==========
+  function updateClock(){
+    el("clock").textContent = new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
+  }
+
+  async function updateTopStrip(){
+    // If you already have /api/topstrip, use it.
+    // If not, we’ll gracefully fall back to just “Phoenix”.
+    const url = "/api/topstrip";
+    try{
+      const data = await fetchJson(url);
+      // Accept shapes:
+      // {city:"Phoenix", temp:67, wind:2, aqi:64, aqiLabel:"Moderate"}
+      const city = data.city || data.location || "Phoenix";
+      const temp = data.temp ?? data.temperature ?? null;
+      const wind = data.wind ?? data.windMph ?? null;
+      const aqi  = data.aqi ?? null;
+      const aqiLabel = data.aqiLabel || data.aqiCategory || "";
+      const parts = [
+        city,
+        (temp!=null && isFinite(temp)) ? `${Math.round(temp)}°` : null,
+        (wind!=null && isFinite(wind)) ? `Wind ${Math.round(wind)} mph` : null,
+        (aqi!=null && isFinite(aqi)) ? `AQI ${aqi}${aqiLabel ? ` (${aqiLabel})` : ""}` : null
+      ].filter(Boolean);
+
+      el("topmeta").textContent = parts.join(" • ");
+    }catch(e){
+      // quiet fallback
+      el("topmeta").textContent = "Phoenix";
+    }
+  }
+
+  // ==========
+  // Panel rotation + caching
+  // ==========
+  let panelIdx = 0;
+  const cache = new Map(); // key -> {data, ts}
+
+  async function loadPanel(panel){
+    el("panelTitle").textContent = panel.title;
+    el("panelHint").textContent  = panel.hint;
+
+    const now = Date.now();
+    const cached = cache.get(panel.key);
+    const freshMs = REFRESH_SECONDS * 1000;
+
+    try{
+      let data;
+      if(cached && (now - cached.ts) < freshMs){
+        data = cached.data;
+      }else{
+        data = await fetchJson(panel.endpoint);
+        cache.set(panel.key, { data, ts: now });
+      }
+      panel.render(data);
+      setStamp();
+    }catch(err){
+      showError(panel, err);
+    }
+  }
+
+  function nextPanel(){
+    panelIdx = (panelIdx + 1) % PANELS.length;
+    loadPanel(PANELS[panelIdx]);
+  }
+
+  // ==========
+  // Init
+  // ==========
+  (async function init(){
+    updateClock();
+    setInterval(updateClock, 1000 * 15);
+
+    await updateTopStrip();
+    setInterval(updateTopStrip, 1000 * 60);
+
+    await loadPanel(PANELS[panelIdx]);
+    setInterval(nextPanel, ROTATE_SECONDS * 1000);
+  })();
 </script>
 </body>
 </html>
