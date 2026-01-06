@@ -3,1056 +3,687 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Edge Dashboard</title>
+  <title>Roth Ticker</title>
   <style>
     :root{
       color-scheme: dark;
 
-      --bg0:#060b14; --bg1:#0a1020;
-      --card:rgba(255,255,255,.06);
-      --card2:rgba(255,255,255,.04);
-      --stroke:rgba(255,255,255,.12);
-      --stroke2:rgba(255,255,255,.10);
-      --text:#e9eefc;
-      --muted:rgba(233,238,252,.72);
+      /* Match the “teal dashboard” vibe */
+      --bg0: #060b14;
+      --bg1: #0a1020;
+      --card: rgba(255,255,255,0.06);
+      --card2: rgba(255,255,255,0.04);
+      --stroke: rgba(255,255,255,0.12);
+      --stroke2: rgba(255,255,255,0.10);
+      --text: #e9eefc;
+      --muted: rgba(233,238,252,0.72);
 
-      --teal:#33e6d1;
-      --tealGlow: rgba(51,230,209,.35);
-      --pos:#77ffb5;
-      --neg:#ff7a7a;
-      --warn:#ffd27a;
+      --teal: #33e6d1;
+      --teal2: rgba(51,230,209,0.25);
 
-      --radius:22px;
-      --tileR:16px;
+      --pos: #77ffb5;
+      --neg: #ff7a7a;
+
+      --radius: 22px;
     }
 
     *{ box-sizing:border-box; }
-    html,body{ height:100%; }
     body{
       margin:0;
+      height:100vh;
       overflow:hidden;
       font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif;
-      color:var(--text);
+      color: var(--text);
+
+      /* Subtle grid + vignette */
       background:
         radial-gradient(1100px 700px at 70% 30%, rgba(51,230,209,0.10), transparent 60%),
         radial-gradient(1000px 650px at 20% 80%, rgba(120,170,255,0.10), transparent 55%),
         linear-gradient(180deg, var(--bg0), var(--bg1));
     }
+
+    /* faint grid overlay */
     body:before{
       content:"";
-      position:fixed; inset:0;
+      position:fixed;
+      inset:0;
       pointer-events:none;
       background:
         linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
-      background-size:44px 44px;
-      opacity:.12;
+      background-size: 44px 44px;
+      opacity:0.12;
       mask-image: radial-gradient(circle at 55% 45%, black 55%, transparent 78%);
     }
 
-    .wrap{ height:100%; padding:12px 14px; display:flex; flex-direction:column; gap:10px; }
-
-    /* Top strip */
-    .topStrip{
+    .wrap{
+      height:100%;
+      padding: 12px 14px;
       display:flex;
-      align-items:center;
+      flex-direction:column;
+      gap: 10px;
+    }
+
+    /* Header */
+    .top{
+      display:flex;
       justify-content:space-between;
-      gap:10px;
-      padding:10px 12px;
-      border-radius:999px;
-      background: rgba(0,0,0,.18);
-      border:1px solid rgba(255,255,255,.10);
+      align-items:baseline;
+      gap:12px;
+      padding: 2px 2px 0 2px;
     }
-    .topLeft{ display:flex; align-items:baseline; gap:12px; min-width:0; }
-    .clock{
-      font-weight:950;
-      font-variant-numeric: tabular-nums;
-      font-size: clamp(22px, 3.0vw, 34px);
-      letter-spacing:.5px;
+    .acct{
+      font-weight:900;
+      letter-spacing:0.4px;
+      font-size:18px;
+      opacity:0.95;
+    }
+    .stamp{
+      font-size:12px;
+      color: var(--muted);
       white-space:nowrap;
     }
-    .topMeta{
-      min-width:0;
-      font-size: clamp(12px, 1.6vw, 14px);
-      color:rgba(233,238,252,.82);
-      white-space:nowrap;
+
+    /* Main card */
+    .card{
+      flex:1;
+      border-radius: var(--radius);
+      background: var(--card);
+      border: 1px solid var(--stroke);
       overflow:hidden;
-      text-overflow:ellipsis;
+      display:flex;
+      flex-direction:column;
     }
+
+    .cardInner{
+      flex:1;
+      padding: 18px 20px 14px 20px;
+      display:flex;
+      flex-direction:column;
+      gap: 14px;
+    }
+
+    /* HERO row */
+    .heroRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:16px;
+    }
+
+    .leftBlock .sym{
+      font-size: 88px;
+      font-weight: 950;
+      letter-spacing: 1px;
+      line-height: 0.95;
+      margin:0;
+    }
+    .leftBlock .weight{
+      margin-top: 10px;
+      font-size: 18px;
+      color: var(--muted);
+    }
+    .leftBlock .meta{
+      margin-top: 10px;
+      font-size: 16px;
+      color: rgba(233,238,252,0.70);
+    }
+
+    /* Price block */
+    .priceBox{
+      text-align:right;
+      padding: 12px 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--stroke2);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      min-width: 280px;
+    }
+
+    .price{
+      font-size: 98px;
+      font-weight: 950;
+      line-height: 0.95;
+      margin:0;
+      text-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+
+    .chg{
+      margin-top: 12px;
+      font-size: 30px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      display:flex;
+      justify-content:flex-end;
+      align-items:center;
+      gap:10px;
+    }
+
+    .pillRow{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      align-items:center;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
     .pill{
       display:inline-flex;
       align-items:center;
       gap:8px;
-      padding:7px 12px;
-      border-radius:999px;
-      font-size:12px;
-      font-weight:900;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 800;
       background: rgba(51,230,209,0.10);
       border: 1px solid rgba(51,230,209,0.22);
       color: rgba(233,238,252,0.92);
-      white-space:nowrap;
-      flex:0 0 auto;
+      white-space: nowrap;
     }
-    .dot{ width:8px; height:8px; border-radius:99px; background:var(--teal); box-shadow:0 0 12px rgba(51,230,209,.55); }
 
-    /* Panel card */
-    .card{
+    .dot{
+      width:8px; height:8px; border-radius:99px;
+      background: var(--teal);
+      box-shadow: 0 0 12px rgba(51,230,209,0.5);
+    }
+
+    /* #5 breathing LIVE indicator (pauses when SYNC) */
+    @keyframes breathe {
+      0%   { transform: scale(1);   opacity: 0.75; box-shadow: 0 0 10px rgba(51,230,209,0.25); }
+      50%  { transform: scale(1.45);opacity: 1;    box-shadow: 0 0 22px rgba(51,230,209,0.55); }
+      100% { transform: scale(1);   opacity: 0.75; box-shadow: 0 0 10px rgba(51,230,209,0.25); }
+    }
+    .pill .dot{
+      animation: breathe 1.6s ease-in-out infinite;
+      transform-origin: center;
+    }
+
+    .pos{ color: var(--pos); }
+    .neg{ color: var(--neg); }
+
+    /* #2 Market badge styles */
+    .pill.market{
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.14);
+      color: rgba(233,238,252,0.90);
+    }
+    .mDot{
+      width:8px; height:8px; border-radius:99px;
+      background: rgba(233,238,252,0.55);
+      box-shadow: 0 0 10px rgba(233,238,252,0.18);
+    }
+    .pill.market.open{
+      background: rgba(119,255,181,0.12);
+      border-color: rgba(119,255,181,0.26);
+    }
+    .pill.market.open .mDot{
+      background: #77ffb5;
+      box-shadow: 0 0 14px rgba(119,255,181,0.40);
+    }
+    .pill.market.closed{
+      background: rgba(255,122,122,0.12);
+      border-color: rgba(255,122,122,0.24);
+    }
+    .pill.market.closed .mDot{
+      background: #ff7a7a;
+      box-shadow: 0 0 14px rgba(255,122,122,0.35);
+    }
+
+    /* “Portfolio Pulse” area fills the empty space */
+    .pulse{
       flex:1;
-      border-radius:var(--radius);
-      background:var(--card);
-      border:1px solid var(--stroke);
-      overflow:hidden;
+      border-radius: 18px;
+      background: var(--card2);
+      border: 1px solid rgba(255,255,255,0.10);
+      padding: 14px;
       display:flex;
       flex-direction:column;
-      min-height:0; /* important for internal scroll */
+      gap: 10px;
+      position:relative;
+      overflow:hidden;
     }
-    .cardHead{
+
+    .pulse:before{
+      content:"";
+      position:absolute;
+      inset:-80px -80px auto auto;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(51,230,209,0.18), transparent 65%);
+      transform: rotate(25deg);
+    }
+
+    .pulseTitle{
       display:flex;
       justify-content:space-between;
       align-items:center;
-      gap:10px;
-      padding:14px 16px 10px 16px;
-      border-bottom:1px solid rgba(255,255,255,.10);
-      background: rgba(0,0,0,.12);
+      gap:12px;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 0.6px;
+      color: rgba(233,238,252,0.86);
+      text-transform: uppercase;
     }
-    .title{
-      font-weight:950;
-      letter-spacing:.5px;
-      text-transform:uppercase;
-      font-size:14px;
-      color:rgba(233,238,252,.9);
+    .pulseTitle span{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
     }
-    .subTitle{
-      font-size:12px;
-      color:rgba(233,238,252,.70);
-      font-weight:800;
-      letter-spacing:.4px;
-      text-transform:uppercase;
-      white-space:nowrap;
-    }
-    .cardBody{
+
+    .tiles{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
       flex:1;
-      padding:14px 16px 14px 16px;
-      min-height:0;
+      min-height: 0;
     }
+
+    .tile{
+      border-radius: 16px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      padding: 12px 12px 10px 12px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      gap:8px;
+      min-height: 0;
+    }
+
+    .tileLabel{
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      color: rgba(233,238,252,0.70);
+      text-transform: uppercase;
+    }
+
+    .tileValue{
+      font-size: 30px;
+      font-weight: 950;
+      line-height: 1.0;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tileSub{
+      font-size: 12px;
+      color: rgba(233,238,252,0.70);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Bottom progress / footer */
     .footer{
-      padding:10px 14px 12px 14px;
-      border-top:1px solid rgba(255,255,255,.10);
+      padding: 10px 14px 12px 14px;
+      border-top: 1px solid rgba(255,255,255,0.10);
       background: rgba(0,0,0,0.18);
+      display:flex;
+      flex-direction:column;
+      gap: 8px;
+    }
+
+    .bar{
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.10);
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+    .bar > div{
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, rgba(51,230,209,0.35), rgba(51,230,209,0.90));
+      border-radius:999px;
+      transition: width .35s ease;
+      box-shadow: 0 0 18px rgba(51,230,209,0.35);
+    }
+
+    .bottomRow{
       display:flex;
       justify-content:space-between;
       gap:12px;
-      font-size:12px;
+      font-size: 12px;
       color: rgba(233,238,252,0.80);
       font-variant-numeric: tabular-nums;
     }
-
-    /* Shared tiles */
-    .tile{
-      border-radius:var(--tileR);
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.10);
-      padding:12px;
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,.05);
-      min-height:0;
-    }
-    .tileLabel{
-      font-size:12px;
-      font-weight:900;
-      letter-spacing:.4px;
-      color:rgba(233,238,252,.70);
-      text-transform:uppercase;
-      margin-bottom:8px;
-    }
-    .pos{ color:var(--pos); }
-    .neg{ color:var(--neg); }
-    .muted{ color:rgba(233,238,252,.70); }
-
-    /* MARKET layout */
-    .marketTop{
-      display:flex;
-      gap:12px;
-      align-items:stretch;
-      margin-bottom:12px;
-    }
-    .quoteBig{
-      flex:1;
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-end;
-      gap:12px;
-    }
-    .qBlock{
-      min-width:0;
-    }
-    .qSym{
-      font-size:12px;
-      font-weight:950;
-      letter-spacing:.4px;
-      color:rgba(233,238,252,.70);
-      text-transform:uppercase;
-      margin-bottom:6px;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .qPrice{
-      font-size: clamp(34px, 6.0vw, 56px);
-      font-weight:950;
-      line-height:1.0;
-      font-variant-numeric: tabular-nums;
-    }
-    .qChg{
-      margin-top:6px;
-      font-size:14px;
-      font-weight:900;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .marketGrid{
-      display:grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap:12px;
-      height: calc(100% - 88px);
-      min-height:0;
-    }
-    .sectors{
-      display:flex;
-      flex-direction:column;
-      min-height:0;
-    }
-    .sectorGrid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px;
-      flex:1;
-      min-height:0;
-      overflow:hidden;
-    }
-    .sectorItem{
-      border-radius:14px;
-      padding:10px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.04);
-      display:flex;
-      justify-content:space-between;
-      align-items:baseline;
-      gap:10px;
-      min-width:0;
-    }
-    .sectorName{
-      font-size: clamp(13px, 1.7vw, 15px);
-      font-weight:950;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .sectorPct{
-      font-size: clamp(13px, 1.7vw, 15px);
-      font-weight:950;
-      font-variant-numeric: tabular-nums;
-      white-space:nowrap;
-    }
-
-    .marketRight{
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-      min-height:0;
-    }
-    .moodRow{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px;
-    }
-    .moodVal{
-      font-size: clamp(18px, 2.6vw, 24px);
-      font-weight:950;
-      font-variant-numeric: tabular-nums;
-      line-height:1.1;
-    }
-    .moodSub{
-      margin-top:6px;
-      font-size:12px;
-      color:rgba(233,238,252,.68);
-      font-weight:800;
-    }
-
-    .headlineList{
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-      flex:1;
-      min-height:0;
-      overflow:auto;
-      padding-right:4px;
-    }
-    .headline{
-      border-radius:14px;
-      padding:12px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.04);
-    }
-    .hTitle{
-      font-size: clamp(14px, 1.9vw, 16px);
-      font-weight:950;
-      line-height:1.15;
-      display:-webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow:hidden;
-    }
-    .hSrc{
-      margin-top:8px;
-      font-size:12px;
-      color:rgba(233,238,252,.65);
-      font-weight:800;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-
-    /* INTERNET layout */
-    .internetGrid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:12px;
-      height:100%;
-      min-height:0;
-    }
-    .internetGrid .tile:last-child{
-      grid-column: 1 / span 2;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-    }
-    .latVal{
-      font-size: clamp(34px, 6vw, 54px);
-      font-weight:950;
-      font-variant-numeric: tabular-nums;
-      line-height:1.0;
-    }
-    .spark{
-      width:140px; height:38px;
-      border-radius:10px;
-      border:1px solid rgba(255,255,255,.10);
-      background:
-        linear-gradient(180deg, rgba(51,230,209,.18), rgba(0,0,0,0)),
-        repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px);
-      position:relative;
-      overflow:hidden;
-      flex:0 0 auto;
-    }
-    .spark:after{
-      content:"";
-      position:absolute; inset:0;
-      background: linear-gradient(90deg, transparent, rgba(51,230,209,.35), transparent);
-      transform: translateX(-60%);
-      animation: shimmer 2.4s linear infinite;
-      opacity:.6;
-    }
-    @keyframes shimmer{
-      0%{ transform: translateX(-70%); }
-      100%{ transform: translateX(70%); }
-    }
-
-    /* HEADLINES layout */
-    .headlinesList{
-      height:100%;
-      min-height:0;
-      overflow:auto;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-      padding-right:4px;
-    }
-    .newsRow{
-      border-radius:14px;
-      padding:12px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.04);
-    }
-    .newsTitle{
-      font-size: clamp(14px, 1.9vw, 17px);
-      font-weight:950;
-      line-height:1.15;
-      display:-webkit-box;
-      -webkit-line-clamp:2;
-      -webkit-box-orient:vertical;
-      overflow:hidden;
-    }
-    .newsSource{
-      margin-top:8px;
-      font-size:12px;
-      color:rgba(233,238,252,.65);
-      font-weight:800;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-
-    /* WEATHER layout */
-    .weatherTop{
-      display:flex; gap:12px; margin-bottom:12px; align-items:stretch;
-    }
-    .wNow{ flex:1; display:flex; justify-content:space-between; align-items:flex-end; gap:12px; }
-    .wTemp{ font-size: clamp(40px, 7vw, 60px); font-weight:950; line-height:1.0; }
-    .wMeta{ margin-top:6px; font-size:12px; color:rgba(233,238,252,.70); font-weight:800; }
-    .wTomorrow{ flex:0 0 220px; text-align:right; }
-    .wHiLo{ font-size: clamp(26px, 4.5vw, 38px); font-weight:950; line-height:1.0; font-variant-numeric: tabular-nums; }
-    .wLabel{ margin-top:6px; font-size:12px; color:rgba(233,238,252,.70); font-weight:800; }
-
-    .weatherGrid{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap:12px;
-      height: calc(100% - 92px);
-      min-height:0;
-    }
-
-    .radarTile{
-      position:relative;
-      overflow:hidden;
-      min-height:0;
-      height:100%;
-    }
-
-    /* map-ish texture */
-    .radarTile:before{
-      content:"";
-      position:absolute; inset:0;
-      background:
-        radial-gradient(800px 420px at 30% 40%, rgba(51,230,209,.09), transparent 60%),
-        radial-gradient(700px 420px at 70% 65%, rgba(120,170,255,.10), transparent 60%),
-        repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 1px, transparent 1px 18px),
-        repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 1px, transparent 1px 18px);
-      opacity:.22;
-      pointer-events:none;
-    }
-
-    /* scanning sweep */
-    .scan{
-      position:absolute; inset:-40% -40%;
-      background: conic-gradient(from 0deg, rgba(51,230,209,0.0), rgba(51,230,209,.20), rgba(51,230,209,0.0));
-      animation: sweep 6.5s linear infinite;
-      mix-blend-mode: screen;
-      opacity:.55;
-      pointer-events:none;
-    }
-    @keyframes sweep{
-      0%{ transform: rotate(0deg); }
-      100%{ transform: rotate(360deg); }
-    }
-
-    .radarLabel{
-      position:absolute;
-      left:12px; bottom:12px;
-      font-size:12px;
-      color:rgba(233,238,252,.75);
-      font-weight:900;
-      text-transform:uppercase;
-      letter-spacing:.4px;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      z-index:3;
-    }
-    .radarTime{
-      position:absolute;
-      right:12px; bottom:12px;
-      font-size:12px;
-      color:rgba(233,238,252,.75);
-      font-weight:900;
-      font-variant-numeric: tabular-nums;
-      z-index:3;
-    }
-    .radarEmpty{
-      position:absolute;
-      left:12px; top:12px;
-      padding:8px 10px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.18);
-      font-size:12px;
-      color:rgba(233,238,252,.80);
-      font-weight:900;
-      z-index:3;
-      display:flex;
-      gap:8px;
-      align-items:center;
-      max-width: calc(100% - 24px);
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-
-    /* optional “fake rain” overlay for demo */
-    .rainDemo{
-      position:absolute; inset:0;
-      background:
-        radial-gradient(220px 160px at 32% 45%, rgba(60,220,255,.30), transparent 70%),
-        radial-gradient(240px 160px at 60% 35%, rgba(120,255,160,.22), transparent 70%),
-        radial-gradient(260px 200px at 70% 65%, rgba(255,220,120,.18), transparent 70%);
-      filter: blur(.2px);
-      opacity:.75;
-      mix-blend-mode: screen;
-      z-index:2;
-      pointer-events:none;
-    }
-
-    /* CITIES */
-    .citiesList{
-      height:100%;
-      min-height:0;
-      overflow:auto;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-      padding-right:4px;
-    }
-    .cityRow{
-      display:flex;
-      justify-content:space-between;
-      align-items:baseline;
-      gap:10px;
-      border-radius:14px;
-      padding:12px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.04);
-      min-width:0;
-    }
-    .cityName{
-      font-size: clamp(14px, 2.0vw, 16px);
-      font-weight:950;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      min-width:0;
-    }
-    .cityTime{
-      font-size: clamp(16px, 2.2vw, 18px);
-      font-weight:950;
-      font-variant-numeric: tabular-nums;
-      white-space:nowrap;
-    }
-    .cityTemp{
-      margin-left:10px;
-      font-size: clamp(18px, 2.6vw, 20px);
-      font-weight:950;
-      font-variant-numeric: tabular-nums;
-      white-space:nowrap;
-    }
-
-    /* utility */
-    .rowRight{ display:flex; align-items:baseline; gap:10px; white-space:nowrap; }
-    .updated{ white-space:nowrap; }
   </style>
 </head>
 
 <body>
   <div class="wrap">
-    <div class="topStrip">
-      <div class="topLeft">
-        <div class="clock" id="clock">--:--</div>
-        <div class="topMeta" id="topMeta">Loading…</div>
-      </div>
-      <div class="pill"><span class="dot"></span><span id="liveLabel">LIVE</span></div>
+    <div class="top">
+      <div class="acct" id="acct">Portfolio</div>
+      <div class="stamp" id="stamp">—</div>
     </div>
 
     <div class="card">
-      <div class="cardHead">
-        <div class="title" id="panelTitle">—</div>
-        <div class="subTitle" id="panelSub">—</div>
-      </div>
+      <div class="cardInner">
+        <div class="heroRow">
+          <div class="leftBlock">
+            <div class="sym" id="sym">—</div>
+            <div class="weight" id="wgt">—</div>
+            <div class="meta" id="meta">Loading…</div>
+          </div>
 
-      <div class="cardBody" id="panelBody">
-        <!-- injected -->
+          <div class="priceBox">
+            <!-- #2: Add market badge next to LIVE -->
+            <div class="pillRow">
+              <div class="pill"><span class="dot" id="liveDot"></span><span id="status">LIVE</span></div>
+              <div class="pill market" id="marketBadge"><span class="mDot"></span><span id="marketText">—</span></div>
+            </div>
+
+            <div class="price" id="price">—</div>
+            <div class="chg" id="chg">—</div>
+          </div>
+        </div>
+
+        <div class="pulse">
+          <div class="pulseTitle">
+            <span><span class="dot"></span> Portfolio Pulse</span>
+            <span id="pulseHint" style="color:rgba(233,238,252,0.65);font-size:12px;font-weight:800;">—</span>
+          </div>
+
+          <div class="tiles">
+            <div class="tile">
+              <div class="tileLabel">Est. Total Value</div>
+              <div class="tileValue" id="tTotal">—</div>
+              <div class="tileSub" id="tTotalSub">Based on quantities</div>
+            </div>
+
+            <div class="tile">
+              <div class="tileLabel">Est. Day Change</div>
+              <div class="tileValue" id="tDay">—</div>
+              <div class="tileSub" id="tDaySub">Sum(qty × change)</div>
+            </div>
+
+            <div class="tile">
+              <div class="tileLabel">Top Gainer</div>
+              <div class="tileValue" id="tGainer">—</div>
+              <div class="tileSub" id="tGainerSub">—</div>
+            </div>
+
+            <div class="tile">
+              <div class="tileLabel">Top Loser</div>
+              <div class="tileValue" id="tLoser">—</div>
+              <div class="tileSub" id="tLoserSub">—</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="footer">
-        <div>Edge Dashboard</div>
-        <div class="updated" id="updatedStamp">Updated —</div>
+        <div class="bar"><div id="barFill"></div></div>
+        <div class="bottomRow">
+          <div>Est. total value: <strong id="total">—</strong></div>
+          <div>Next: <span id="next">—</span></div>
+        </div>
       </div>
     </div>
   </div>
 
 <script>
-/* =========================
-   ENDPOINTS (edit if needed)
-   =========================
-   These should match your Cloudflare Pages Functions routes.
-   If yours are different, only change these strings.
-*/
-const API = {
-  // returns: { quotes: { "SPY": { price, change, changesPercentage }, ... } }
-  quotes: (symbolsCsv) => `/api/quotes?symbols=${encodeURIComponent(symbolsCsv)}&t=${Date.now()}`,
+  const fmtUsd = (n) =>
+    (n == null || !isFinite(n)) ? "—" :
+    n.toLocaleString(undefined, { style:"currency", currency:"USD" });
 
-  // returns: { items: [{ title, source, url }...] }   (your “Google News Marketplace Business” feed)
-  news: `/api/news?kind=marketplace&t=${Date.now()}`,
+  const fmtSignedUsd = (n) =>
+    (n == null || !isFinite(n)) ? "—" :
+    (n >= 0 ? "+" : "") + fmtUsd(n);
 
-  // returns: { us: [...], world: [...], business: [...] }  OR { items: [...] }
-  headlines: `/api/headlines?t=${Date.now()}`,
+  const fmtPct = (n) =>
+    (n == null || !isFinite(n)) ? "—" :
+    (n >= 0 ? "+" : "") + n.toFixed(2) + "%";
 
-  // returns: { now:{ tempF, windMph, aqi, aqiLabel, rainPct, sunrise, sunset }, tomorrow:{ hiF, loF }, city:"Phoenix" }
-  weather: `/api/weather?city=Phoenix&t=${Date.now()}`,
+  function clsFor(n){ return n > 0 ? "pos" : (n < 0 ? "neg" : ""); }
 
-  // returns: { checks: [{ name:"Cloudflare", ms: 7 }, { name:"Google", ms: 23 }], status:"Healthy" }
-  internet: `/api/internet?t=${Date.now()}`,
+  let config = null;
+  let quotes = {}; // symbol -> { price, change, changesPercentage }
+  let idx = 0;
 
-  // returns: { cities:[{ name, tz, tempF }...] } or you can compute local times from tz
-  cities: `/api/cities?t=${Date.now()}`
-};
+  // timers
+  let cycleTimer = null;
+  let refreshTimer = null;
 
-const DEMO_RAIN = new URLSearchParams(location.search).get("demoRain") === "1";
+  // #4 Weighted cycling state
+  let weightedSeq = [];
+  let weightedPos = 0;
 
-/* ===== utils ===== */
-const fmtUsd = (n) => (n==null || !isFinite(n)) ? "—" : n.toLocaleString(undefined,{style:"currency",currency:"USD"});
-const fmtSigned = (n) => (n==null || !isFinite(n)) ? "—" : (n>=0?"+":"") + n.toFixed(2);
-const fmtPct = (n) => (n==null || !isFinite(n)) ? "—" : (n>=0?"+":"") + n.toFixed(2) + "%";
-const clsFor = (n) => n>0 ? "pos" : (n<0 ? "neg" : "");
-
-function setUpdated(){
-  const t = new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
-  document.getElementById("updatedStamp").textContent = `Updated ${t}`;
-}
-
-function tickClock(){
-  const d = new Date();
-  document.getElementById("clock").textContent = d.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
-}
-
-/* ===== panel renderer helpers ===== */
-function setPanel(title, sub){
-  document.getElementById("panelTitle").textContent = title;
-  document.getElementById("panelSub").textContent = sub || "";
-}
-
-/* ====== PANELS ====== */
-async function panelMarket(){
-  setPanel("MARKET", "SPY + VXX + SECTORS + 2 HEADLINES");
-  const body = document.getElementById("panelBody");
-  body.innerHTML = `
-    <div class="marketTop">
-      <div class="tile quoteBig">
-        <div class="qBlock">
-          <div class="qSym">S&P 500 Proxy (SPY)</div>
-          <div class="qPrice" id="m_spy_p">—</div>
-          <div class="qChg" id="m_spy_c">—</div>
-        </div>
-        <div class="qBlock" style="text-align:right;">
-          <div class="qSym">Vol Proxy (VXX)</div>
-          <div class="qPrice" id="m_vxx_p" style="font-size:clamp(28px,5vw,44px)">—</div>
-          <div class="qChg" id="m_vxx_c">—</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="marketGrid">
-      <div class="tile sectors">
-        <div class="tileLabel">Sectors (fills the box)</div>
-        <div class="sectorGrid" id="m_sectors">
-          <!-- 8 items -->
-        </div>
-      </div>
-
-      <div class="marketRight">
-        <div class="tile">
-          <div class="tileLabel">Market Mood</div>
-          <div class="moodRow">
-            <div>
-              <div class="moodVal" id="m_mood">—</div>
-              <div class="moodSub" id="m_mood_sub">—</div>
-            </div>
-            <div>
-              <div class="moodVal" id="m_breadth">—</div>
-              <div class="moodSub" id="m_breadth_sub">—</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="tile" style="flex:1; min-height:0;">
-          <div class="tileLabel">Marketplace Business (2 headlines)</div>
-          <div class="headlineList" id="m_news">
-            <div class="headline"><div class="hTitle">Loading…</div><div class="hSrc">—</div></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  // Quotes (SPY, VXX + sector ETFs)
-  const sectorEtfs = [
-    ["XLK","Tech"],["XLF","Financials"],["XLE","Energy"],["XLY","Cons Disc"],
-    ["XLP","Cons Staples"],["XLV","Health"],["XLI","Industrials"],["XLU","Utilities"]
-  ];
-  const symbols = ["SPY","VXX", ...sectorEtfs.map(x=>x[0])].join(",");
-  const qRes = await fetch(API.quotes(symbols), { cache:"no-store" });
-  const qJson = await qRes.json();
-  const quotes = qJson.quotes || {};
-
-  const spy = quotes["SPY"];
-  const vxx = quotes["VXX"];
-
-  function setQuote(prefix, q){
-    const p = document.getElementById(prefix+"_p");
-    const c = document.getElementById(prefix+"_c");
-    if(q && isFinite(q.price)){
-      p.textContent = q.price.toFixed(1);
-      const chg = Number(q.changesPercentage);
-      const chgTxt = `${fmtPct(chg)} today`;
-      c.textContent = chgTxt;
-      c.className = "qChg " + clsFor(chg);
-    } else {
-      p.textContent = "—";
-      c.textContent = "—";
-    }
-  }
-  setQuote("m_spy", spy);
-  setQuote("m_vxx", vxx);
-
-  // Sector grid fills box
-  const grid = document.getElementById("m_sectors");
-  grid.innerHTML = "";
-  for(const [sym, name] of sectorEtfs){
-    const q = quotes[sym];
-    const pct = q ? Number(q.changesPercentage) : NaN;
-    const cls = clsFor(pct);
-    const pctTxt = isFinite(pct) ? fmtPct(pct) : "—";
-    const el = document.createElement("div");
-    el.className = "sectorItem";
-    el.innerHTML = `
-      <div class="sectorName">${name} <span class="muted" style="font-weight:900;">(${sym})</span></div>
-      <div class="sectorPct ${cls}">${pctTxt}</div>
-    `;
-    grid.appendChild(el);
+  // #5 Live dot control (pause breathe when SYNC)
+  function setLiveState(isLive){
+    const dot = document.getElementById("liveDot");
+    if(!dot) return;
+    dot.style.animationPlayState = isLive ? "running" : "paused";
+    dot.style.opacity = isLive ? "1" : "0.6";
   }
 
-  // “Mood” without extra APIs:
-  // - if SPY up and VXX down => Risk ON
-  // - if SPY down and VXX up => Risk OFF
-  let mood = "—", moodSub="—";
-  if(spy && vxx && isFinite(spy.changesPercentage) && isFinite(vxx.changesPercentage)){
-    const s = Number(spy.changesPercentage);
-    const v = Number(vxx.changesPercentage);
-    if(s>0 && v<0){ mood = "Risk ON"; moodSub = `SPY ${fmtPct(s)} • VXX ${fmtPct(v)}`; }
-    else if(s<0 && v>0){ mood = "Risk OFF"; moodSub = `SPY ${fmtPct(s)} • VXX ${fmtPct(v)}`; }
-    else { mood = "Mixed"; moodSub = `SPY ${fmtPct(s)} • VXX ${fmtPct(v)}`; }
-  }
-  document.getElementById("m_mood").textContent = mood;
-  document.getElementById("m_mood_sub").textContent = moodSub;
+  // #2 Market open/closed (no API; ignores holidays)
+  function isMarketOpenET(now = new Date()){
+    const et = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+    const day = et.getDay(); // 0 Sun ... 6 Sat
+    const minutes = et.getHours() * 60 + et.getMinutes();
 
-  // breadth proxy: how many sectors green
-  let green = 0;
-  for(const [sym] of sectorEtfs){
-    const pct = Number(quotes[sym]?.changesPercentage);
-    if(isFinite(pct) && pct>0) green++;
-  }
-  document.getElementById("m_breadth").textContent = `${green}/8 green`;
-  document.getElementById("m_breadth_sub").textContent = `Sector breadth today`;
+    const isWeekday = day >= 1 && day <= 5;
+    const openMinutes = 9 * 60 + 30;
+    const closeMinutes = 16 * 60;
 
-  // Marketplace news (2)
-  const newsWrap = document.getElementById("m_news");
-  try{
-    const nRes = await fetch(API.news, { cache:"no-store" });
-    const nJson = await nRes.json();
-    const items = (nJson.items || []).slice(0,2);
-    newsWrap.innerHTML = "";
-    if(!items.length){
-      newsWrap.innerHTML = `<div class="headline"><div class="hTitle">No headlines returned</div><div class="hSrc">Check /api/news</div></div>`;
-    } else {
-      for(const it of items){
-        const div = document.createElement("div");
-        div.className = "headline";
-        div.innerHTML = `<div class="hTitle">${escapeHtml(it.title||"—")}</div><div class="hSrc">${escapeHtml(it.source||"")}</div>`;
-        newsWrap.appendChild(div);
+    return isWeekday && minutes >= openMinutes && minutes < closeMinutes;
+  }
+
+  function updateMarketBadge(){
+    const badge = document.getElementById("marketBadge");
+    const text = document.getElementById("marketText");
+    if(!badge || !text) return;
+
+    const open = isMarketOpenET();
+    badge.classList.remove("open", "closed");
+    badge.classList.add(open ? "open" : "closed");
+    text.textContent = open ? "MARKET OPEN" : "MARKET CLOSED";
+  }
+
+  async function loadConfig(){
+    const r = await fetch("./portfolio.json", { cache: "no-store" });
+    config = await r.json();
+    document.getElementById("acct").textContent = config.accountName || "Portfolio";
+  }
+
+  async function fetchQuotes(){
+    const statusEl = document.getElementById("status");
+    statusEl.textContent = "LIVE";
+
+    const symbols = config.holdings.map(h => h.symbol).join(",");
+    const r = await fetch(`/api/quotes?symbols=${encodeURIComponent(symbols)}&t=${Date.now()}`, { cache:"no-store" });
+    if(!r.ok) throw new Error("Quote fetch failed: " + r.status);
+
+    const data = await r.json();
+    quotes = data.quotes || {};
+    document.getElementById("stamp").textContent =
+      "Updated " + new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
+
+    document.getElementById("pulseHint").textContent =
+      `${Object.keys(quotes).length}/${config.holdings.length} symbols updated`;
+
+    // success -> breathe
+    setLiveState(true);
+  }
+
+  function computeTotals(){
+    let totalValue = 0;
+    let totalDay = 0;
+
+    let topGainer = null; // {sym, pct, chg}
+    let topLoser  = null;
+
+    for(const h of config.holdings){
+      const q = quotes[h.symbol];
+      if(!q || !isFinite(q.price)) continue;
+
+      const qty = Number(h.qty ?? 0);
+      const value = q.price * qty;
+      totalValue += (isFinite(value) ? value : 0);
+
+      const dayPart = (isFinite(q.change) ? (q.change * qty) : 0);
+      totalDay += dayPart;
+
+      const pct = Number(q.changesPercentage);
+      if(isFinite(pct)){
+        if(!topGainer || pct > topGainer.pct) topGainer = { sym: h.symbol, pct, chg: q.change };
+        if(!topLoser  || pct < topLoser.pct)  topLoser  = { sym: h.symbol, pct, chg: q.change };
       }
     }
-  } catch(e){
-    newsWrap.innerHTML = `<div class="headline"><div class="hTitle">News unavailable</div><div class="hSrc">—</div></div>`;
+
+    return { totalValue, totalDay, topGainer, topLoser };
   }
 
-  setUpdated();
-}
+  function renderPulse(){
+    const { totalValue, totalDay, topGainer, topLoser } = computeTotals();
 
-async function panelInternet(){
-  setPanel("SERVER INFO", "LATENCY CHECKS");
-  const body = document.getElementById("panelBody");
-  body.innerHTML = `
-    <div class="internetGrid">
-      <div class="tile">
-        <div class="tileLabel">Cloudflare</div>
-        <div class="latVal" id="i_cf">—</div>
-        <div class="muted" style="font-weight:900; font-size:12px;">OK</div>
-        <div class="spark" aria-hidden="true"></div>
-      </div>
+    // Total
+    document.getElementById("tTotal").textContent = fmtUsd(totalValue);
 
-      <div class="tile">
-        <div class="tileLabel">Google</div>
-        <div class="latVal" id="i_gg">—</div>
-        <div class="muted" style="font-weight:900; font-size:12px;">OK</div>
-        <div class="spark" aria-hidden="true"></div>
-      </div>
+    // Day change
+    const tDay = document.getElementById("tDay");
+    tDay.textContent = fmtSignedUsd(totalDay);
+    tDay.className = "tileValue " + clsFor(totalDay);
 
-      <div class="tile">
-        <div>
-          <div class="tileLabel">Status</div>
-          <div id="i_status" style="font-size:clamp(34px,5vw,52px); font-weight:950;">—</div>
-          <div class="muted" id="i_sub" style="font-weight:900; font-size:12px; margin-top:6px;">—</div>
-        </div>
-        <div class="muted" style="text-align:right; font-weight:900; font-size:12px;">
-          <div>These are server pings</div>
-          <div style="opacity:.7;">(not your Wi-Fi speed)</div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  const r = await fetch(API.internet, { cache:"no-store" });
-  const j = await r.json();
-
-  const checks = j.checks || [];
-  const cf = checks.find(x => (x.name||"").toLowerCase().includes("cloudflare"));
-  const gg = checks.find(x => (x.name||"").toLowerCase().includes("google"));
-
-  document.getElementById("i_cf").textContent = cf?.ms != null ? `${cf.ms}ms` : "—";
-  document.getElementById("i_gg").textContent = gg?.ms != null ? `${gg.ms}ms` : "—";
-
-  const st = (j.status || "Healthy").toString();
-  const stEl = document.getElementById("i_status");
-  stEl.textContent = st;
-  stEl.className = st.toLowerCase().includes("healthy") ? "pos" : (st.toLowerCase().includes("degrad") ? "warn" : "neg");
-  document.getElementById("i_sub").textContent = j.note || "All good";
-
-  setUpdated();
-}
-
-async function panelHeadlines(){
-  setPanel("HEADLINES", "US + WORLD + BUSINESS");
-  const body = document.getElementById("panelBody");
-  body.innerHTML = `<div class="headlinesList" id="h_list"></div>`;
-
-  const list = document.getElementById("h_list");
-  list.innerHTML = `<div class="newsRow"><div class="newsTitle">Loading…</div><div class="newsSource">—</div></div>`;
-
-  const r = await fetch(API.headlines, { cache:"no-store" });
-  const j = await r.json();
-
-  // Accept either {items:[...]} or {us:[...],world:[...],business:[...]}
-  let items = [];
-  if(Array.isArray(j.items)) items = j.items;
-  else {
-    items = []
-      .concat(j.us||[])
-      .concat(j.world||[])
-      .concat(j.business||[]);
-  }
-
-  items = items.slice(0,6);
-
-  list.innerHTML = "";
-  if(!items.length){
-    list.innerHTML = `<div class="newsRow"><div class="newsTitle">No headlines returned</div><div class="newsSource">Check /api/headlines</div></div>`;
-  } else {
-    for(const it of items){
-      const row = document.createElement("div");
-      row.className = "newsRow";
-      row.innerHTML = `
-        <div class="newsTitle">${escapeHtml(it.title||"—")}</div>
-        <div class="newsSource">${escapeHtml(it.source||it.site||"")}</div>
-      `;
-      list.appendChild(row);
+    // Gainer/Loser
+    if(topGainer){
+      const el = document.getElementById("tGainer");
+      el.textContent = topGainer.sym;
+      el.className = "tileValue pos";
+      document.getElementById("tGainerSub").textContent =
+        `${fmtPct(topGainer.pct)} • ${fmtSignedUsd(topGainer.chg)}`;
+    } else {
+      document.getElementById("tGainer").textContent = "—";
+      document.getElementById("tGainerSub").textContent = "—";
     }
-  }
 
-  setUpdated();
-}
-
-async function panelWeather(){
-  setPanel("WEATHER", "NOW + TOMORROW + RADAR");
-  const body = document.getElementById("panelBody");
-  body.innerHTML = `
-    <div class="weatherTop">
-      <div class="tile wNow">
-        <div>
-          <div class="tileLabel" id="w_city">— WEATHER</div>
-          <div class="wTemp" id="w_temp">—°</div>
-          <div class="wMeta" id="w_meta">—</div>
-        </div>
-        <div class="wTomorrow">
-          <div class="wHiLo" id="w_tmr">— / —</div>
-          <div class="wLabel">Tomorrow</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="weatherGrid">
-      <div class="tile radarTile">
-        <div class="scan" aria-hidden="true"></div>
-        <div class="radarEmpty" id="w_radarHint"><span class="dot"></span> Radar scanning… (shows precip when present)</div>
-        <div id="w_rainDemo" style="display:none;" class="rainDemo" aria-hidden="true"></div>
-        <div class="radarLabel"><span class="dot"></span><span id="w_radarLabel">Radar (RainViewer)</span></div>
-        <div class="radarTime" id="w_radarTime">—</div>
-      </div>
-    </div>
-  `;
-
-  const r = await fetch(API.weather, { cache:"no-store" });
-  const j = await r.json();
-
-  const city = j.city || "Phoenix";
-  const now = j.now || {};
-  const tomorrow = j.tomorrow || {};
-
-  document.getElementById("w_city").textContent = `${city.toUpperCase()} WEATHER`;
-  document.getElementById("w_temp").textContent = (now.tempF != null) ? `${Math.round(now.tempF)}°` : "—°";
-  const metaBits = [];
-  if(now.windMph != null) metaBits.push(`Wind ${Math.round(now.windMph)} mph`);
-  if(now.rainPct != null) metaBits.push(`Rain ${Math.round(now.rainPct)}%`);
-  if(now.aqi != null) metaBits.push(`AQI ${now.aqi} (${now.aqiLabel||"—"})`);
-  document.getElementById("w_meta").textContent = metaBits.join(" • ") || "—";
-
-  if(tomorrow.hiF != null && tomorrow.loF != null){
-    document.getElementById("w_tmr").textContent = `${Math.round(tomorrow.hiF)}° / ${Math.round(tomorrow.loF)}°`;
-  } else {
-    document.getElementById("w_tmr").textContent = "— / —";
-  }
-
-  // Radar hint + time
-  document.getElementById("w_radarTime").textContent = new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
-
-  // If no precip, show “no precip” message; otherwise show “precip detected”
-  const precip = now.rainPct != null ? Number(now.rainPct) : 0;
-  const hint = document.getElementById("w_radarHint");
-  if(DEMO_RAIN){
-    document.getElementById("w_rainDemo").style.display = "block";
-    hint.textContent = "Precip detected (demo mode) • ?demoRain=1";
-  } else {
-    hint.textContent = precip > 10
-      ? "Precip likely nearby • radar will show blobs when present"
-      : "No precip nearby • radar still scanning";
-  }
-
-  setUpdated();
-}
-
-async function panelCities(){
-  setPanel("CITIES", "TIME + TEMP");
-  const body = document.getElementById("panelBody");
-  body.innerHTML = `<div class="citiesList" id="c_list"></div>`;
-  const list = document.getElementById("c_list");
-
-  const r = await fetch(API.cities, { cache:"no-store" });
-  const j = await r.json();
-  const cities = (j.cities || []).slice(0,7);
-
-  list.innerHTML = "";
-  if(!cities.length){
-    list.innerHTML = `<div class="cityRow"><div class="cityName">No cities returned</div><div class="rowRight"><div class="cityTime">—</div><div class="cityTemp">—°</div></div></div>`;
-    setUpdated();
-    return;
-  }
-
-  for(const c of cities){
-    const name = c.name || "—";
-    const tz = c.tz || "UTC";
-    const tempF = c.tempF;
-
-    // local time from TZ (no extra API needed)
-    const time = new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit", timeZone: tz });
-
-    const row = document.createElement("div");
-    row.className = "cityRow";
-    row.innerHTML = `
-      <div class="cityName">${escapeHtml(name)}</div>
-      <div class="rowRight">
-        <div class="cityTime">${escapeHtml(time)}</div>
-        <div class="cityTemp">${tempF != null ? `${Math.round(tempF)}°` : "—°"}</div>
-      </div>
-    `;
-    list.appendChild(row);
-  }
-
-  setUpdated();
-}
-
-/* ===== cycle controller ===== */
-const PANELS = [
-  { fn: panelMarket,   seconds: 18 },
-  { fn: panelHeadlines,seconds: 16 },
-  { fn: panelWeather,  seconds: 16 },
-  { fn: panelInternet, seconds: 14 },
-  { fn: panelCities,   seconds: 14 },
-];
-
-let panelIndex = 0;
-let cycleTimer = null;
-
-async function showPanel(i){
-  panelIndex = i % PANELS.length;
-  try{
-    await PANELS[panelIndex].fn();
-  } catch(e){
-    // graceful error UI
-    document.getElementById("panelBody").innerHTML = `
-      <div class="tile">
-        <div class="tileLabel">Panel error</div>
-        <div style="font-weight:950; font-size:18px;">${escapeHtml(String(e?.message || e))}</div>
-        <div class="muted" style="margin-top:10px; font-weight:900; font-size:12px;">
-          If the API is fine, this is usually a JSON shape mismatch (field names changed).
-        </div>
-      </div>`;
-    setUpdated();
-  }
-}
-
-function startCycle(){
-  if(cycleTimer) clearTimeout(cycleTimer);
-
-  const run = async () => {
-    await showPanel(panelIndex);
-    const ms = (PANELS[panelIndex].seconds || 15) * 1000;
-    cycleTimer = setTimeout(() => {
-      panelIndex = (panelIndex + 1) % PANELS.length;
-      run();
-    }, ms);
-  };
-  run();
-}
-
-/* ===== misc ===== */
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, (m) =>
-    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])
-  );
-}
-
-(async function init(){
-  tickClock();
-  setInterval(tickClock, 1000);
-
-  // top strip meta pulls from weather so it’s always relevant
-  async function refreshTopStrip(){
-    try{
-      const r = await fetch(API.weather, { cache:"no-store" });
-      const j = await r.json();
-      const now = j.now || {};
-      const city = j.city || "Phoenix";
-      const bits = [];
-      bits.push(city);
-      if(now.tempF != null) bits.push(`${Math.round(now.tempF)}°`);
-      if(now.windMph != null) bits.push(`Wind ${Math.round(now.windMph)} mph`);
-      if(now.aqi != null) bits.push(`AQI ${now.aqi} (${now.aqiLabel||"—"})`);
-      document.getElementById("topMeta").textContent = bits.join(" • ");
-    } catch {
-      document.getElementById("topMeta").textContent = "—";
+    if(topLoser){
+      const el = document.getElementById("tLoser");
+      el.textContent = topLoser.sym;
+      el.className = "tileValue neg";
+      document.getElementById("tLoserSub").textContent =
+        `${fmtPct(topLoser.pct)} • ${fmtSignedUsd(topLoser.chg)}`;
+    } else {
+      document.getElementById("tLoser").textContent = "—";
+      document.getElementById("tLoserSub").textContent = "—";
     }
-  }
-  await refreshTopStrip();
-  setInterval(refreshTopStrip, 60 * 1000);
 
-  startCycle();
-})();
+    // Footer duplicate total value
+    document.getElementById("total").textContent = fmtUsd(totalValue);
+  }
+
+  function render(){
+    const h = config.holdings[idx];
+    const nextH = config.holdings[(idx + 1) % config.holdings.length];
+    const q = quotes[h.symbol];
+
+    document.getElementById("sym").textContent = h.symbol;
+    document.getElementById("wgt").textContent =
+      (h.weight != null ? `Weight: ${Number(h.weight).toFixed(2)}%` : "Weight: —");
+
+    const priceEl = document.getElementById("price");
+    const chgEl   = document.getElementById("chg");
+    const metaEl  = document.getElementById("meta");
+    const statusEl = document.getElementById("status");
+
+    if(q && isFinite(q.price)){
+      priceEl.textContent = fmtUsd(q.price);
+      chgEl.textContent = `${fmtSignedUsd(q.change)}  (${fmtPct(q.changesPercentage)})`;
+      chgEl.className = "chg " + clsFor(q.change);
+      chgEl.style.color = ""; // clear any forced muted color
+
+      const qty = Number(h.qty ?? 0);
+      metaEl.textContent = `Qty: ${qty.toLocaleString(undefined,{maximumFractionDigits:3})} • Est. position: ${fmtUsd(qty * q.price)}`;
+      statusEl.textContent = "LIVE";
+      setLiveState(true);
+    } else {
+      priceEl.textContent = "—";
+      chgEl.textContent = "No quote (delisted/OTC?)";
+      chgEl.className = "chg";
+      chgEl.style.color = "rgba(233,238,252,0.70)";
+      metaEl.textContent = "Waiting for quote data…";
+      statusEl.textContent = "SYNC";
+      setLiveState(false);
+    }
+
+    document.getElementById("next").textContent = nextH.symbol;
+
+    // Progress bar
+    const fill = document.getElementById("barFill");
+    fill.style.width = "0%";
+    requestAnimationFrame(() => { fill.style.width = "100%"; });
+
+    // Pulse area
+    renderPulse();
+  }
+
+  // #4 Weighted sequence builder
+  function buildWeightedSequence(holdings){
+    const slots = 120; // smooth cycling; tweak if you want
+    const totalW = holdings.reduce((a,h)=>a + (Number(h.weight)||0), 0) || 1;
+
+    const seq = [];
+    for(let i=0;i<holdings.length;i++){
+      const w = (Number(holdings[i].weight)||0) / totalW;
+      const count = Math.max(1, Math.round(w * slots));
+      for(let k=0;k<count;k++) seq.push(i);
+    }
+
+    // Shuffle to avoid clumps
+    for(let i=seq.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [seq[i], seq[j]] = [seq[j], seq[i]];
+    }
+    return seq;
+  }
+
+  function startCycle(){
+    const cycleMs = (config.cycleSeconds ?? 5) * 1000;
+    if(cycleTimer) clearInterval(cycleTimer);
+
+    // Build weighted playlist once at start (or rebuild if you want on refresh)
+    weightedSeq = buildWeightedSequence(config.holdings);
+    weightedPos = 0;
+
+    idx = weightedSeq[weightedPos] ?? 0;
+    render();
+
+    cycleTimer = setInterval(() => {
+      weightedPos = (weightedPos + 1) % weightedSeq.length;
+      idx = weightedSeq[weightedPos] ?? 0;
+      render();
+    }, cycleMs);
+  }
+
+  function startRefresh(){
+    const refreshMs = (config.refreshSeconds ?? 60) * 1000;
+    if(refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = setInterval(async () => {
+      try {
+        await fetchQuotes();
+        render();
+      } catch(e){
+        console.error(e);
+        document.getElementById("status").textContent = "SYNC";
+        setLiveState(false);
+      }
+    }, refreshMs);
+  }
+
+  (async function init(){
+    await loadConfig();
+    updateMarketBadge();
+    setInterval(updateMarketBadge, 60_000);
+
+    try { await fetchQuotes(); } catch(e){
+      console.error(e);
+      document.getElementById("status").textContent = "SYNC";
+      setLiveState(false);
+    }
+
+    startCycle();
+    startRefresh();
+  })();
 </script>
 </body>
 </html>
