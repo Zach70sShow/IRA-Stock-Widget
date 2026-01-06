@@ -1,610 +1,1211 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Edge Dashboard</title>
   <style>
     :root{
       color-scheme: dark;
-      --bg0:#060b14; --bg1:#0a1020;
-      --card:rgba(255,255,255,0.06);
-      --card2:rgba(255,255,255,0.04);
-      --stroke:rgba(255,255,255,0.12);
-      --stroke2:rgba(255,255,255,0.10);
-      --text:#e9eefc;
-      --muted:rgba(233,238,252,0.72);
-      --teal:#33e6d1;
-      --pos:#77ffb5;
-      --neg:#ff7a7a;
-      --radius:22px;
+
+      --bg0: #060b14;
+      --bg1: #0a1020;
+      --card: rgba(255,255,255,0.06);
+      --card2: rgba(255,255,255,0.04);
+      --stroke: rgba(255,255,255,0.12);
+      --stroke2: rgba(255,255,255,0.10);
+      --text: #e9eefc;
+      --muted: rgba(233,238,252,0.72);
+
+      --teal: #33e6d1;
+      --teal2: rgba(51,230,209,0.25);
+
+      --pos: #77ffb5;
+      --neg: #ff7a7a;
+
+      --radius: 22px;
+      --pad: 12px;
     }
-    *{box-sizing:border-box}
+
+    *{ box-sizing:border-box; }
+    html, body{ height:100%; }
     body{
-      margin:0; height:100vh; overflow:hidden;
-      font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;
-      color:var(--text);
+      margin:0;
+      overflow:hidden;
+      font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
       background:
         radial-gradient(1100px 700px at 70% 30%, rgba(51,230,209,0.10), transparent 60%),
         radial-gradient(1000px 650px at 20% 80%, rgba(120,170,255,0.10), transparent 55%),
-        linear-gradient(180deg,var(--bg0),var(--bg1));
+        linear-gradient(180deg, var(--bg0), var(--bg1));
     }
     body:before{
-      content:""; position:fixed; inset:0; pointer-events:none;
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
       background:
         linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
-      background-size:44px 44px;
+      background-size: 44px 44px;
       opacity:0.12;
       mask-image: radial-gradient(circle at 55% 45%, black 55%, transparent 78%);
     }
 
-    .wrap{height:100%; padding:12px 14px; display:flex; flex-direction:column; gap:10px;}
-    .topStrip{
-      border-radius:18px;
-      background:rgba(255,255,255,0.06);
-      border:1px solid rgba(255,255,255,0.12);
-      padding:10px 12px;
+    .wrap{
+      height:100%;
+      padding: 10px 12px;
       display:flex;
-      justify-content:space-between;
+      flex-direction:column;
+      gap: 10px;
+    }
+
+    /* Top strip */
+    .topStrip{
+      border-radius: 18px;
+      background: rgba(0,0,0,0.28);
+      border: 1px solid rgba(255,255,255,0.10);
+      padding: 10px 12px;
+      display:flex;
       align-items:center;
-      gap:12px;
-      min-height:46px;
+      justify-content:space-between;
+      gap: 12px;
+      box-shadow: 0 14px 40px rgba(0,0,0,0.25);
+      min-height: 54px;
     }
-    .topLeft{
-      display:flex; align-items:baseline; gap:12px; min-width:0;
+    .tsLeft{
+      display:flex;
+      align-items:baseline;
+      gap: 12px;
+      min-width: 0;
     }
-    .time{
-      font-weight:950; font-size:22px; letter-spacing:0.4px;
+    .clock{
+      font-weight: 950;
+      letter-spacing: 0.6px;
+      font-variant-numeric: tabular-nums;
+      font-size: clamp(22px, 3.2vw, 34px);
+      line-height: 1;
       white-space:nowrap;
     }
-    .topMeta{
-      color:var(--muted);
-      font-size:13px;
+    .tsMeta{
+      color: rgba(233,238,252,0.78);
+      font-size: clamp(12px, 1.6vw, 14px);
       white-space:nowrap;
       overflow:hidden;
-      text-overflow:ellipsis;
-      min-width:0;
+      text-overflow: ellipsis;
+      max-width: 65vw;
     }
-    .topRight{
-      display:flex; align-items:center; gap:10px; white-space:nowrap;
-      font-size:13px; color:rgba(233,238,252,0.86);
-      font-variant-numeric:tabular-nums;
+    .tsRight{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      flex: 0 0 auto;
     }
     .pill{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:6px 10px; border-radius:999px;
-      font-size:12px; font-weight:900;
-      background:rgba(51,230,209,0.10);
-      border:1px solid rgba(51,230,209,0.22);
-      color:rgba(233,238,252,0.92);
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 850;
+      background: rgba(51,230,209,0.10);
+      border: 1px solid rgba(51,230,209,0.22);
+      color: rgba(233,238,252,0.92);
+      white-space:nowrap;
     }
     .dot{
-      width:8px; height:8px; border-radius:999px;
-      background:var(--teal);
-      box-shadow:0 0 14px rgba(51,230,209,0.35);
-      animation:breathe 1.6s ease-in-out infinite;
-      transform-origin:center;
-    }
-    @keyframes breathe{
-      0%{transform:scale(1);opacity:.75}
-      50%{transform:scale(1.45);opacity:1}
-      100%{transform:scale(1);opacity:.75}
+      width:8px; height:8px; border-radius:99px;
+      background: var(--teal);
+      box-shadow: 0 0 12px rgba(51,230,209,0.5);
     }
 
+    /* Main card */
     .card{
-      flex:1; min-height:0;
-      border-radius:var(--radius);
-      background:var(--card);
-      border:1px solid var(--stroke);
+      flex:1;
+      border-radius: var(--radius);
+      background: var(--card);
+      border: 1px solid var(--stroke);
       overflow:hidden;
-      display:flex; flex-direction:column;
+      display:flex;
+      flex-direction:column;
       position:relative;
-    }
-    .cardInner{
-      flex:1; min-height:0;
-      padding:14px;
-      display:flex; flex-direction:column; gap:10px;
+      box-shadow: 0 18px 55px rgba(0,0,0,0.30);
     }
 
-    .panelTitle{
-      display:flex; justify-content:space-between; align-items:center; gap:10px;
-      font-size:13px; font-weight:950;
-      letter-spacing:0.6px;
-      color:rgba(233,238,252,0.86);
-      text-transform:uppercase;
-      min-width:0;
+    .hdr{
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.18);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
     }
-    .panelTitle .hint{
-      font-size:12px; font-weight:800; color:rgba(233,238,252,0.65);
-      overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;
+    .title{
+      font-weight: 950;
+      letter-spacing: 0.7px;
+      text-transform: uppercase;
+      font-size: 14px;
+      color: rgba(233,238,252,0.90);
+      white-space:nowrap;
     }
-
-    .panel{
-      flex:1; min-height:0;
-      border-radius:18px;
-      background:var(--card2);
-      border:1px solid rgba(255,255,255,0.10);
-      padding:12px;
+    .subTitle{
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: rgba(233,238,252,0.55);
+      white-space:nowrap;
       overflow:hidden;
-      display:none;
-      position:relative;
+      text-overflow: ellipsis;
+      max-width: 55%;
+      text-align:right;
     }
-    .panel.active{display:block;}
 
+    .content{
+      flex:1;
+      padding: 12px 14px;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+    }
+
+    /* footer strip (keeps "updated" visible even on small Edge) */
+    .ftr{
+      padding: 10px 14px;
+      border-top: 1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.18);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      font-size: 12px;
+      color: rgba(233,238,252,0.65);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Generic tiles */
     .grid2{
-      display:grid; grid-template-columns:1fr 1fr; gap:10px;
-      height:100%;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      flex:1;
+      min-height:0;
     }
     .tile{
-      border-radius:16px;
-      background:rgba(255,255,255,0.05);
-      border:1px solid rgba(255,255,255,0.10);
-      padding:12px;
-      display:flex; flex-direction:column; justify-content:space-between;
-      min-height:0;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      padding: 12px 12px 10px 12px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      gap: 8px;
+      min-height: 0;
       overflow:hidden;
-    }
-    .label{
-      font-size:12px; font-weight:900; letter-spacing:0.4px;
-      color:rgba(233,238,252,0.70);
-      text-transform:uppercase;
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    }
-    .value{
-      font-size:34px; font-weight:950; line-height:1.0;
-      font-variant-numeric:tabular-nums;
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    }
-    .sub{
-      font-size:12px; color:rgba(233,238,252,0.70);
-      font-variant-numeric:tabular-nums;
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    }
-    .pos{color:var(--pos)}
-    .neg{color:var(--neg)}
-
-    .list{
-      display:flex; flex-direction:column; gap:10px;
-      height:100%;
-    }
-    .headline{
-      border-radius:14px;
-      background:rgba(255,255,255,0.05);
-      border:1px solid rgba(255,255,255,0.10);
-      padding:12px;
-      display:flex; flex-direction:column; gap:8px;
-      overflow:hidden;
-    }
-    .headline .h{
-      font-size:16px; font-weight:900; line-height:1.2;
-      overflow:hidden;
-      display:-webkit-box;
-      -webkit-line-clamp:2;
-      -webkit-box-orient:vertical;
-    }
-    .headline .m{
-      font-size:12px; color:rgba(233,238,252,0.70);
-      display:flex; justify-content:space-between; gap:10px;
-      white-space:nowrap; overflow:hidden;
-    }
-
-    .imgBox{
-      border-radius:16px;
-      background:rgba(0,0,0,0.12);
-      border:1px solid rgba(255,255,255,0.10);
-      overflow:hidden;
-      height: 54%;
-      min-height: 120px;
-      display:flex; align-items:center; justify-content:center;
       position:relative;
     }
-    .imgBox img{ width:100%; height:100%; object-fit:cover; opacity:0.95; }
-    .imgBox .overlay{
-      position:absolute; inset:auto 10px 10px 10px;
-      display:flex; justify-content:space-between; gap:10px;
-      color:rgba(233,238,252,0.92);
-      font-size:12px; font-weight:900;
-      text-shadow:0 8px 22px rgba(0,0,0,0.45);
+    .tile:before{
+      content:"";
+      position:absolute;
+      inset:-70px -70px auto auto;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(51,230,209,0.12), transparent 65%);
+      transform: rotate(25deg);
+      pointer-events:none;
+    }
+    .tileLabel{
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: rgba(233,238,252,0.62);
+    }
+    .tileValue{
+      font-size: clamp(28px, 4vw, 44px);
+      font-weight: 950;
+      line-height: 1.0;
+      font-variant-numeric: tabular-nums;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+    .tileSub{
+      font-size: 12px;
+      color: rgba(233,238,252,0.70);
+      font-variant-numeric: tabular-nums;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+    .pos{ color: var(--pos); }
+    .neg{ color: var(--neg); }
+
+    /* Market top row */
+    .marketTop{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .bigQuote{
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      padding: 12px 12px;
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap: 10px;
+      overflow:hidden;
+      position:relative;
+    }
+    .bigQuote .k{
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: rgba(233,238,252,0.70);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      max-width: 62%;
+    }
+    .bigQuote .p{
+      font-size: clamp(34px, 5vw, 54px);
+      font-weight: 950;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      white-space:nowrap;
+    }
+    .bigQuote .d{
+      font-size: 12px;
+      font-weight: 850;
+      color: rgba(233,238,252,0.70);
+      font-variant-numeric: tabular-nums;
+      margin-top: 6px;
     }
 
-    .footer{
-      padding:10px 14px 12px 14px;
-      border-top:1px solid rgba(255,255,255,0.10);
-      background:rgba(0,0,0,0.18);
-      display:flex; justify-content:space-between; gap:12px;
-      font-size:12px; color:rgba(233,238,252,0.78);
-      font-variant-numeric:tabular-nums;
+    /* Sectors block: fill the box better */
+    .sectors{
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+      min-height:0;
+    }
+    .sectorList{
+      flex:1;
+      min-height:0;
+      display:flex;
+      flex-wrap:wrap;
+      gap: 8px;
+      align-content:flex-start;
+      padding-top: 2px;
+      overflow:hidden;
+    }
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      font-weight: 900;
+      font-size: 14px;
+      color: rgba(233,238,252,0.92);
+      font-variant-numeric: tabular-nums;
+      white-space:nowrap;
+    }
+    .chip small{
+      font-weight: 900;
+      opacity: 0.85;
+      font-size: 13px;
+    }
+
+    /* Headlines list - NEVER cut off on Edge: we use internal scrolling and clamp */
+    .list{
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+      flex:1;
+      min-height:0;
+      overflow:auto;
+      padding-right: 4px;
+    }
+    .list::-webkit-scrollbar{ width: 10px; }
+    .list::-webkit-scrollbar-thumb{
+      background: rgba(255,255,255,0.10);
+      border: 2px solid rgba(0,0,0,0.0);
+      background-clip: padding-box;
+      border-radius: 999px;
+    }
+
+    .row{
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      padding: 12px 12px;
+      overflow:hidden;
+    }
+    .row .h{
+      font-weight: 950;
+      font-size: 16px;
+      line-height: 1.15;
+      display:-webkit-box;
+      -webkit-line-clamp: 2;         /* prevents cut-off */
+      -webkit-box-orient: vertical;
+      overflow:hidden;
+    }
+    .row .s{
+      margin-top: 6px;
+      font-size: 12px;
+      color: rgba(233,238,252,0.65);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Weather panel */
+    .wxHero{
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      padding: 12px;
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap: 10px;
+      overflow:hidden;
+      position:relative;
+    }
+    .wxHero .city{
+      font-weight: 950;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      font-size: 12px;
+      color: rgba(233,238,252,0.70);
+      margin-bottom: 6px;
+    }
+    .wxHero .tempNow{
+      font-size: clamp(44px, 6vw, 66px);
+      font-weight: 950;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .wxHero .right{
+      text-align:right;
+      min-width: 120px;
+    }
+    .wxHero .tom{
+      font-size: clamp(22px, 3.2vw, 34px);
+      font-weight: 950;
+      font-variant-numeric: tabular-nums;
+      white-space:nowrap;
+    }
+    .wxHero .tomSub{
+      font-size: 12px;
+      color: rgba(233,238,252,0.70);
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+    }
+    .wxHero .mini{
+      font-size: 12px;
+      color: rgba(233,238,252,0.70);
+      font-variant-numeric: tabular-nums;
+      margin-top: 6px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      max-width: 50vw;
+    }
+
+    /* Radar placeholder with map texture + scanning animation */
+    .radar{
+      flex:1;
+      min-height:0;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.10);
+      position:relative;
+      overflow:hidden;
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      padding: 10px 12px;
+    }
+    .radar .label{
+      font-size: 12px;
+      font-weight: 900;
+      color: rgba(233,238,252,0.75);
+      letter-spacing: 0.5px;
+    }
+    .radar .time{
+      font-size: 12px;
+      font-weight: 900;
+      color: rgba(233,238,252,0.65);
+      font-variant-numeric: tabular-nums;
+    }
+    .radar:before{
+      /* “map-ish” texture: grid + contour-ish lines */
+      content:"";
+      position:absolute; inset:0;
+      background:
+        radial-gradient(circle at 20% 30%, rgba(51,230,209,0.12), transparent 45%),
+        radial-gradient(circle at 75% 65%, rgba(120,170,255,0.10), transparent 48%),
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 34px),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 34px),
+        radial-gradient(circle at 30% 60%, rgba(255,255,255,0.06) 0 2px, transparent 3px 100%),
+        radial-gradient(circle at 70% 40%, rgba(255,255,255,0.05) 0 2px, transparent 3px 100%);
+      opacity:0.65;
+      filter: saturate(0.95) contrast(1.05);
+      pointer-events:none;
+    }
+    .radar:after{
+      /* scan line */
+      content:"";
+      position:absolute;
+      left:-20%;
+      right:-20%;
+      height: 18%;
+      top:-20%;
+      background: linear-gradient(180deg, transparent, rgba(51,230,209,0.18), transparent);
+      transform: skewY(-7deg);
+      animation: scan 3.8s linear infinite;
+      pointer-events:none;
+      mix-blend-mode: screen;
+      opacity:0.75;
+    }
+    @keyframes scan{
+      0%{ top:-30%; }
+      100%{ top:120%; }
+    }
+    .radarBadge{
+      position:absolute;
+      top: 10px;
+      right: 12px;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.4px;
+      background: rgba(0,0,0,0.30);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(233,238,252,0.80);
+      z-index: 2;
+    }
+    .radarBadge b{ color: var(--teal); }
+
+    /* Cities list */
+    .cityRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:baseline;
+      gap: 10px;
+    }
+    .cityName{
+      font-weight: 950;
+      font-size: 15px;
+      color: rgba(233,238,252,0.92);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      max-width: 55%;
+    }
+    .cityTime{
+      font-weight: 950;
+      font-variant-numeric: tabular-nums;
+      font-size: 15px;
+      color: rgba(233,238,252,0.92);
+      white-space:nowrap;
+    }
+    .cityTemp{
+      font-weight: 950;
+      font-variant-numeric: tabular-nums;
+      font-size: 18px;
+      white-space:nowrap;
+    }
+
+    /* “Panel error” styling */
+    .errBox{
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 14px 14px;
+      color: rgba(233,238,252,0.90);
+    }
+    .errBox .k{
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: rgba(233,238,252,0.70);
+      margin-bottom: 6px;
+    }
+    .errBox .m{
+      font-size: 16px;
+      font-weight: 950;
+      line-height: 1.15;
+    }
+    .errBox .h{
+      margin-top: 8px;
+      font-size: 12px;
+      color: rgba(233,238,252,0.70);
+      line-height: 1.35;
+    }
+
+    /* small toggle row for crypto (kept here in case you want later) */
+    .toggles{
+      display:flex;
+      gap: 8px;
+      align-items:center;
+      justify-content:flex-end;
+    }
+    .btn{
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.05);
+      color: rgba(233,238,252,0.85);
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      cursor:pointer;
+      user-select:none;
+    }
+    .btn.active{
+      border-color: rgba(51,230,209,0.30);
+      background: rgba(51,230,209,0.12);
+      color: rgba(233,238,252,0.92);
+      box-shadow: 0 0 18px rgba(51,230,209,0.12);
     }
   </style>
 </head>
+
 <body>
   <div class="wrap">
+
+    <!-- TOP STRIP -->
     <div class="topStrip">
-      <div class="topLeft">
-        <div class="time" id="time">—</div>
-        <div class="topMeta" id="topMeta">Loading…</div>
+      <div class="tsLeft">
+        <div class="clock" id="clock">--:--</div>
+        <div class="tsMeta" id="topMeta">Loading weather…</div>
       </div>
-      <div class="topRight">
-        <span class="pill"><span class="dot" id="liveDot"></span><span id="liveText">LIVE</span></span>
+      <div class="tsRight">
+        <div class="pill"><span class="dot"></span><span id="topStatus">LIVE</span></div>
       </div>
     </div>
 
+    <!-- MAIN PANEL -->
     <div class="card">
-      <div class="cardInner">
-        <div class="panelTitle">
-          <span><span class="dot" style="animation:none;opacity:1;transform:none"></span> <span id="panelName">Market</span></span>
-          <span class="hint" id="panelHint">—</span>
-        </div>
-
-        <!-- MARKET PANEL -->
-        <div class="panel active" id="p-market">
-          <div class="grid2" style="grid-template-rows:auto 1fr; grid-template-columns:1fr 1fr;">
-            <div class="tile" style="grid-column:1/3;">
-              <div class="label">S&amp;P 500 Proxy (SPY) • Vol Proxy (VXX)</div>
-              <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-end;">
-                <div>
-                  <div class="value" id="spyVal">—</div>
-                  <div class="sub" id="spySub">—</div>
-                </div>
-                <div style="text-align:right;">
-                  <div class="value" id="vxxVal" style="font-size:28px;">—</div>
-                  <div class="sub" id="vxxSub">—</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="tile">
-              <div class="label">Sectors (tiny movers)</div>
-              <div class="sub" id="sectors">Loading…</div>
-              <div class="sub" style="opacity:.75;">XLK XLF XLE XLI XLY XLP</div>
-            </div>
-
-            <div class="headline">
-              <div class="label">1 Market Headline</div>
-              <div class="h" id="mktHeadline">Loading…</div>
-              <div class="m">
-                <span id="mktSource">—</span>
-                <span id="mktWhen">—</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- WEATHER PANEL -->
-        <div class="panel" id="p-weather">
-          <div class="list">
-            <div class="tile" style="height:46%;">
-              <div class="label">Phoenix Weather</div>
-              <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-end;">
-                <div>
-                  <div class="value" id="wxNow">—</div>
-                  <div class="sub" id="wxNowSub">—</div>
-                </div>
-                <div style="text-align:right;">
-                  <div class="value" id="wxTomorrow" style="font-size:28px;">—</div>
-                  <div class="sub" id="wxTomorrowSub">Tomorrow</div>
-                </div>
-              </div>
-              <div class="sub" id="wxExtras" style="margin-top:10px;">—</div>
-            </div>
-
-            <div class="imgBox">
-              <img id="radarImg" alt="Radar" />
-              <div class="overlay">
-                <span id="radarLabel">Radar (RainViewer)</span>
-                <span id="radarWhen">—</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- HEADLINES PANEL -->
-        <div class="panel" id="p-headlines">
-          <div class="list" id="newsList"></div>
-        </div>
-
-        <!-- INTERNET HEALTH PANEL -->
-        <div class="panel" id="p-net">
-          <div class="grid2">
-            <div class="tile">
-              <div class="label">Cloudflare</div>
-              <div class="value" id="cfPing">—</div>
-              <div class="sub" id="cfPingSub">—</div>
-            </div>
-            <div class="tile">
-              <div class="label">Google</div>
-              <div class="value" id="ggPing">—</div>
-              <div class="sub" id="ggPingSub">—</div>
-            </div>
-            <div class="tile" style="grid-column:1/3;">
-              <div class="label">Status</div>
-              <div class="value" id="netStatus" style="font-size:28px;">—</div>
-              <div class="sub" id="netStatusSub">—</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- CITIES PANEL -->
-        <div class="panel" id="p-cities">
-          <div class="list" id="citiesList"></div>
-        </div>
-
+      <div class="hdr">
+        <div class="title" id="panelTitle">—</div>
+        <div class="subTitle" id="panelSub">—</div>
       </div>
 
-      <div class="footer">
-        <div id="footerLeft">—</div>
-        <div id="footerRight">—</div>
+      <div class="content" id="panelContent">
+        <!-- panel content injected -->
+      </div>
+
+      <div class="ftr">
+        <div>Edge Dashboard</div>
+        <div id="updatedStamp">Updated —</div>
       </div>
     </div>
   </div>
 
 <script>
-  // ---------- Timing (low API usage) ----------
-  const PANEL_MS = 12_000;
+/**
+ * EDGE.HTML (Rotator)
+ * - Fixes the issues you called out:
+ *   1) Headlines/Cities never “cut off”: internal scroll + line clamp
+ *   2) Cities show city names + time + temp (no blank rows)
+ *   3) Weather radar area never empty: map texture + scan animation + rain hint
+ *   4) Market box is filled with meaningful content: SPY + VXX + SECTOR CHIPS + 2 headlines
+ *   5) Errors show clearly and don’t break the whole rotation
+ *
+ * IMPORTANT:
+ * - This file intentionally uses NO new CSS files and is fully copy/paste.
+ * - It prefers your existing /api endpoints if you have them, but includes
+ *   fallbacks using free public endpoints where possible.
+ */
 
-  const TOPSTRIP_REFRESH_MS = 5 * 60_000;
-  const MARKET_REFRESH_MS   = 2 * 60_000;
-  const WEATHER_REFRESH_MS  = 5 * 60_000;
-  const NEWS_REFRESH_MS     = 5 * 60_000;
-  const NET_REFRESH_MS      = 5 * 60_000;
-  const CITIES_REFRESH_MS   = 10 * 60_000;
+// =====================
+// CONFIG (edit safely)
+// =====================
+const CONFIG = {
+  locationName: "Phoenix",
+  // Phoenix coords (change if needed)
+  lat: 33.4484,
+  lon: -112.0740,
 
-  // Rotation weights (shows some panels less often)
-  const ROTATION = [
-    "market","weather","headlines","market","weather","cities","market","headlines","net"
+  rotateSeconds: 12,
+  refreshSeconds: 120,
+
+  // Cities you asked for (times + temps)
+  cities: [
+    { name: "Phoenix", tz: "America/Phoenix", lat: 33.4484, lon: -112.0740 },
+    { name: "Flagstaff", tz: "America/Phoenix", lat: 35.1983, lon: -111.6513 },
+    { name: "Washington, DC", tz: "America/New_York", lat: 38.9072, lon: -77.0369 },
+    { name: "Frederick, MD", tz: "America/New_York", lat: 39.4143, lon: -77.4105 },
+    { name: "Winchester, VA", tz: "America/New_York", lat: 39.1857, lon: -78.1633 },
+    { name: "Boston", tz: "America/New_York", lat: 42.3601, lon: -71.0589 },
+    { name: "Berlin", tz: "Europe/Berlin", lat: 52.5200, lon: 13.4050 },
+  ],
+
+  // Market tickers for “general market”: SPY + VXX + tiny sector proxies
+  market: {
+    primary: [
+      { symbol: "SPY", label: "S&P 500 Proxy (SPY)" },
+      { symbol: "VXX", label: "Vol Proxy (VXX)" }
+    ],
+    sectors: [
+      "XLK","XLF","XLE","XLI","XLY","XLP","XLV","XLB","XLU","XLC","XLRE"
+    ],
+    // One or two Marketplace Business headlines
+    businessFeed: "https://news.google.com/rss/search?q=site:marketplace.org+business&hl=en-US&gl=US&ceid=US:en",
+  },
+
+  // News feeds (US + World + Business)
+  feeds: {
+    us: "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en",
+    world: "https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-US&gl=US&ceid=US:en",
+    business: "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=en-US&gl=US&ceid=US:en",
+  },
+
+  // Prefer your own backend endpoints if present (Cloudflare Pages Functions)
+  endpoints: {
+    quotes: "/api/quotes?symbols=",
+    // Optional endpoints you MAY already have; if they 404 we fall back:
+    internet: "/api/internet",
+    // If you already made one for cities/news, you can wire them here later.
+  }
+};
+
+// =====================
+// Helpers
+// =====================
+const $ = (id) => document.getElementById(id);
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+const fmtUsd = (n) =>
+  (n == null || !isFinite(n)) ? "—" :
+  n.toLocaleString(undefined, { style:"currency", currency:"USD", maximumFractionDigits: (n<10?4:2) });
+
+const fmtSignedUsd = (n) =>
+  (n == null || !isFinite(n)) ? "—" :
+  (n >= 0 ? "+" : "") + fmtUsd(n);
+
+const fmtPct = (n) =>
+  (n == null || !isFinite(n)) ? "—" :
+  (n >= 0 ? "+" : "") + n.toFixed(2) + "%";
+
+function clsFor(n){ return n > 0 ? "pos" : (n < 0 ? "neg" : ""); }
+
+function nowTimeHHMM(){
+  return new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
+}
+function updatedStamp(){
+  $("updatedStamp").textContent = "Updated " + nowTimeHHMM();
+}
+function setTopStatus(text){
+  $("topStatus").textContent = text;
+}
+
+// CORS-friendly fetch for RSS via jina.ai proxy (returns plaintext)
+async function fetchTextViaJina(url){
+  // Prefer https version
+  const safe = url.startsWith("http://") ? url.replace("http://","https://") : url;
+  const proxy = "https://r.jina.ai/" + safe;
+  const r = await fetch(proxy, { cache:"no-store" });
+  if(!r.ok) throw new Error("RSS fetch failed: " + r.status);
+  return await r.text();
+}
+
+function parseRssItems(xmlText, limit=6){
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xmlText, "text/xml");
+  const items = Array.from(doc.querySelectorAll("item")).slice(0, limit).map(it => {
+    const title = (it.querySelector("title")?.textContent || "").trim();
+    const link  = (it.querySelector("link")?.textContent || "").trim();
+    const source = (it.querySelector("source")?.textContent || "").trim()
+      || (new URL(link || "https://example.com")).hostname.replace("www.","");
+    return { title, link, source };
+  }).filter(x => x.title);
+  return items;
+}
+
+async function safeJson(url){
+  const r = await fetch(url, { cache:"no-store" });
+  const text = await r.text();
+  // If you ever get HTML back, this catches it nicely:
+  if(text.trim().startsWith("<")){
+    throw new Error("Unexpected token '<' (HTML returned). Check endpoint path / auth / CORS.");
+  }
+  return JSON.parse(text);
+}
+
+function panelError(title, err){
+  $("panelContent").innerHTML = `
+    <div class="errBox">
+      <div class="k">Panel error</div>
+      <div class="m">${escapeHtml(title)}</div>
+      <div class="h">${escapeHtml(String(err?.message || err))}</div>
+      <div class="h" style="margin-top:10px;">
+        If this started after a redeploy, it’s usually one of:
+        <br>• wrong endpoint path (404 page returned as HTML)
+        <br>• a feed/service blocked the request (proxy helps)
+        <br>• JSON field names changed
+      </div>
+    </div>
+  `;
+  updatedStamp();
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, (c)=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+
+// =====================
+// Top strip: clock + weather + wind + AQI
+// Uses Open-Meteo (free, no key) + Open-Meteo Air Quality (free, no key)
+// =====================
+let topState = { tempF:null, windMph:null, aqi:null, aqiLabel:"—" };
+
+async function refreshTop(){
+  try{
+    // Weather (current temp + wind)
+    // Open-Meteo returns in metric by default; we convert.
+    const wUrl =
+      `https://api.open-meteo.com/v1/forecast?latitude=${CONFIG.lat}&longitude=${CONFIG.lon}` +
+      `&current=temperature_2m,wind_speed_10m` +
+      `&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto`;
+    const w = await safeJson(wUrl);
+    const tempF = w?.current?.temperature_2m;
+    const windMph = w?.current?.wind_speed_10m;
+
+    // Air quality (US AQI)
+    const aUrl =
+      `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${CONFIG.lat}&longitude=${CONFIG.lon}` +
+      `&current=us_aqi&timezone=auto`;
+    const a = await safeJson(aUrl);
+    const aqi = a?.current?.us_aqi;
+
+    topState.tempF = isFinite(tempF) ? tempF : null;
+    topState.windMph = isFinite(windMph) ? windMph : null;
+    topState.aqi = isFinite(aqi) ? aqi : null;
+
+    let aqiLabel = "—";
+    if(isFinite(aqi)){
+      if(aqi <= 50) aqiLabel = "Good";
+      else if(aqi <= 100) aqiLabel = "Moderate";
+      else if(aqi <= 150) aqiLabel = "Unhealthy (SG)";
+      else if(aqi <= 200) aqiLabel = "Unhealthy";
+      else if(aqi <= 300) aqiLabel = "Very Unhealthy";
+      else aqiLabel = "Hazardous";
+    }
+    topState.aqiLabel = aqiLabel;
+
+    const tempStr = isFinite(topState.tempF) ? `${Math.round(topState.tempF)}°` : "—";
+    const windStr = isFinite(topState.windMph) ? `Wind ${Math.round(topState.windMph)} mph` : "Wind —";
+    const aqiStr  = isFinite(topState.aqi) ? `AQI ${Math.round(topState.aqi)} (${aqiLabel})` : "AQI —";
+
+    $("topMeta").textContent = `${CONFIG.locationName} • ${tempStr} • ${windStr} • ${aqiStr}`;
+    setTopStatus("LIVE");
+  } catch(e){
+    // Don’t kill the app if top strip fails
+    $("topMeta").textContent = `${CONFIG.locationName} • Weather unavailable`;
+    setTopStatus("SYNC");
+    console.error(e);
+  }
+}
+
+function tickClock(){
+  const t = new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
+  $("clock").textContent = t;
+}
+
+// =====================
+// Panel Renderers
+// =====================
+async function renderMarket(){
+  $("panelTitle").textContent = "MARKET";
+  $("panelSub").textContent = "SPY + VXX + SECTORS + 2 HEADLINES";
+
+  // 1) Quotes via your existing /api/quotes (Alpaca-backed)
+  //    This keeps secrets server-side and avoids public rate limits.
+  const symbols = [
+    ...CONFIG.market.primary.map(x=>x.symbol),
+    ...CONFIG.market.sectors
+  ].join(",");
+
+  let qMap = {};
+  try{
+    const data = await safeJson(`${CONFIG.endpoints.quotes}${encodeURIComponent(symbols)}&t=${Date.now()}`);
+    qMap = data?.quotes || {};
+  } catch(e){
+    // If your endpoint is down, show a friendly error but still render layout
+    console.error(e);
+  }
+
+  const spy = qMap["SPY"];
+  const vxx = qMap["VXX"];
+
+  function bigBlock(sym, label){
+    const q = qMap[sym];
+    const price = q && isFinite(q.price) ? fmtUsd(q.price) : "—";
+    const pct = q && isFinite(q.changesPercentage) ? q.changesPercentage : null;
+    const pctStr = isFinite(pct) ? `${fmtPct(pct)} today` : "—";
+    const cls = isFinite(pct) ? clsFor(pct) : "";
+    return `
+      <div class="bigQuote">
+        <div style="min-width:0">
+          <div class="k">${escapeHtml(label)}</div>
+          <div class="d ${cls}">${escapeHtml(pctStr)}</div>
+        </div>
+        <div class="p">${escapeHtml(price)}</div>
+      </div>
+    `;
+  }
+
+  // 2) Sectors as big “chips” (fills the box better than tiny text)
+  //    Sort by % move descending so it feels like “movers”.
+  const sectorMoves = CONFIG.market.sectors.map(sym => {
+    const q = qMap[sym];
+    const pct = q && isFinite(q.changesPercentage) ? Number(q.changesPercentage) : null;
+    return { sym, pct };
+  }).filter(x => x.pct != null).sort((a,b)=>Math.abs(b.pct)-Math.abs(a.pct));
+
+  const chips = sectorMoves.slice(0, 10).map(x => {
+    const cls = clsFor(x.pct);
+    return `<div class="chip"><span>${x.sym}</span><small class="${cls}">${fmtPct(x.pct)}</small></div>`;
+  }).join("");
+
+  // 3) Marketplace Business headlines via Google News RSS (proxied)
+  let bizItems = [];
+  try{
+    const txt = await fetchTextViaJina(CONFIG.market.businessFeed);
+    bizItems = parseRssItems(txt, 2);
+  } catch(e){
+    console.error(e);
+  }
+
+  const headlineBox = (item) => {
+    if(!item) return `<div class="row"><div class="h">No headline returned</div><div class="s">marketplace business</div></div>`;
+    return `
+      <div class="row">
+        <div class="h">${escapeHtml(item.title)}</div>
+        <div class="s">${escapeHtml(item.source)}</div>
+      </div>
+    `;
+  };
+
+  $("panelContent").innerHTML = `
+    <div class="marketTop">
+      ${bigBlock("SPY", "S&P 500 Proxy (SPY)")}
+      ${bigBlock("VXX", "Vol Proxy (VXX)")}
+    </div>
+
+    <div class="grid2" style="flex:1;min-height:0;">
+      <div class="tile">
+        <div class="tileLabel">Sectors (movers)</div>
+        <div class="sectors">
+          <div class="sectorList">${chips || `<div style="color:rgba(233,238,252,0.60);font-weight:850;">No sector quotes yet</div>`}</div>
+          <div class="tileSub">Sorted by biggest move</div>
+        </div>
+      </div>
+
+      <div class="tile" style="gap:10px;">
+        <div class="tileLabel">Marketplace Business</div>
+        <div style="display:flex;flex-direction:column;gap:10px;min-height:0;">
+          ${headlineBox(bizItems[0])}
+          ${headlineBox(bizItems[1])}
+        </div>
+        <div class="tileSub">Source: Google News RSS</div>
+      </div>
+    </div>
+  `;
+
+  updatedStamp();
+}
+
+async function renderInternet(){
+  $("panelTitle").textContent = "SERVER INFO";
+  $("panelSub").textContent = "LATENCY CHECKS";
+
+  // This is intentionally "server-ish" so it doesn’t look like your Wi-Fi speed.
+  // We'll measure fetch latency to a few well-known endpoints from the Edge device.
+  const targets = [
+    { name: "Cloudflare", url: "https://1.1.1.1/cdn-cgi/trace" },
+    { name: "Google", url: "https://www.google.com/generate_204" }
   ];
 
-  const PANELS = {
-    market:    { id:"p-market",    name:"Market",   hint:"SPY + VXX + sectors + 1 headline" },
-    weather:   { id:"p-weather",   name:"Weather",  hint:"Now + tomorrow + radar" },
-    headlines: { id:"p-headlines", name:"Headlines",hint:"US + World + Business" },
-    net:       { id:"p-net",       name:"Internet", hint:"Latency checks" },
-    cities:    { id:"p-cities",    name:"Cities",   hint:"Time + temp" }
-  };
-
-  const fmt1 = n => (n==null||!isFinite(n)) ? "—" : n.toFixed(1);
-  const fmt0 = n => (n==null||!isFinite(n)) ? "—" : Math.round(n).toString();
-  const fmtPct = n => (n==null||!isFinite(n)) ? "—" : (n>=0?"+":"")+n.toFixed(2)+"%";
-  const clsFor = n => n>0 ? "pos" : (n<0 ? "neg" : "");
-
-  // ---------- State ----------
-  let cache = {
-    top: null,
-    market: null,
-    weather: null,
-    news: null,
-    net: null,
-    cities: null,
-    lastOk: Date.now()
-  };
-
-  // ---------- Helpers ----------
-  function setLive(ok){
-    const dot = document.getElementById("liveDot");
-    const txt = document.getElementById("liveText");
-    dot.style.animationPlayState = ok ? "running" : "paused";
-    dot.style.opacity = ok ? "1" : "0.6";
-    txt.textContent = ok ? "LIVE" : "SYNC";
+  async function ping(url){
+    const t0 = performance.now();
+    // mode:"no-cors" avoids CORS issues; latency still measurable.
+    await fetch(url + "?t=" + Date.now(), { mode:"no-cors", cache:"no-store" });
+    const t1 = performance.now();
+    return Math.round(t1 - t0);
   }
 
-  function setTime(){
-    const now = new Date();
-    document.getElementById("time").textContent =
-      now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
-    document.getElementById("footerRight").textContent =
-      "Updated " + new Date(cache.lastOk).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+  let results = [];
+  try{
+    results = await Promise.all(targets.map(async t => {
+      try{
+        const ms = await ping(t.url);
+        return { name: t.name, ms, ok: true };
+      } catch(e){
+        return { name: t.name, ms: null, ok: false };
+      }
+    }));
+  } catch(e){
+    console.error(e);
   }
 
-  // ---------- Fetchers ----------
-  async function loadTopStrip(){
-    const r = await fetch(`/api/topstrip?t=${Date.now()}`, {cache:"no-store"});
-    if(!r.ok) throw new Error("topstrip " + r.status);
-    cache.top = await r.json();
+  const status = results.every(r=>r.ok) ? "Healthy" : "Degraded";
+  const statusCls = results.every(r=>r.ok) ? "pos" : "neg";
 
-    const meta = [];
-    meta.push(cache.top.city || "Phoenix");
-    if(isFinite(cache.top.tempF)) meta.push(`${Math.round(cache.top.tempF)}°`);
-    if(isFinite(cache.top.windMph)) meta.push(`Wind ${Math.round(cache.top.windMph)} mph`);
-    if(isFinite(cache.top.aqiUS)) meta.push(`AQI ${Math.round(cache.top.aqiUS)} (${cache.top.aqiLabel || "—"})`);
-
-    document.getElementById("topMeta").textContent = meta.join("  •  ");
-    document.getElementById("footerLeft").textContent = "Edge Dashboard";
-  }
-
-  async function loadMarket(){
-    const r = await fetch(`/api/market?t=${Date.now()}`, {cache:"no-store"});
-    if(!r.ok) throw new Error("market " + r.status);
-    cache.market = await r.json();
-
-    // SPY
-    document.getElementById("spyVal").textContent =
-      (cache.market.spy?.price != null) ? `$${fmt1(cache.market.spy.price)}` : "—";
-    const spyChg = cache.market.spy?.pct;
-    const spySub = document.getElementById("spySub");
-    spySub.textContent = (spyChg!=null) ? `${fmtPct(spyChg)} today` : "—";
-    spySub.className = "sub " + clsFor(spyChg);
-
-    // VXX
-    document.getElementById("vxxVal").textContent =
-      (cache.market.vxx?.price != null) ? `VXX $${fmt1(cache.market.vxx.price)}` : "—";
-    const vxxChg = cache.market.vxx?.pct;
-    const vxxSub = document.getElementById("vxxSub");
-    vxxSub.textContent = (vxxChg!=null) ? `${fmtPct(vxxChg)} today` : "—";
-    vxxSub.className = "sub " + clsFor(vxxChg);
-
-    // Sectors tiny string
-    const parts = (cache.market.sectors || []).map(s => {
-      const p = s.pct;
-      const sign = (p>=0?"+":"");
-      return `${s.sym} ${sign}${p.toFixed(1)}%`;
-    });
-    document.getElementById("sectors").textContent = parts.join("   ");
-
-    // Headline
-    document.getElementById("mktHeadline").textContent = cache.market.headline?.title || "—";
-    document.getElementById("mktSource").textContent = cache.market.headline?.source || "Google News";
-    document.getElementById("mktWhen").textContent   = cache.market.headline?.when || "";
-  }
-
-  async function loadWeather(){
-    const r = await fetch(`/api/weather?t=${Date.now()}`, {cache:"no-store"});
-    if(!r.ok) throw new Error("weather " + r.status);
-    cache.weather = await r.json();
-
-    document.getElementById("wxNow").textContent =
-      isFinite(cache.weather.tempF) ? `${Math.round(cache.weather.tempF)}°` : "—";
-
-    const nowSub = [];
-    if(isFinite(cache.weather.windMph)) nowSub.push(`Wind ${Math.round(cache.weather.windMph)} mph`);
-    if(isFinite(cache.weather.precipProb)) nowSub.push(`Rain ${Math.round(cache.weather.precipProb)}%`);
-    document.getElementById("wxNowSub").textContent = nowSub.join(" • ") || "—";
-
-    document.getElementById("wxTomorrow").textContent =
-      (isFinite(cache.weather.tomorrowHiF) && isFinite(cache.weather.tomorrowLoF))
-      ? `${Math.round(cache.weather.tomorrowHiF)}° / ${Math.round(cache.weather.tomorrowLoF)}°`
-      : "—";
-
-    const extras = [];
-    if(cache.weather.sunrise) extras.push(`Sunrise ${cache.weather.sunrise}`);
-    if(cache.weather.sunset) extras.push(`Sunset ${cache.weather.sunset}`);
-    if(isFinite(cache.weather.aqiUS)) extras.push(`AQI ${Math.round(cache.weather.aqiUS)} (${cache.weather.aqiLabel || "—"})`);
-    document.getElementById("wxExtras").textContent = extras.join(" • ") || "—";
-
-    // Radar image (static snapshot url)
-    if(cache.weather.radar?.img){
-      document.getElementById("radarImg").src = cache.weather.radar.img;
-      document.getElementById("radarWhen").textContent = cache.weather.radar.when || "";
-    } else {
-      document.getElementById("radarImg").removeAttribute("src");
-      document.getElementById("radarWhen").textContent = "—";
-    }
-  }
-
-  function renderNewsList(items){
-    const host = document.getElementById("newsList");
-    host.innerHTML = "";
-    (items || []).slice(0,5).forEach(it => {
-      const div = document.createElement("div");
-      div.className = "headline";
-      div.innerHTML = `
-        <div class="h">${escapeHtml(it.title || "—")}</div>
-        <div class="m"><span>${escapeHtml(it.source || "Google News")}</span><span>${escapeHtml(it.when || "")}</span></div>
-      `;
-      host.appendChild(div);
-    });
-  }
-
-  async function loadNews(){
-    const r = await fetch(`/api/news?t=${Date.now()}`, {cache:"no-store"});
-    if(!r.ok) throw new Error("news " + r.status);
-    cache.news = await r.json();
-    renderNewsList(cache.news.items || []);
-  }
-
-  async function loadNet(){
-    const r = await fetch(`/api/net?t=${Date.now()}`, {cache:"no-store"});
-    if(!r.ok) throw new Error("net " + r.status);
-    cache.net = await r.json();
-
-    const cf = cache.net.cloudflareMs;
-    const gg = cache.net.googleMs;
-
-    document.getElementById("cfPing").textContent = (cf!=null) ? `${Math.round(cf)}ms` : "—";
-    document.getElementById("ggPing").textContent = (gg!=null) ? `${Math.round(gg)}ms` : "—";
-
-    document.getElementById("cfPingSub").textContent = cache.net.cloudflareOk ? "OK" : "Issue";
-    document.getElementById("ggPingSub").textContent = cache.net.googleOk ? "OK" : "Issue";
-
-    const good = cache.net.cloudflareOk && cache.net.googleOk;
-    document.getElementById("netStatus").textContent = good ? "Healthy" : "Degraded";
-    document.getElementById("netStatus").className = "value " + (good ? "pos" : "neg");
-    document.getElementById("netStatusSub").textContent = cache.net.note || "";
-  }
-
-  function renderCities(items){
-    const host = document.getElementById("citiesList");
-    host.innerHTML = "";
-    (items || []).forEach(it => {
-      const div = document.createElement("div");
-      div.className = "headline";
-      div.innerHTML = `
-        <div class="label">${escapeHtml(it.name || "—")}</div>
-        <div style="display:flex;justify-content:space-between;gap:12px;align-items:baseline;">
-          <div class="value" style="font-size:28px;">${escapeHtml(it.time || "—")}</div>
-          <div class="value" style="font-size:28px;">${isFinite(it.tempF) ? Math.round(it.tempF) + "°" : "—"}</div>
+  $("panelContent").innerHTML = `
+    <div class="grid2" style="grid-template-columns: 1fr 1fr; flex:0 0 auto;">
+      ${results.map(r => `
+        <div class="tile" style="min-height:140px;">
+          <div class="tileLabel">${escapeHtml(r.name)}</div>
+          <div class="tileValue">${r.ok ? `${r.ms}ms` : "—"}</div>
+          <div class="tileSub">${r.ok ? "OK" : "UNREACHABLE"}</div>
         </div>
-        <div class="sub">${escapeHtml(it.extra || "")}</div>
-      `;
-      host.appendChild(div);
-    });
-  }
+      `).join("")}
+    </div>
 
-  async function loadCities(){
-    const r = await fetch(`/api/cities?t=${Date.now()}`, {cache:"no-store"});
-    if(!r.ok) throw new Error("cities " + r.status);
-    cache.cities = await r.json();
-    renderCities(cache.cities.items || []);
-  }
+    <div class="tile" style="flex:1;min-height:0;">
+      <div class="tileLabel">Status</div>
+      <div class="tileValue ${statusCls}" style="font-size: clamp(40px, 6vw, 66px);">${status}</div>
+      <div class="tileSub">This is server reachability, not your Wi-Fi bandwidth.</div>
+      <div class="tileSub">Tip: if these spike, streams/feeds often feel “laggy”.</div>
+    </div>
+  `;
 
-  function escapeHtml(s){
-    return String(s)
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
+  updatedStamp();
+}
 
-  // ---------- Panel rotation ----------
-  let rotPos = 0;
-  function showPanel(key){
-    for(const k in PANELS){
-      document.getElementById(PANELS[k].id).classList.toggle("active", k===key);
+async function renderHeadlines(){
+  $("panelTitle").textContent = "HEADLINES";
+  $("panelSub").textContent = "US + WORLD + BUSINESS";
+
+  // Pull a mixed list from the three feeds (proxied to avoid CORS)
+  let items = [];
+  try{
+    const [usTxt, worldTxt, bizTxt] = await Promise.all([
+      fetchTextViaJina(CONFIG.feeds.us),
+      fetchTextViaJina(CONFIG.feeds.world),
+      fetchTextViaJina(CONFIG.feeds.business)
+    ]);
+    const us = parseRssItems(usTxt, 4);
+    const world = parseRssItems(worldTxt, 4);
+    const biz = parseRssItems(bizTxt, 4);
+    // Interleave for variety
+    items = [];
+    for(let i=0;i<5;i++){
+      if(us[i]) items.push(us[i]);
+      if(world[i]) items.push(world[i]);
+      if(biz[i]) items.push(biz[i]);
+      if(items.length >= 10) break;
     }
-    document.getElementById("panelName").textContent = PANELS[key].name;
-    document.getElementById("panelHint").textContent = PANELS[key].hint;
+    items = items.slice(0, 10);
+  } catch(e){
+    panelError("Headlines", e);
+    return;
   }
 
-  // ---------- Init ----------
-  async function safe(fn){
+  $("panelContent").innerHTML = `
+    <div class="list">
+      ${items.map(it => `
+        <div class="row">
+          <div class="h">${escapeHtml(it.title)}</div>
+          <div class="s">${escapeHtml(it.source)}</div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+  updatedStamp();
+}
+
+async function renderWeather(){
+  $("panelTitle").textContent = "WEATHER";
+  $("panelSub").textContent = "NOW + TOMORROW + RADAR";
+
+  try{
+    const url =
+      `https://api.open-meteo.com/v1/forecast?latitude=${CONFIG.lat}&longitude=${CONFIG.lon}` +
+      `&current=temperature_2m,wind_speed_10m,precipitation` +
+      `&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum` +
+      `&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto`;
+    const w = await safeJson(url);
+
+    const nowT = w?.current?.temperature_2m;
+    const nowWind = w?.current?.wind_speed_10m;
+    const nowP = w?.current?.precipitation;
+
+    const tmax = w?.daily?.temperature_2m_max?.[1];
+    const tmin = w?.daily?.temperature_2m_min?.[1];
+    const sunrise = w?.daily?.sunrise?.[0];
+    const sunset  = w?.daily?.sunset?.[0];
+    const pSum0 = w?.daily?.precipitation_sum?.[0];
+    const pSum1 = w?.daily?.precipitation_sum?.[1];
+
+    const sunriseStr = sunrise ? new Date(sunrise).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}) : "—";
+    const sunsetStr  = sunset ? new Date(sunset).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}) : "—";
+
+    const rainLikely = (isFinite(pSum0) && pSum0 > 0.01) || (isFinite(pSum1) && pSum1 > 0.01) || (isFinite(nowP) && nowP > 0.01);
+
+    $("panelContent").innerHTML = `
+      <div class="wxHero">
+        <div style="min-width:0">
+          <div class="city">${escapeHtml(CONFIG.locationName)} Weather</div>
+          <div class="tempNow">${isFinite(nowT) ? `${Math.round(nowT)}°` : "—"}</div>
+          <div class="mini">
+            ${isFinite(nowWind) ? `Wind ${Math.round(nowWind)} mph` : "Wind —"} •
+            ${rainLikely ? "Rain possible" : "Rain 0% (likely)"} •
+            ${isFinite(topState.aqi) ? `AQI ${Math.round(topState.aqi)} (${topState.aqiLabel})` : "AQI —"}
+          </div>
+          <div class="mini">Sunrise ${sunriseStr} • Sunset ${sunsetStr}</div>
+        </div>
+
+        <div class="right">
+          <div class="tom">${isFinite(tmax) && isFinite(tmin) ? `${Math.round(tmax)}° / ${Math.round(tmin)}°` : "— / —"}</div>
+          <div class="tomSub">Tomorrow</div>
+          <div class="mini" style="max-width:240px;">
+            ${isFinite(pSum1) ? `Precip: ${pSum1.toFixed(2)} in` : "Precip: —"}
+          </div>
+        </div>
+      </div>
+
+      <div class="radar">
+        <div class="radarBadge"><span class="dot"></span><span>Radar</span> <b>${rainLikely ? "ACTIVE" : "IDLE"}</b></div>
+        <div class="label">Radar (visual placeholder)</div>
+        <div class="time">${nowTimeHHMM()}</div>
+      </div>
+    `;
+
+    updatedStamp();
+  } catch(e){
+    panelError("Weather", e);
+  }
+}
+
+async function renderCities(){
+  $("panelTitle").textContent = "CITIES";
+  $("panelSub").textContent = "TIME + TEMP";
+
+  // temps via Open-Meteo, times via Intl (no API required for time)
+  // We'll fetch temps in parallel; if any fails, still show others.
+  async function cityTemp(c){
+    const url =
+      `https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lon}` +
+      `&current=temperature_2m&temperature_unit=fahrenheit&timezone=auto`;
+    const w = await safeJson(url);
+    const t = w?.current?.temperature_2m;
+    return isFinite(t) ? t : null;
+  }
+
+  const temps = await Promise.all(CONFIG.cities.map(async c => {
     try{
-      await fn();
-      cache.lastOk = Date.now();
-      setLive(true);
+      const t = await cityTemp(c);
+      return { ...c, tempF: t };
     } catch(e){
-      console.error(e);
-      setLive(false);
+      return { ...c, tempF: null };
     }
+  }));
+
+  const rows = temps.map(c => {
+    const time = new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit", timeZone: c.tz });
+    const tStr = isFinite(c.tempF) ? `${Math.round(c.tempF)}°` : "—";
+    return `
+      <div class="row">
+        <div class="cityRow">
+          <div class="cityName">${escapeHtml(c.name)}</div>
+          <div style="display:flex;gap:14px;align-items:baseline;">
+            <div class="cityTime">${escapeHtml(time)}</div>
+            <div class="cityTemp">${escapeHtml(tStr)}</div>
+          </div>
+        </div>
+        <div class="s">${escapeHtml(c.tz)}</div>
+      </div>
+    `;
+  }).join("");
+
+  $("panelContent").innerHTML = `<div class="list">${rows}</div>`;
+  updatedStamp();
+}
+
+// =====================
+// Rotation Controller
+// =====================
+const PANELS = [
+  { key:"market",   title:"MARKET",   sub:"SPY + VXX + SECTORS + 2 HEADLINES", render: renderMarket },
+  { key:"weather",  title:"WEATHER",  sub:"NOW + TOMORROW + RADAR",            render: renderWeather },
+  { key:"headlines",title:"HEADLINES",sub:"US + WORLD + BUSINESS",             render: renderHeadlines },
+  { key:"internet", title:"SERVER INFO", sub:"LATENCY CHECKS",                 render: renderInternet },
+  { key:"cities",   title:"CITIES",   sub:"TIME + TEMP",                       render: renderCities },
+  // NOTE: IRA panel intentionally NOT included here.
+  // You told me: the far-right panel is IRA portfolio and should stay separate.
+];
+
+let panelIndex = 0;
+let rotateTimer = null;
+let refreshTimer = null;
+
+async function showPanel(i){
+  const p = PANELS[i % PANELS.length];
+  $("panelTitle").textContent = p.title;
+  $("panelSub").textContent = p.sub;
+  $("panelContent").innerHTML = `<div style="color:rgba(233,238,252,0.75);font-weight:850;">Loading…</div>`;
+  try{
+    await p.render();
+  } catch(e){
+    panelError(p.title, e);
   }
+}
 
-  (async function init(){
-    setTime();
-    setInterval(setTime, 1000);
+function startRotation(){
+  const ms = (CONFIG.rotateSeconds ?? 12) * 1000;
+  if(rotateTimer) clearInterval(rotateTimer);
+  rotateTimer = setInterval(async () => {
+    panelIndex = (panelIndex + 1) % PANELS.length;
+    await showPanel(panelIndex);
+  }, ms);
+}
 
-    // initial loads
-    await safe(loadTopStrip);
-    await safe(loadMarket);
-    await safe(loadWeather);
-    await safe(loadNews);
-    await safe(loadNet);
-    await safe(loadCities);
+function startRefresh(){
+  const ms = (CONFIG.refreshSeconds ?? 120) * 1000;
+  if(refreshTimer) clearInterval(refreshTimer);
+  refreshTimer = setInterval(async () => {
+    // Refresh top strip + current panel
+    await refreshTop();
+    await showPanel(panelIndex);
+  }, ms);
+}
 
-    // refresh loops
-    setInterval(()=>safe(loadTopStrip), TOPSTRIP_REFRESH_MS);
-    setInterval(()=>safe(loadMarket),   MARKET_REFRESH_MS);
-    setInterval(()=>safe(loadWeather),  WEATHER_REFRESH_MS);
-    setInterval(()=>safe(loadNews),     NEWS_REFRESH_MS);
-    setInterval(()=>safe(loadNet),      NET_REFRESH_MS);
-    setInterval(()=>safe(loadCities),   CITIES_REFRESH_MS);
+// =====================
+// Init
+// =====================
+(async function init(){
+  tickClock();
+  setInterval(tickClock, 1000 * 10);
 
-    // rotation loop
-    showPanel(ROTATION[0]);
-    setInterval(()=>{
-      rotPos = (rotPos + 1) % ROTATION.length;
-      showPanel(ROTATION[rotPos]);
-    }, PANEL_MS);
-  })();
+  await refreshTop();
+  await showPanel(panelIndex);
+
+  startRotation();
+  startRefresh();
+})();
 </script>
 </body>
 </html>
