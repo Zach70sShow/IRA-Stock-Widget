@@ -3,7 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Rain Radar Widget</title>
+  <title>Phoenix Rain Radar (vibe)</title>
+
+  <!-- Leaflet (map) - CDN only (no local files) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
   <style>
     :root{
       color-scheme: dark;
@@ -37,7 +42,7 @@
         linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
       background-size: 44px 44px;
-      opacity:0.12;
+      opacity:0.10;
       mask-image: radial-gradient(circle at 55% 45%, black 55%, transparent 78%);
     }
 
@@ -82,7 +87,7 @@
       position:relative;
     }
 
-    /* Radar panel */
+    /* Radar wrapper */
     .radar{
       flex:1;
       margin: 14px;
@@ -94,145 +99,133 @@
       min-height:0;
     }
 
-    /* Base “map-ish” texture: rings + faint grid + contour-ish noise */
-    .radar:before{
-      content:"";
-      position:absolute; inset:-140px;
-      background:
-        radial-gradient(circle at 50% 50%, rgba(51,230,209,0.16), transparent 55%),
-        repeating-radial-gradient(circle at 50% 50%,
-          rgba(233,238,252,0.06) 0px,
-          rgba(233,238,252,0.06) 1px,
-          transparent 1px,
-          transparent 42px
-        ),
-        repeating-linear-gradient(0deg,
-          rgba(233,238,252,0.035),
-          rgba(233,238,252,0.035) 1px,
-          transparent 1px,
-          transparent 28px
-        ),
-        repeating-linear-gradient(90deg,
-          rgba(233,238,252,0.028),
-          rgba(233,238,252,0.028) 1px,
-          transparent 1px,
-          transparent 28px
-        );
-      opacity: 0.62;
+    /* === MAP LAYER === */
+    #map{
+      position:absolute; inset:0;
+      z-index: 0;
+      filter: saturate(0.9) contrast(1.05) brightness(0.92);
     }
 
-    /* Big radar sweep */
+    /* Hide Leaflet UI completely */
+    .leaflet-control-container{ display:none; }
+    .leaflet-tile{ opacity:0.85; }
+
+    /* Soft map vignette + glass */
+    .mapGlass{
+      position:absolute; inset:0;
+      z-index: 1;
+      background:
+        radial-gradient(circle at 50% 45%, rgba(51,230,209,0.06), transparent 55%),
+        radial-gradient(circle at 50% 45%, transparent 55%, rgba(0,0,0,0.55) 100%);
+      pointer-events:none;
+    }
+
+    /* Subtle rings (cleaner than the earlier “busy” texture) */
+    .rings{
+      position:absolute; inset:-140px;
+      z-index: 2;
+      background:
+        repeating-radial-gradient(circle at 50% 50%,
+          rgba(233,238,252,0.05) 0px,
+          rgba(233,238,252,0.05) 1px,
+          transparent 1px,
+          transparent 56px
+        );
+      opacity: 0.30;
+      pointer-events:none;
+    }
+
+    /* Radar sweep (subtle) */
     .sweep{
       position:absolute;
       inset:-70%;
+      z-index: 3;
       background: conic-gradient(from 0deg,
         rgba(51,230,209,0.0),
-        rgba(51,230,209,0.0) 25%,
-        rgba(51,230,209,0.26) 40%,
-        rgba(51,230,209,0.0) 55%,
+        rgba(51,230,209,0.0) 28%,
+        rgba(51,230,209,0.18) 42%,
+        rgba(51,230,209,0.0) 56%,
         rgba(51,230,209,0.0)
       );
-      animation: spin 4.6s linear infinite;
+      animation: spin 5.4s linear infinite;
       mix-blend-mode: screen;
-      opacity: 0.70;
+      opacity: 0.55;
+      pointer-events:none;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* “Storm cells” blobs drifting */
+    /* Storm “cells” (still fake, but now anchored visually by the map) */
     .cells{
       position:absolute; inset:0;
-      filter: blur(0.2px);
-      opacity: 0.95;
+      z-index: 4;
+      opacity: 0.85;
       pointer-events:none;
     }
     .cell{
       position:absolute;
-      width: 240px; height: 240px;
+      width: 260px; height: 260px;
       border-radius: 999px;
       background: radial-gradient(circle at 40% 40%,
-        rgba(120,170,255,0.32),
-        rgba(51,230,209,0.18) 35%,
-        rgba(51,230,209,0.08) 55%,
-        transparent 70%
+        rgba(120,170,255,0.18),
+        rgba(51,230,209,0.12) 40%,
+        rgba(51,230,209,0.05) 62%,
+        transparent 75%
       );
       mix-blend-mode: screen;
-      animation: drift 9s ease-in-out infinite;
+      animation: drift 11s ease-in-out infinite;
     }
-    .cell:nth-child(2){
-      width: 320px; height: 320px;
-      background: radial-gradient(circle at 45% 45%,
-        rgba(120,170,255,0.24),
-        rgba(51,230,209,0.14) 42%,
-        rgba(51,230,209,0.06) 62%,
-        transparent 75%
-      );
-      animation-duration: 12s;
-      opacity: 0.9;
-    }
-    .cell:nth-child(3){
-      width: 200px; height: 200px;
-      background: radial-gradient(circle at 45% 45%,
-        rgba(120,170,255,0.20),
-        rgba(51,230,209,0.12) 40%,
-        rgba(51,230,209,0.05) 60%,
-        transparent 75%
-      );
-      animation-duration: 10s;
-      opacity: 0.85;
-    }
+    .cell:nth-child(2){ width: 340px; height: 340px; animation-duration: 14s; opacity:0.75; }
+    .cell:nth-child(3){ width: 210px; height: 210px; animation-duration: 12s; opacity:0.70; }
+
     @keyframes drift{
       0%   { transform: translate(0px, 0px) scale(1.0); }
-      50%  { transform: translate(60px, -40px) scale(1.05); }
+      50%  { transform: translate(46px, -28px) scale(1.06); }
       100% { transform: translate(0px, 0px) scale(1.0); }
     }
 
-    /* Rain streak overlay */
+    /* Rain streak overlay (cleaner + less loud) */
     .rain{
       position:absolute; inset:0;
+      z-index: 5;
       pointer-events:none;
       opacity: 0;
-      transition: opacity .4s ease;
+      transition: opacity .35s ease;
     }
     .rain.on{ opacity: 1; }
-
     .rain:before, .rain:after{
       content:"";
-      position:absolute; inset:-50%;
+      position:absolute; inset:-55%;
       background-image:
         repeating-linear-gradient(115deg,
           rgba(233,238,252,0.00) 0px,
-          rgba(233,238,252,0.00) 8px,
-          rgba(233,238,252,0.20) 9px,
-          rgba(233,238,252,0.00) 12px
+          rgba(233,238,252,0.00) 10px,
+          rgba(233,238,252,0.12) 11px,
+          rgba(233,238,252,0.00) 15px
         );
-      background-size: 24px 24px;
-      animation: rainMove 0.65s linear infinite;
+      background-size: 28px 28px;
+      animation: rainMove 0.85s linear infinite;
       mix-blend-mode: screen;
+      opacity: 0.55;
     }
     .rain:after{
-      opacity: 0.55;
-      filter: blur(0.6px);
-      animation-duration: 0.85s;
+      opacity: 0.25;
+      filter: blur(0.8px);
+      animation-duration: 1.05s;
     }
     @keyframes rainMove{
-      to { transform: translate3d(140px, 220px, 0); }
+      to { transform: translate3d(140px, 240px, 0); }
     }
 
-    /* Bottom HUD */
+    /* HUD */
     .hud{
       position:absolute;
       left: 14px; right: 14px; bottom: 14px;
+      z-index: 6;
       display:flex;
       justify-content:space-between;
       align-items:flex-end;
       gap:12px;
       pointer-events:none;
-    }
-    .hudLeft{
-      min-width:0;
-      display:flex;
-      flex-direction:column;
-      gap:6px;
     }
     .chip{
       display:inline-flex;
@@ -255,6 +248,7 @@
       box-shadow: 0 0 14px rgba(51,230,209,0.55);
     }
     .desc{
+      margin-top:8px;
       font-size: 22px;
       font-weight: 950;
       line-height: 1.1;
@@ -265,6 +259,7 @@
       text-shadow: 0 10px 24px rgba(0,0,0,0.40);
     }
     .sub{
+      margin-top:6px;
       font-size: 12px;
       color: rgba(233,238,252,0.70);
       font-weight: 850;
@@ -289,14 +284,38 @@
       color: rgba(233,238,252,0.70);
       font-weight: 850;
       letter-spacing: 0.3px;
+      white-space:nowrap;
     }
 
-    /* Subtle vignette */
-    .vignette{
-      position:absolute; inset:0;
-      background: radial-gradient(circle at 50% 45%, transparent 55%, rgba(0,0,0,0.45) 100%);
+    /* Top-left mini label for interpretability */
+    .mapLabel{
+      position:absolute;
+      left: 14px;
+      top: 14px;
+      z-index: 6;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.10);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.4px;
+      color: rgba(233,238,252,0.80);
       pointer-events:none;
-      opacity: 0.55;
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(51,230,209,0.08);
+      border: 1px solid rgba(51,230,209,0.18);
+      color: rgba(233,238,252,0.86);
+      font-weight: 900;
     }
   </style>
 </head>
@@ -309,42 +328,57 @@
     </div>
 
     <div class="card">
-      <div class="radar" id="radar">
+      <div class="radar">
+        <!-- Map underneath -->
+        <div id="map"></div>
+        <div class="mapGlass"></div>
+
+        <!-- Clean texture -->
+        <div class="rings"></div>
+
+        <!-- Fake storm blobs -->
         <div class="cells">
-          <div class="cell" style="left:12%; top:18%"></div>
-          <div class="cell" style="left:48%; top:8%"></div>
-          <div class="cell" style="left:62%; top:44%"></div>
+          <div class="cell" style="left:14%; top:14%"></div>
+          <div class="cell" style="left:46%; top:8%"></div>
+          <div class="cell" style="left:58%; top:46%"></div>
         </div>
 
+        <!-- Sweep + rain overlay -->
         <div class="sweep"></div>
-
-        <!-- rain overlay toggled by JS -->
         <div class="rain on" id="rain"></div>
 
+        <!-- Map label -->
+        <div class="mapLabel">
+          <span class="pill"><span class="dot"></span>PHX AREA</span>
+          <span id="zoomLbl">Zoom —</span>
+        </div>
+
+        <!-- HUD -->
         <div class="hud">
-          <div class="hudLeft">
+          <div>
             <div class="chip"><span class="dot"></span><span id="mode">RAIN MODE</span></div>
             <div class="desc" id="desc">Moderate rain • scanning</div>
-            <div class="sub" id="sub">Placeholder radar texture (no API) • looks great on Edge</div>
+            <div class="sub" id="sub">Basemap: Phoenix metro • Radar overlay is “vibe” (not real radar yet)</div>
           </div>
           <div class="hudRight">
             <div class="big" id="temp">56°</div>
             <div class="tiny" id="extra">Wind 14 mph • AQI 32</div>
           </div>
         </div>
-
-        <div class="vignette"></div>
       </div>
     </div>
   </div>
 
 <script>
-  // Toggle this to "true" or "false"
+  // Toggle this for dry days:
   const IS_RAINING = true;
 
-  // Fake-but-believable values to show what it looks like on its own
+  // Phoenix center
+  const PHX = { lat: 33.4484, lon: -112.0740, zoom: 9 };
+
+  // Demo readout (you can wire real data later)
   const demo = {
-    descRain: "Moderate rain • scanning",
+    descRain: "Rain today • scanning",
     descClear: "Clear skies • scanning",
     temp: 56,
     wind: 14,
@@ -376,9 +410,39 @@
     document.getElementById("extra").textContent = `Wind ${demo.wind} mph • AQI ${demo.aqi}`;
   }
 
+  // ---- Map init (no key) ----
+  const map = L.map("map", {
+    zoomControl: false,
+    attributionControl: false,
+    dragging: false,
+    scrollWheelZoom: false,
+    doubleClickZoom: false,
+    boxZoom: false,
+    keyboard: false,
+    tap: false
+  }).setView([PHX.lat, PHX.lon], PHX.zoom);
+
+  // Free dark tiles (no API key)
+  L.tileLayer(
+    "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+    { maxZoom: 18, subdomains: "abcd" }
+  ).addTo(map);
+
+  // A faint Phoenix marker ring
+  const marker = L.circleMarker([PHX.lat, PHX.lon], {
+    radius: 8,
+    color: "rgba(51,230,209,0.65)",
+    weight: 2,
+    fillColor: "rgba(51,230,209,0.22)",
+    fillOpacity: 0.9
+  }).addTo(map);
+
+  // Update zoom label
+  document.getElementById("zoomLbl").textContent = "Zoom " + PHX.zoom;
+
   setMode(IS_RAINING);
   tickStamp();
-  setInterval(tickStamp, 15_000);
+  setInterval(tickStamp, 15000);
 </script>
 </body>
 </html>
