@@ -3,330 +3,376 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Headlines</title>
+  <title>Headline Stream</title>
+
   <style>
     :root{
-      --bg0:#061018;
-      --bg1:#081520;
-      --card:rgba(12,22,30,.82);
-      --stroke:rgba(255,255,255,.10);
-      --text:#eaf2ff;
-      --muted:rgba(234,242,255,.72);
-      --teal:#33e6d1;
-      --teal2:rgba(51,230,209,.18);
-      --warn:#ff7a7a;
-      --radius:22px;
+      --bg0:#05080a;
+      --bg1:#0a1116;
+      --panel:#0b141aee;
+      --stroke:#1b2a32;
+      --glow:#46f3d0;
+      --text:#eaf2f7;
+      --muted:#a8b9c6;
+      --chip:#0b2022;
+      --chipStroke:#1c3c3a;
+      --danger:#ff6b6b;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0;overflow:hidden}
-    body{
-      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+
+    html,body{
+      height:100%;
+      margin:0;
+      background: radial-gradient(1200px 700px at 15% 0%, #163642 0%, transparent 60%),
+                  linear-gradient(180deg, var(--bg0), var(--bg1));
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       color:var(--text);
-      background:
-        radial-gradient(1200px 800px at 30% 15%, rgba(51,230,209,.14), transparent 55%),
-        radial-gradient(900px 600px at 70% 75%, rgba(120,170,255,.10), transparent 55%),
-        linear-gradient(180deg,var(--bg0),var(--bg1));
+      overflow:hidden;
     }
 
-    .wrap{height:100%;padding:18px;display:flex;flex-direction:column;gap:12px}
-
-    .topbar{
-      height:64px;border-radius:999px;
-      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.20));
-      border:1px solid var(--stroke);
-      box-shadow: 0 18px 40px rgba(0,0,0,.40);
-      display:flex;align-items:center;justify-content:space-between;
-      padding:12px 16px;
-      overflow:hidden;position:relative;
-    }
-    .topbar:before{
-      content:"";position:absolute;inset:-2px;pointer-events:none;
-      background:
-        radial-gradient(700px 260px at 55% 0%, rgba(51,230,209,.18), transparent 55%),
-        radial-gradient(900px 320px at 15% 0%, rgba(120,170,255,.10), transparent 60%);
-      opacity:.9;
+    .wrap{
+      position:relative;
+      height:100%;
+      padding:18px 18px 14px 18px;
+      box-sizing:border-box;
     }
 
-    .left{display:flex;align-items:baseline;gap:12px;z-index:1}
-    .clock{font-size:40px;font-weight:900;letter-spacing:.4px;line-height:1}
-    .label{display:flex;flex-direction:column;gap:2px;margin-top:8px}
-    .label .title{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-    .label .sub{font-size:12px;color:rgba(234,242,255,.55)}
+    /* Top bar */
+    .top{
+      height:72px;
+      display:flex;
+      align-items:center;
+      gap:18px;
+      padding:14px 16px;
+      border-radius:18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      border:1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 18px 60px rgba(0,0,0,0.55);
+      backdrop-filter: blur(10px);
+    }
 
-    .live{
-      z-index:1;
-      display:inline-flex;align-items:center;gap:10px;
-      padding:8px 12px;border-radius:999px;
-      background:rgba(0,0,0,.18);
-      border:1px solid rgba(51,230,209,.22);
-      color:rgba(234,242,255,.80);
+    .time{
+      font-size:56px;
       font-weight:800;
-      letter-spacing:.08em;
-      user-select:none;
-    }
-    .dot{
-      width:9px;height:9px;border-radius:99px;background:var(--teal);
-      box-shadow:0 0 18px rgba(51,230,209,.55);
-    }
-
-    .card{
-      flex:1;border-radius:var(--radius);
-      background:var(--card);
-      border:1px solid var(--stroke);
-      box-shadow: 0 22px 55px rgba(0,0,0,.45);
-      padding:18px;
-      display:flex;flex-direction:column;justify-content:space-between;
-      overflow:hidden;position:relative;
-    }
-    .card:before{
-      content:"";position:absolute;inset:-2px;pointer-events:none;
-      background:
-        radial-gradient(900px 520px at 20% 25%, rgba(51,230,209,.10), transparent 55%),
-        radial-gradient(900px 520px at 85% 80%, rgba(120,170,255,.08), transparent 55%);
-      opacity:.8;
-    }
-
-    .content{position:relative;z-index:1;display:flex;flex-direction:column;gap:12px}
-    .kicker{
-      display:flex;align-items:center;justify-content:space-between;gap:12px;
-      color:var(--muted);font-size:13px;font-weight:800;
-    }
-    .kicker .leftK{display:inline-flex;align-items:center;gap:10px}
-    .pill{
-      display:inline-flex;align-items:center;gap:8px;
-      padding:6px 10px;border-radius:999px;
-      background:rgba(51,230,209,.10);
-      border:1px solid rgba(51,230,209,.22);
-      color:rgba(234,242,255,.90);
-      font-size:12px;font-weight:900;
-      letter-spacing:.08em;
-      text-transform:uppercase;
+      letter-spacing:-1.5px;
+      line-height:1;
+      opacity:0.95;
+      text-shadow: 0 12px 30px rgba(0,0,0,0.55);
       white-space:nowrap;
     }
 
-    .headline{
-      font-size:38px;
-      line-height:1.10;
-      font-weight:950;
-      letter-spacing:.2px;
-      text-shadow: 0 10px 26px rgba(0,0,0,.35);
-      /* avoid cut-off on small Edge: clamp to 3 lines */
-      display:-webkit-box;
-      -webkit-box-orient:vertical;
-      -webkit-line-clamp:3;
+    .titleBlock{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width:0;
+    }
+
+    .headlineStream{
+      font-size:22px;
+      letter-spacing:0.18em;
+      opacity:0.8;
+    }
+    .subline{
+      font-size:18px;
+      color:var(--muted);
+      opacity:0.9;
+    }
+
+    .status{
+      margin-left:auto;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-size:14px;
+      color:var(--muted);
+      opacity:0.9;
+      white-space:nowrap;
+    }
+
+    .dot{
+      width:9px;height:9px;border-radius:50%;
+      background:var(--glow);
+      box-shadow: 0 0 0 4px rgba(70,243,208,0.12), 0 0 18px rgba(70,243,208,0.45);
+    }
+
+    /* Main card */
+    .card{
+      margin-top:14px;
+      height:calc(100% - 72px - 14px);
+      border-radius:22px;
+      background:
+        radial-gradient(900px 500px at 80% 20%, rgba(70,243,208,0.12), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+      border:1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 18px 70px rgba(0,0,0,0.6);
+      overflow:hidden;
+      position:relative;
+      backdrop-filter: blur(10px);
+    }
+
+    .card::before{
+      content:"";
+      position:absolute; inset:0;
+      background:
+        repeating-linear-gradient(135deg, rgba(255,255,255,0.04) 0, rgba(255,255,255,0.04) 2px, transparent 2px, transparent 12px);
+      opacity:0.35;
+      pointer-events:none;
+      mix-blend-mode: overlay;
+    }
+
+    .inner{
+      position:relative;
+      height:100%;
+      padding:22px 22px 18px 22px;
+      box-sizing:border-box;
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+    }
+
+    .row{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      min-width:0;
+    }
+
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 14px;
+      border-radius:999px;
+      background: linear-gradient(180deg, rgba(70,243,208,0.12), rgba(70,243,208,0.05));
+      border:1px solid rgba(70,243,208,0.25);
+      font-weight:700;
+      letter-spacing:0.12em;
+      color:#dffcf6;
+      text-transform:uppercase;
+      flex:0 0 auto;
+    }
+
+    .meta{
+      color:var(--muted);
+      font-size:20px;
+      font-weight:600;
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
+    .bigTitle{
+      font-size:64px;
+      line-height:1.02;
+      font-weight:900;
+      letter-spacing:-1.3px;
+      margin-top:4px;
+      text-shadow: 0 18px 60px rgba(0,0,0,0.55);
+      max-height: 2.3em;
       overflow:hidden;
     }
 
     .summary{
-      font-size:18px;line-height:1.35;color:rgba(234,242,255,.90);
-      /* clamp summary too */
-      display:-webkit-box;
-      -webkit-box-orient:vertical;
-      -webkit-line-clamp:4;
-      overflow:hidden;
+      font-size:28px;
+      color:#d6e3ec;
+      opacity:0.95;
+      max-width: 1200px;
     }
 
     .footer{
-      position:relative;z-index:1;
-      display:flex;align-items:center;justify-content:space-between;gap:12px;
-      font-size:12px;color:rgba(234,242,255,.70);
-      margin-top:10px;
+      margin-top:auto;
+      display:flex;
+      align-items:center;
+      gap:14px;
+      color:var(--muted);
+      font-size:14px;
+      opacity:0.9;
     }
 
-    .btnrow{display:flex;gap:8px;flex-wrap:wrap}
-    .btn{
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(0,0,0,.14);
-      color:rgba(234,242,255,.88);
-      padding:8px 12px;border-radius:999px;
-      font-weight:900;font-size:12px;letter-spacing:.06em;
-      cursor:pointer;user-select:none;
+    .pill{
+      padding:8px 12px;
+      border-radius:999px;
+      background: rgba(0,0,0,0.25);
+      border:1px solid rgba(255,255,255,0.10);
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      white-space:nowrap;
     }
-    .btn:hover{border-color:rgba(51,230,209,.35)}
-    .btn.warn{border-color:rgba(255,122,122,.35)}
-    a{color:inherit}
+
+    .btn{
+      cursor:pointer;
+      user-select:none;
+      padding:8px 12px;
+      border-radius:12px;
+      background: rgba(0,0,0,0.25);
+      border:1px solid rgba(255,255,255,0.12);
+      color:var(--text);
+      font-weight:700;
+    }
+    .btn:active{ transform: translateY(1px); }
+
+    .err{
+      color: var(--danger);
+      font-weight:700;
+    }
+
+    a{ color:inherit; text-decoration:none; }
+    a:hover{ text-decoration: underline; }
   </style>
 </head>
 
 <body>
   <div class="wrap">
-    <div class="topbar">
-      <div class="left">
-        <div class="clock" id="clock">--:--</div>
-        <div class="label">
-          <div class="title">Headline Stream</div>
-          <div class="sub" id="sub">Markets • Tech • AZ • NFL • World</div>
-        </div>
+    <div class="top">
+      <div class="time" id="clock">--:--</div>
+      <div class="titleBlock">
+        <div class="headlineStream">HEADLINE STREAM</div>
+        <div class="subline">Markets • Tech • AZ • NFL • World • Editing • Gaming</div>
       </div>
-      <div class="live"><span class="dot"></span><span id="status">LIVE</span></div>
+      <div class="status">
+        <span id="updated">Updating…</span>
+        <span class="dot"></span>
+      </div>
     </div>
 
     <div class="card">
-      <div class="content">
-        <div class="kicker">
-          <div class="leftK">
-            <span class="pill" id="bucket">—</span>
-            <span id="source">Loading…</span>
+      <div class="inner">
+        <div class="row">
+          <div class="chip" id="chip">LOADING</div>
+          <div class="meta" id="meta">—</div>
+        </div>
+
+        <div class="bigTitle" id="title">Fetching headlines…</div>
+        <div class="summary" id="summary">Please wait.</div>
+
+        <div class="footer">
+          <div class="pill" id="sourcePill">Source: —</div>
+          <div class="pill" id="idxPill">Item — / —</div>
+          <div class="pill">Auto: <span id="autoPill">90s</span></div>
+
+          <div style="margin-left:auto; display:flex; gap:10px;">
+            <div class="btn" id="prevBtn">◀</div>
+            <div class="btn" id="nextBtn">▶</div>
+            <div class="btn" id="openBtn">Open</div>
           </div>
-          <span id="age">—</span>
         </div>
-
-        <div class="headline" id="headline">Fetching headlines…</div>
-        <div class="summary" id="summary">Summary will appear here (2–4 sentences).</div>
-      </div>
-
-      <div class="footer">
-        <div class="btnrow">
-          <button class="btn" id="prev">Prev</button>
-          <button class="btn" id="next">Next</button>
-          <button class="btn" id="pause">Pause</button>
-          <button class="btn warn" id="refresh">Refresh</button>
-          <button class="btn" id="open">Open</button>
-        </div>
-        <div id="updated">Updated —</div>
       </div>
     </div>
   </div>
 
 <script>
-(() => {
-  const API_HEADLINES = "/api/headlines";
-  const API_SUMMARIZE = "/api/summarize";
+  const API = "/api/headlines?limit=50&reddit=1";
 
-  // Change these without breaking anything:
-  const ROTATE_MS = 90_000;           // 1.5 min
-  const SUMMARY_CACHE_MS = 6 * 60 * 60 * 1000;
-
-  const $ = (id)=>document.getElementById(id);
+  // 60–120 seconds feels good on an Edge panel
+  let ROTATE_MS = 90_000;
 
   let items = [];
   let idx = 0;
-  let paused = false;
   let timer = null;
 
+  const el = (id) => document.getElementById(id);
+
   function tickClock(){
-    $("clock").textContent = new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
-  }
-  setInterval(tickClock, 1000);
-  tickClock();
-
-  function relTime(iso){
-    if(!iso) return "—";
-    const t = new Date(iso).getTime();
-    if(!Number.isFinite(t)) return "—";
-    const m = Math.floor((Date.now() - t) / 60000);
-    if(m < 1) return "just now";
-    if(m < 60) return `${m}m ago`;
-    const h = Math.floor(m/60);
-    if(h < 24) return `${h}h ago`;
-    const d = Math.floor(h/24);
-    return `${d}d ago`;
+    const d = new Date();
+    const h = d.getHours();
+    const m = String(d.getMinutes()).padStart(2,"0");
+    const ampm = h >= 12 ? "PM" : "AM";
+    const hh = ((h + 11) % 12 + 1);
+    el("clock").textContent = `${hh}:${m} ${ampm}`;
   }
 
-  function sumKey(url){ return "sumcache::" + url; }
-
-  async function loadFeeds(){
-    $("status").textContent = "SYNC";
-    try{
-      const r = await fetch(API_HEADLINES + "?t=" + Date.now(), { cache:"no-store" });
-      const data = await r.json();
-      if(!data.ok) throw new Error(data.error || "Headlines API error");
-      items = data.items || [];
-      if(!items.length) throw new Error("No items returned");
-
-      idx = 0;
-      $("updated").textContent = "Updated " + new Date(data.updatedAt || Date.now()).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
-      $("status").textContent = paused ? "PAUSED" : "LIVE";
-
-      render();
-      restartTimer();
-    }catch(e){
-      $("status").textContent = "ERROR";
-      $("headline").textContent = "Could not load headlines";
-      $("summary").textContent = String(e?.message || e);
-      $("bucket").textContent = "—";
-      $("source").textContent = "Check /api/headlines";
-      $("age").textContent = "—";
-      $("updated").textContent = "Updated —";
-    }
+  function setUpdatedLabel(text){
+    el("updated").textContent = text;
   }
 
-  async function loadSummary(item){
-    if(!item?.url) return;
-    const key = sumKey(item.url);
+  function showItem(i){
+    if (!items.length) return;
 
-    try{
-      const raw = localStorage.getItem(key);
-      if(raw){
-        const cached = JSON.parse(raw);
-        if(cached?.t && (Date.now() - cached.t) < SUMMARY_CACHE_MS && cached?.text){
-          $("summary").textContent = cached.text;
-          return;
-        }
-      }
-    }catch(_){}
+    const x = items[i % items.length];
+    idx = i % items.length;
 
-    $("summary").textContent = "Summarizing…";
-    try{
-      const u = new URL(API_SUMMARIZE, location.origin);
-      u.searchParams.set("url", item.url);
-      u.searchParams.set("title", item.title || "");
-      u.searchParams.set("source", item.source || "");
-      const r = await fetch(u.toString(), { cache:"no-store" });
-      const data = await r.json();
-      if(!data.ok) throw new Error(data.error || "Summarize error");
+    el("chip").textContent = (x.category || "NEWS").toUpperCase();
+    el("meta").textContent = x.source ? `${x.source}` : "—";
+    el("title").textContent = x.title || "—";
+    el("summary").textContent = x.summary || "Summary unavailable.";
+    el("sourcePill").innerHTML = `Source: <a href="${x.url}" target="_blank" rel="noreferrer">${escapeHtml(x.url)}</a>`;
+    el("idxPill").textContent = `Item ${idx + 1} / ${items.length}`;
 
-      $("summary").textContent = data.summary || "—";
-      try{
-        localStorage.setItem(key, JSON.stringify({ t: Date.now(), text: $("summary").textContent }));
-      }catch(_){}
-    }catch(_){
-      $("summary").textContent = "Summary unavailable.";
-    }
-  }
-
-  function render(){
-    if(!items.length) return;
-    const it = items[idx];
-
-    $("bucket").textContent = (it.bucket || "News").toUpperCase();
-    $("source").textContent = it.source || "Unknown";
-    $("age").textContent = relTime(it.publishedAt);
-
-    $("headline").textContent = it.title || "—";
-    $("open").onclick = () => window.open(it.url, "_blank", "noopener,noreferrer");
-
-    loadSummary(it);
-  }
-
-  function restartTimer(){
-    if(timer) clearInterval(timer);
-    timer = setInterval(() => { if(!paused) next(); }, ROTATE_MS);
+    // store current URL for Open button
+    el("openBtn").dataset.url = x.url || "";
   }
 
   function next(){
-    if(!items.length) return;
-    idx = (idx + 1) % items.length;
-    render();
+    showItem(idx + 1);
   }
+
   function prev(){
-    if(!items.length) return;
-    idx = (idx - 1 + items.length) % items.length;
-    render();
+    showItem((idx - 1 + items.length) % items.length);
   }
 
-  $("next").onclick = next;
-  $("prev").onclick = prev;
-  $("refresh").onclick = loadFeeds;
+  function startRotate(){
+    stopRotate();
+    el("autoPill").textContent = Math.round(ROTATE_MS/1000) + "s";
+    timer = setInterval(next, ROTATE_MS);
+  }
 
-  $("pause").onclick = () => {
-    paused = !paused;
-    $("pause").textContent = paused ? "Resume" : "Pause";
-    $("status").textContent = paused ? "PAUSED" : "LIVE";
-  };
+  function stopRotate(){
+    if (timer) clearInterval(timer);
+    timer = null;
+  }
 
-  loadFeeds();
-})();
+  async function load(){
+    setUpdatedLabel("Updating…");
+    try{
+      const r = await fetch(API, { cache: "no-store" });
+      const data = await r.json();
+
+      if (!data.ok) throw new Error(data.error || "API error");
+
+      items = data.items || [];
+      if (!items.length) throw new Error("No items returned");
+
+      // randomize slightly so you don’t always see the same first headline
+      idx = Math.floor(Math.random() * items.length);
+      showItem(idx);
+
+      const now = new Date();
+      setUpdatedLabel("Updated " + now.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}));
+      startRotate();
+    }catch(e){
+      el("chip").textContent = "ERROR";
+      el("title").textContent = "Couldn’t load headlines";
+      el("summary").innerHTML = `<span class="err">${escapeHtml(String(e.message || e))}</span>`;
+      setUpdatedLabel("Error");
+      stopRotate();
+    }
+  }
+
+  function escapeHtml(s){
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#39;");
+  }
+
+  // Controls
+  el("nextBtn").addEventListener("click", () => { next(); startRotate(); });
+  el("prevBtn").addEventListener("click", () => { prev(); startRotate(); });
+  el("openBtn").addEventListener("click", () => {
+    const u = el("openBtn").dataset.url;
+    if (u) window.open(u, "_blank", "noopener,noreferrer");
+  });
+
+  // Boot
+  tickClock();
+  setInterval(tickClock, 1000);
+  load();
+  // Refresh the feed list every ~10 minutes (without redeploying)
+  setInterval(load, 10 * 60 * 1000);
 </script>
 </body>
 </html>
