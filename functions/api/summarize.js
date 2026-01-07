@@ -1,33 +1,23 @@
-export async function onRequestGet({ request, env, context }) {
+export async function onRequestGet({ request, env }) {
   const u = new URL(request.url);
   const target = u.searchParams.get("url");
-  const title = u.searchParams.get("title") || "";
+  const title  = u.searchParams.get("title") || "";
   const source = u.searchParams.get("source") || "";
 
-  if (!target) return json({ ok: false, error: "Missing ?url=" }, 400);
-  if (!env.OPENAI_API_KEY) return json({ ok: false, error: "Missing OPENAI_API_KEY env var" }, 500);
+  if (!target) return json({ ok:false, error:"Missing ?url=" }, 400);
+  if (!env.OPENAI_API_KEY) return json({ ok:false, error:"Missing OPENAI_API_KEY env var" }, 500);
 
-  // --- Edge cache (Cloudflare Cache API) ---
-  // Cache key must be a Request. We include title/source so summaries vary when headline text changes.
-  const cacheKeyUrl = new URL(request.url);
-  cacheKeyUrl.pathname = "/__edge_cache__/summarize";
-  cacheKeyUrl.search = ""; // normalize; we'll set our own stable params
-
-  cacheKeyUrl.searchParams.set("url", normalizeUrl(target));
-  cacheKeyUrl.searchParams.set("title", title.slice(0, 180));
-  cacheKeyUrl.searchParams.set("source", source.slice(0, 80));
-
-  const cacheKeyReq = new Request(cacheKeyUrl.toString(), { method: "GET" });
-
-  // If caller passes ?refresh=1 we bypass cache and force a new OpenAI call
-  const forceRefresh = u.searchParams.get("refresh") === "1";
-
-  if (!forceRefresh) {
-    const cached = await caches.default.match(cacheKeyReq);
-    if (cached) return cached;
+  // ---- tiny in-memory cache (per instance) ----
+  const key = `sum:${target}`;
+  const now = Date.now();
+  const hit = memGet(key);
+  if (hit && hit.expiresAt > now) {
+    return json({ ok:true, summary: hit.value, cached:true }, 200, {
+      "cache-control": "public, s-maxage=21600, stale-while-revalidate=86400"
+    });
   }
 
-  // Fetch article (best-effort; some sites block)
+  // Fetch article (best-effort)
   let html = "";
   try {
     const r = await fetch(target, {
@@ -40,17 +30,11 @@ export async function onRequestGet({ request, env, context }) {
     html = await r.text();
   } catch {
     // fall back: summarize only title/source if fetch fails
-    return await summarizeAndCache({
-      env,
-      cacheKeyReq,
-      title,
-      source,
-      text: ""
-    });
+    return summarizeOpenAI(env, { title, source, text: "" }, key);
   }
 
   const text = extractText(html).slice(0, 6500);
-  return await summarizeAndCache({ env, cacheKeyReq, title, source, text });
+  return summarizeOpenAI(env, { title, source, text }, key);
 }
 
 function extractText(html) {
@@ -64,26 +48,7 @@ function extractText(html) {
     .trim();
 }
 
-function normalizeUrl(url) {
-  try {
-    const u = new URL(url);
-    // Strip most tracking params to improve cache hits
-    const drop = new Set([
-      "utm_source","utm_medium","utm_campaign","utm_term","utm_content",
-      "gclid","fbclid","mc_cid","mc_eid","ref","ref_src","src"
-    ]);
-    [...u.searchParams.keys()].forEach(k => {
-      if (drop.has(k)) u.searchParams.delete(k);
-    });
-    // Don’t keep URL fragments
-    u.hash = "";
-    return u.toString();
-  } catch {
-    return String(url || "");
-  }
-}
-
-async function summarizeAndCache({ env, cacheKeyReq, title, source, text }) {
+async function summarizeOpenAI(env, { title, source, text }, cacheKey) {
   const prompt = [
     "Summarize this news item in 2–4 sentences.",
     "Neutral tone. Concrete details only. No hype.",
@@ -95,7 +60,6 @@ async function summarizeAndCache({ env, cacheKeyReq, title, source, text }) {
     text ? `Article text:\n${text}` : "Article text: (not available)"
   ].join("\n");
 
-  // We’ll try OpenAI, but 429 is common if you refresh frequently.
   let r;
   try {
     r = await fetch("https://api.openai.com/v1/responses", {
@@ -105,62 +69,78 @@ async function summarizeAndCache({ env, cacheKeyReq, title, source, text }) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: env.OPENAI_MODEL || "gpt-4.1-mini",
+        model: env.OPENAI_MODEL || "gpt-5",
         input: prompt
       })
     });
   } catch {
-    return json({ ok: false, error: "OpenAI request failed" }, 502);
-  }
-
-  // If rate-limited, try to serve any cached version anyway (even if caller forced refresh)
-  if (r.status === 429) {
-    const cached = await caches.default.match(cacheKeyReq);
-    if (cached) return cached;
-
-    return json({
-      ok: false,
-      error: "OpenAI rate limited (429)",
-      summary: "Summary temporarily unavailable (rate limit). Try again in a minute."
-    }, 429, {
-      "cache-control": "no-store"
-    });
-  }
-
-  if (!r.ok) {
-    const errText = await r.text().catch(() => "");
     return json(
-      { ok: false, error: `OpenAI error ${r.status}`, detail: errText.slice(0, 900) },
-      502,
-      { "cache-control": "no-store" }
+      { ok:false, error:"OpenAI request failed (network)" },
+      502
     );
   }
 
-  const data = await r.json();
+  // Try to parse error body for helpful debugging
+  let bodyText = "";
+  try { bodyText = await r.text(); } catch {}
+  let bodyJson = null;
+  try { bodyJson = bodyText ? JSON.parse(bodyText) : null; } catch {}
 
+  // Handle rate limit nicely so the client doesn't DDoS your own endpoint
+  if (r.status === 429) {
+    const retryAfter = r.headers.get("retry-after");
+    const msg = "Summary temporarily unavailable (rate limit). Try again in a minute.";
+
+    // short cache so repeated client calls back off automatically
+    return json(
+      {
+        ok: false,
+        error: "OpenAI rate limited (429)",
+        retryAfter: retryAfter ? String(retryAfter) : null,
+        openai: bodyJson || bodyText || null,
+        summary: msg
+      },
+      200,
+      { "cache-control": "public, s-maxage=60, stale-while-revalidate=300" }
+    );
+  }
+
+  if (!r.ok) {
+    return json(
+      {
+        ok: false,
+        error: `OpenAI error ${r.status}`,
+        openai: bodyJson || bodyText || null
+      },
+      502
+    );
+  }
+
+  // Parse success body (we already consumed text above)
+  const data = bodyJson || {};
   const summary =
     data.output_text ||
     data?.output?.[0]?.content?.map(c => c.text).filter(Boolean).join("\n") ||
     "";
 
-  const body = {
-    ok: true,
-    summary: String(summary || "").trim() || "No summary returned."
-  };
+  const finalSummary = String(summary || "").trim() || "No summary returned.";
 
-  // Cache it at the edge so repeated refreshes don’t hammer OpenAI
-  const res = json(body, 200, {
-    // Browser should not cache aggressively; Cloudflare edge SHOULD
-    "cache-control": "public, max-age=0, s-maxage=21600, stale-while-revalidate=86400"
-  });
+  // Cache in memory for 6 hours to reduce repeat calls inside the edge runtime
+  memSet(cacheKey, finalSummary, 6 * 60 * 60 * 1000);
 
-  // Put into Cloudflare edge cache
-  await caches.default.put(cacheKeyReq, res.clone());
-
-  return res;
+  return json(
+    { ok: true, summary: finalSummary },
+    200,
+    { "cache-control": "public, s-maxage=21600, stale-while-revalidate=86400" }
+  );
 }
 
-function json(obj, status = 200, extraHeaders = {}) {
+// ---- super tiny in-memory cache helpers ----
+const __MEM = globalThis.__EDGE_MEM__ || (globalThis.__EDGE_MEM__ = new Map());
+function memGet(k) { return __MEM.get(k); }
+function memSet(k, v, ttlMs) { __MEM.set(k, { value: v, expiresAt: Date.now() + ttlMs }); }
+
+function json(obj, status=200, extraHeaders={}) {
   return new Response(JSON.stringify(obj), {
     status,
     headers: {
