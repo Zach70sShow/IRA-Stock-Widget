@@ -2,85 +2,331 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Edge Headlines</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Headlines</title>
   <style>
     :root{
-      --bg:#071015; --card:#0b1820cc; --stroke:#1b3a44;
-      --text:#e7f2f6; --muted:#9fb6bf; --teal:#3fe0c5;
+      --bg0:#061018;
+      --bg1:#081520;
+      --card:rgba(12,22,30,.82);
+      --stroke:rgba(255,255,255,.10);
+      --text:#eaf2ff;
+      --muted:rgba(234,242,255,.72);
+      --teal:#33e6d1;
+      --teal2:rgba(51,230,209,.18);
+      --warn:#ff7a7a;
+      --radius:22px;
     }
-    html,body{height:100%; margin:0; background:radial-gradient(1200px 800px at 30% 10%, #0c2a2f 0%, var(--bg) 55%);}
-    body{font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color:var(--text);}
-    .wrap{height:100%; display:flex; flex-direction:column; padding:18px;}
-    .top{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
-    .title{font-weight:700; letter-spacing:.06em; opacity:.95}
-    .pill{display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border:1px solid var(--stroke); border-radius:999px; background:#07161d99;}
-    .dot{width:8px; height:8px; border-radius:50%; background:var(--teal); box-shadow:0 0 14px #3fe0c5aa;}
-    .card{flex:1; border-radius:18px; border:1px solid var(--stroke); background:linear-gradient(180deg, var(--card), #07141a99); padding:18px; position:relative; overflow:hidden;}
-    .kicker{color:var(--muted); font-size:12px; letter-spacing:.12em; text-transform:uppercase}
-    h1{margin:.35rem 0 .6rem; font-size:34px; line-height:1.05}
-    .meta{display:flex; gap:12px; flex-wrap:wrap; color:var(--muted); font-size:13px}
-    .summary{margin-top:12px; font-size:16px; line-height:1.4; color:#d7e7ee}
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;overflow:hidden}
+    body{
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 800px at 30% 15%, rgba(51,230,209,.14), transparent 55%),
+        radial-gradient(900px 600px at 70% 75%, rgba(120,170,255,.10), transparent 55%),
+        linear-gradient(180deg,var(--bg0),var(--bg1));
+    }
+
+    .wrap{height:100%;padding:18px;display:flex;flex-direction:column;gap:12px}
+
+    .topbar{
+      height:64px;border-radius:999px;
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.20));
+      border:1px solid var(--stroke);
+      box-shadow: 0 18px 40px rgba(0,0,0,.40);
+      display:flex;align-items:center;justify-content:space-between;
+      padding:12px 16px;
+      overflow:hidden;position:relative;
+    }
+    .topbar:before{
+      content:"";position:absolute;inset:-2px;pointer-events:none;
+      background:
+        radial-gradient(700px 260px at 55% 0%, rgba(51,230,209,.18), transparent 55%),
+        radial-gradient(900px 320px at 15% 0%, rgba(120,170,255,.10), transparent 60%);
+      opacity:.9;
+    }
+
+    .left{display:flex;align-items:baseline;gap:12px;z-index:1}
+    .clock{font-size:40px;font-weight:900;letter-spacing:.4px;line-height:1}
+    .label{display:flex;flex-direction:column;gap:2px;margin-top:8px}
+    .label .title{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+    .label .sub{font-size:12px;color:rgba(234,242,255,.55)}
+
+    .live{
+      z-index:1;
+      display:inline-flex;align-items:center;gap:10px;
+      padding:8px 12px;border-radius:999px;
+      background:rgba(0,0,0,.18);
+      border:1px solid rgba(51,230,209,.22);
+      color:rgba(234,242,255,.80);
+      font-weight:800;
+      letter-spacing:.08em;
+      user-select:none;
+    }
+    .dot{
+      width:9px;height:9px;border-radius:99px;background:var(--teal);
+      box-shadow:0 0 18px rgba(51,230,209,.55);
+    }
+
+    .card{
+      flex:1;border-radius:var(--radius);
+      background:var(--card);
+      border:1px solid var(--stroke);
+      box-shadow: 0 22px 55px rgba(0,0,0,.45);
+      padding:18px;
+      display:flex;flex-direction:column;justify-content:space-between;
+      overflow:hidden;position:relative;
+    }
+    .card:before{
+      content:"";position:absolute;inset:-2px;pointer-events:none;
+      background:
+        radial-gradient(900px 520px at 20% 25%, rgba(51,230,209,.10), transparent 55%),
+        radial-gradient(900px 520px at 85% 80%, rgba(120,170,255,.08), transparent 55%);
+      opacity:.8;
+    }
+
+    .content{position:relative;z-index:1;display:flex;flex-direction:column;gap:12px}
+    .kicker{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      color:var(--muted);font-size:13px;font-weight:800;
+    }
+    .kicker .leftK{display:inline-flex;align-items:center;gap:10px}
+    .pill{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:6px 10px;border-radius:999px;
+      background:rgba(51,230,209,.10);
+      border:1px solid rgba(51,230,209,.22);
+      color:rgba(234,242,255,.90);
+      font-size:12px;font-weight:900;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      white-space:nowrap;
+    }
+
+    .headline{
+      font-size:38px;
+      line-height:1.10;
+      font-weight:950;
+      letter-spacing:.2px;
+      text-shadow: 0 10px 26px rgba(0,0,0,.35);
+      /* avoid cut-off on small Edge: clamp to 3 lines */
+      display:-webkit-box;
+      -webkit-box-orient:vertical;
+      -webkit-line-clamp:3;
+      overflow:hidden;
+    }
+
+    .summary{
+      font-size:18px;line-height:1.35;color:rgba(234,242,255,.90);
+      /* clamp summary too */
+      display:-webkit-box;
+      -webkit-box-orient:vertical;
+      -webkit-line-clamp:4;
+      overflow:hidden;
+    }
+
+    .footer{
+      position:relative;z-index:1;
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      font-size:12px;color:rgba(234,242,255,.70);
+      margin-top:10px;
+    }
+
+    .btnrow{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.14);
+      color:rgba(234,242,255,.88);
+      padding:8px 12px;border-radius:999px;
+      font-weight:900;font-size:12px;letter-spacing:.06em;
+      cursor:pointer;user-select:none;
+    }
+    .btn:hover{border-color:rgba(51,230,209,.35)}
+    .btn.warn{border-color:rgba(255,122,122,.35)}
     a{color:inherit}
-    .foot{display:flex; justify-content:space-between; margin-top:10px; color:var(--muted); font-size:12px}
   </style>
 </head>
+
 <body>
   <div class="wrap">
-    <div class="top">
-      <div class="title">HEADLINE STREAM</div>
-      <div class="pill"><span class="dot"></span><span id="status">LIVE</span></div>
+    <div class="topbar">
+      <div class="left">
+        <div class="clock" id="clock">--:--</div>
+        <div class="label">
+          <div class="title">Headline Stream</div>
+          <div class="sub" id="sub">Markets • Tech • AZ • NFL • World</div>
+        </div>
+      </div>
+      <div class="live"><span class="dot"></span><span id="status">LIVE</span></div>
     </div>
 
     <div class="card">
-      <div class="kicker" id="source">Loading…</div>
-      <h1 id="headline">Fetching the next headline…</h1>
-      <div class="meta">
-        <span id="time">—</span>
-        <span id="cache">—</span>
-        <span><a id="link" href="#" target="_blank" rel="noreferrer">Open</a></span>
-      </div>
-      <div class="summary" id="summary">—</div>
+      <div class="content">
+        <div class="kicker">
+          <div class="leftK">
+            <span class="pill" id="bucket">—</span>
+            <span id="source">Loading…</span>
+          </div>
+          <span id="age">—</span>
+        </div>
 
-      <div class="foot">
-        <span>Updates every ~90s</span>
-        <span id="updated">—</span>
+        <div class="headline" id="headline">Fetching headlines…</div>
+        <div class="summary" id="summary">Summary will appear here (2–4 sentences).</div>
+      </div>
+
+      <div class="footer">
+        <div class="btnrow">
+          <button class="btn" id="prev">Prev</button>
+          <button class="btn" id="next">Next</button>
+          <button class="btn" id="pause">Pause</button>
+          <button class="btn warn" id="refresh">Refresh</button>
+          <button class="btn" id="open">Open</button>
+        </div>
+        <div id="updated">Updated —</div>
       </div>
     </div>
   </div>
 
 <script>
-  const REFRESH_MS = 90_000;
+(() => {
+  const API_HEADLINES = "/api/headlines";
+  const API_SUMMARIZE = "/api/summarize";
 
-  async function refresh() {
+  // Change these without breaking anything:
+  const ROTATE_MS = 90_000;           // 1.5 min
+  const SUMMARY_CACHE_MS = 6 * 60 * 60 * 1000;
+
+  const $ = (id)=>document.getElementById(id);
+
+  let items = [];
+  let idx = 0;
+  let paused = false;
+  let timer = null;
+
+  function tickClock(){
+    $("clock").textContent = new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+  }
+  setInterval(tickClock, 1000);
+  tickClock();
+
+  function relTime(iso){
+    if(!iso) return "—";
+    const t = new Date(iso).getTime();
+    if(!Number.isFinite(t)) return "—";
+    const m = Math.floor((Date.now() - t) / 60000);
+    if(m < 1) return "just now";
+    if(m < 60) return `${m}m ago`;
+    const h = Math.floor(m/60);
+    if(h < 24) return `${h}h ago`;
+    const d = Math.floor(h/24);
+    return `${d}d ago`;
+  }
+
+  function sumKey(url){ return "sumcache::" + url; }
+
+  async function loadFeeds(){
+    $("status").textContent = "SYNC";
     try{
-      document.getElementById("status").textContent = "SYNC";
-      const res = await fetch("/api/headlines", { cache: "no-store" });
-      const data = await res.json();
+      const r = await fetch(API_HEADLINES + "?t=" + Date.now(), { cache:"no-store" });
+      const data = await r.json();
+      if(!data.ok) throw new Error(data.error || "Headlines API error");
+      items = data.items || [];
+      if(!items.length) throw new Error("No items returned");
 
-      if(!data.ok) throw new Error(data.error || "Unknown error");
+      idx = 0;
+      $("updated").textContent = "Updated " + new Date(data.updatedAt || Date.now()).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+      $("status").textContent = paused ? "PAUSED" : "LIVE";
 
-      document.getElementById("source").textContent = data.headline.source;
-      document.getElementById("headline").textContent = data.headline.title;
-      document.getElementById("time").textContent = data.headline.publishedAt || "—";
-      document.getElementById("summary").textContent = data.summary || "—";
-      document.getElementById("cache").textContent = data.cache ? `Cache: ${data.cache}` : "";
-      document.getElementById("updated").textContent = `Updated ${new Date(data.updatedAt).toLocaleTimeString()}`;
-
-      const link = document.getElementById("link");
-      link.href = data.headline.url || "#";
-      link.style.pointerEvents = data.headline.url ? "auto" : "none";
-      link.style.opacity = data.headline.url ? "1" : ".5";
-
-      document.getElementById("status").textContent = "LIVE";
-    } catch(e){
-      document.getElementById("status").textContent = "ERROR";
-      document.getElementById("summary").textContent = String(e?.message || e);
+      render();
+      restartTimer();
+    }catch(e){
+      $("status").textContent = "ERROR";
+      $("headline").textContent = "Could not load headlines";
+      $("summary").textContent = String(e?.message || e);
+      $("bucket").textContent = "—";
+      $("source").textContent = "Check /api/headlines";
+      $("age").textContent = "—";
+      $("updated").textContent = "Updated —";
     }
   }
 
-  refresh();
-  setInterval(refresh, REFRESH_MS);
+  async function loadSummary(item){
+    if(!item?.url) return;
+    const key = sumKey(item.url);
+
+    try{
+      const raw = localStorage.getItem(key);
+      if(raw){
+        const cached = JSON.parse(raw);
+        if(cached?.t && (Date.now() - cached.t) < SUMMARY_CACHE_MS && cached?.text){
+          $("summary").textContent = cached.text;
+          return;
+        }
+      }
+    }catch(_){}
+
+    $("summary").textContent = "Summarizing…";
+    try{
+      const u = new URL(API_SUMMARIZE, location.origin);
+      u.searchParams.set("url", item.url);
+      u.searchParams.set("title", item.title || "");
+      u.searchParams.set("source", item.source || "");
+      const r = await fetch(u.toString(), { cache:"no-store" });
+      const data = await r.json();
+      if(!data.ok) throw new Error(data.error || "Summarize error");
+
+      $("summary").textContent = data.summary || "—";
+      try{
+        localStorage.setItem(key, JSON.stringify({ t: Date.now(), text: $("summary").textContent }));
+      }catch(_){}
+    }catch(_){
+      $("summary").textContent = "Summary unavailable.";
+    }
+  }
+
+  function render(){
+    if(!items.length) return;
+    const it = items[idx];
+
+    $("bucket").textContent = (it.bucket || "News").toUpperCase();
+    $("source").textContent = it.source || "Unknown";
+    $("age").textContent = relTime(it.publishedAt);
+
+    $("headline").textContent = it.title || "—";
+    $("open").onclick = () => window.open(it.url, "_blank", "noopener,noreferrer");
+
+    loadSummary(it);
+  }
+
+  function restartTimer(){
+    if(timer) clearInterval(timer);
+    timer = setInterval(() => { if(!paused) next(); }, ROTATE_MS);
+  }
+
+  function next(){
+    if(!items.length) return;
+    idx = (idx + 1) % items.length;
+    render();
+  }
+  function prev(){
+    if(!items.length) return;
+    idx = (idx - 1 + items.length) % items.length;
+    render();
+  }
+
+  $("next").onclick = next;
+  $("prev").onclick = prev;
+  $("refresh").onclick = loadFeeds;
+
+  $("pause").onclick = () => {
+    paused = !paused;
+    $("pause").textContent = paused ? "Resume" : "Pause";
+    $("status").textContent = paused ? "PAUSED" : "LIVE";
+  };
+
+  loadFeeds();
+})();
 </script>
 </body>
 </html>
