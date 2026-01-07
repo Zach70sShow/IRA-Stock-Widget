@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rain Radar Widget</title>
+  <style>
+    :root{
+      color-scheme: dark;
+      --bg0:#060b14;
+      --bg1:#0a1020;
+      --card: rgba(255,255,255,0.06);
+      --stroke: rgba(255,255,255,0.12);
+      --text:#e9eefc;
+      --muted: rgba(233,238,252,0.72);
+      --teal:#33e6d1;
+      --teal2: rgba(51,230,209,0.22);
+      --radius: 22px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      height:100vh;
+      overflow:hidden;
+      font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1100px 700px at 70% 30%, rgba(51,230,209,0.10), transparent 60%),
+        radial-gradient(1000px 650px at 20% 80%, rgba(120,170,255,0.10), transparent 55%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+    }
+    body:before{
+      content:"";
+      position:fixed; inset:0;
+      pointer-events:none;
+      background:
+        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 44px 44px;
+      opacity:0.12;
+      mask-image: radial-gradient(circle at 55% 45%, black 55%, transparent 78%);
+    }
+
+    .wrap{
+      height:100%;
+      padding: 12px 14px;
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+    }
+
+    .top{
+      display:flex;
+      justify-content:space-between;
+      align-items:baseline;
+      gap:12px;
+      padding: 2px 2px 0 2px;
+    }
+    .title{
+      font-weight:950;
+      letter-spacing:0.6px;
+      font-size:16px;
+      text-transform: uppercase;
+      color: rgba(233,238,252,0.86);
+    }
+    .stamp{
+      font-size:12px;
+      color: var(--muted);
+      white-space:nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .card{
+      flex:1;
+      border-radius: var(--radius);
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+      position:relative;
+    }
+
+    /* Radar panel */
+    .radar{
+      flex:1;
+      margin: 14px;
+      border-radius: 18px;
+      background: rgba(0,0,0,0.20);
+      border: 1px solid rgba(255,255,255,0.10);
+      position:relative;
+      overflow:hidden;
+      min-height:0;
+    }
+
+    /* Base “map-ish” texture: rings + faint grid + contour-ish noise */
+    .radar:before{
+      content:"";
+      position:absolute; inset:-140px;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(51,230,209,0.16), transparent 55%),
+        repeating-radial-gradient(circle at 50% 50%,
+          rgba(233,238,252,0.06) 0px,
+          rgba(233,238,252,0.06) 1px,
+          transparent 1px,
+          transparent 42px
+        ),
+        repeating-linear-gradient(0deg,
+          rgba(233,238,252,0.035),
+          rgba(233,238,252,0.035) 1px,
+          transparent 1px,
+          transparent 28px
+        ),
+        repeating-linear-gradient(90deg,
+          rgba(233,238,252,0.028),
+          rgba(233,238,252,0.028) 1px,
+          transparent 1px,
+          transparent 28px
+        );
+      opacity: 0.62;
+    }
+
+    /* Big radar sweep */
+    .sweep{
+      position:absolute;
+      inset:-70%;
+      background: conic-gradient(from 0deg,
+        rgba(51,230,209,0.0),
+        rgba(51,230,209,0.0) 25%,
+        rgba(51,230,209,0.26) 40%,
+        rgba(51,230,209,0.0) 55%,
+        rgba(51,230,209,0.0)
+      );
+      animation: spin 4.6s linear infinite;
+      mix-blend-mode: screen;
+      opacity: 0.70;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* “Storm cells” blobs drifting */
+    .cells{
+      position:absolute; inset:0;
+      filter: blur(0.2px);
+      opacity: 0.95;
+      pointer-events:none;
+    }
+    .cell{
+      position:absolute;
+      width: 240px; height: 240px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 40% 40%,
+        rgba(120,170,255,0.32),
+        rgba(51,230,209,0.18) 35%,
+        rgba(51,230,209,0.08) 55%,
+        transparent 70%
+      );
+      mix-blend-mode: screen;
+      animation: drift 9s ease-in-out infinite;
+    }
+    .cell:nth-child(2){
+      width: 320px; height: 320px;
+      background: radial-gradient(circle at 45% 45%,
+        rgba(120,170,255,0.24),
+        rgba(51,230,209,0.14) 42%,
+        rgba(51,230,209,0.06) 62%,
+        transparent 75%
+      );
+      animation-duration: 12s;
+      opacity: 0.9;
+    }
+    .cell:nth-child(3){
+      width: 200px; height: 200px;
+      background: radial-gradient(circle at 45% 45%,
+        rgba(120,170,255,0.20),
+        rgba(51,230,209,0.12) 40%,
+        rgba(51,230,209,0.05) 60%,
+        transparent 75%
+      );
+      animation-duration: 10s;
+      opacity: 0.85;
+    }
+    @keyframes drift{
+      0%   { transform: translate(0px, 0px) scale(1.0); }
+      50%  { transform: translate(60px, -40px) scale(1.05); }
+      100% { transform: translate(0px, 0px) scale(1.0); }
+    }
+
+    /* Rain streak overlay */
+    .rain{
+      position:absolute; inset:0;
+      pointer-events:none;
+      opacity: 0;
+      transition: opacity .4s ease;
+    }
+    .rain.on{ opacity: 1; }
+
+    .rain:before, .rain:after{
+      content:"";
+      position:absolute; inset:-50%;
+      background-image:
+        repeating-linear-gradient(115deg,
+          rgba(233,238,252,0.00) 0px,
+          rgba(233,238,252,0.00) 8px,
+          rgba(233,238,252,0.20) 9px,
+          rgba(233,238,252,0.00) 12px
+        );
+      background-size: 24px 24px;
+      animation: rainMove 0.65s linear infinite;
+      mix-blend-mode: screen;
+    }
+    .rain:after{
+      opacity: 0.55;
+      filter: blur(0.6px);
+      animation-duration: 0.85s;
+    }
+    @keyframes rainMove{
+      to { transform: translate3d(140px, 220px, 0); }
+    }
+
+    /* Bottom HUD */
+    .hud{
+      position:absolute;
+      left: 14px; right: 14px; bottom: 14px;
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:12px;
+      pointer-events:none;
+    }
+    .hudLeft{
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(51,230,209,0.10);
+      border: 1px solid rgba(51,230,209,0.22);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: rgba(233,238,252,0.92);
+      width: fit-content;
+    }
+    .dot{
+      width:8px; height:8px; border-radius:99px;
+      background: var(--teal);
+      box-shadow: 0 0 14px rgba(51,230,209,0.55);
+    }
+    .desc{
+      font-size: 22px;
+      font-weight: 950;
+      line-height: 1.1;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width: 70vw;
+      text-shadow: 0 10px 24px rgba(0,0,0,0.40);
+    }
+    .sub{
+      font-size: 12px;
+      color: rgba(233,238,252,0.70);
+      font-weight: 850;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width: 70vw;
+    }
+    .hudRight{
+      text-align:right;
+      font-variant-numeric: tabular-nums;
+    }
+    .big{
+      font-size: 44px;
+      font-weight: 950;
+      line-height: 1;
+      text-shadow: 0 10px 24px rgba(0,0,0,0.40);
+    }
+    .tiny{
+      margin-top: 6px;
+      font-size: 12px;
+      color: rgba(233,238,252,0.70);
+      font-weight: 850;
+      letter-spacing: 0.3px;
+    }
+
+    /* Subtle vignette */
+    .vignette{
+      position:absolute; inset:0;
+      background: radial-gradient(circle at 50% 45%, transparent 55%, rgba(0,0,0,0.45) 100%);
+      pointer-events:none;
+      opacity: 0.55;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="title">Radar</div>
+      <div class="stamp" id="stamp">—</div>
+    </div>
+
+    <div class="card">
+      <div class="radar" id="radar">
+        <div class="cells">
+          <div class="cell" style="left:12%; top:18%"></div>
+          <div class="cell" style="left:48%; top:8%"></div>
+          <div class="cell" style="left:62%; top:44%"></div>
+        </div>
+
+        <div class="sweep"></div>
+
+        <!-- rain overlay toggled by JS -->
+        <div class="rain on" id="rain"></div>
+
+        <div class="hud">
+          <div class="hudLeft">
+            <div class="chip"><span class="dot"></span><span id="mode">RAIN MODE</span></div>
+            <div class="desc" id="desc">Moderate rain • scanning</div>
+            <div class="sub" id="sub">Placeholder radar texture (no API) • looks great on Edge</div>
+          </div>
+          <div class="hudRight">
+            <div class="big" id="temp">56°</div>
+            <div class="tiny" id="extra">Wind 14 mph • AQI 32</div>
+          </div>
+        </div>
+
+        <div class="vignette"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // Toggle this to "true" or "false"
+  const IS_RAINING = true;
+
+  // Fake-but-believable values to show what it looks like on its own
+  const demo = {
+    descRain: "Moderate rain • scanning",
+    descClear: "Clear skies • scanning",
+    temp: 56,
+    wind: 14,
+    aqi: 32
+  };
+
+  function tickStamp(){
+    const d = new Date();
+    document.getElementById("stamp").textContent =
+      "Updated " + d.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
+  }
+
+  function setMode(raining){
+    const rain = document.getElementById("rain");
+    const mode = document.getElementById("mode");
+    const desc = document.getElementById("desc");
+
+    if(raining){
+      rain.classList.add("on");
+      mode.textContent = "RAIN MODE";
+      desc.textContent = demo.descRain;
+    }else{
+      rain.classList.remove("on");
+      mode.textContent = "SCAN MODE";
+      desc.textContent = demo.descClear;
+    }
+
+    document.getElementById("temp").textContent = demo.temp + "°";
+    document.getElementById("extra").textContent = `Wind ${demo.wind} mph • AQI ${demo.aqi}`;
+  }
+
+  setMode(IS_RAINING);
+  tickStamp();
+  setInterval(tickStamp, 15_000);
+</script>
+</body>
+</html>
