@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Edge Headlines</title>
+  <style>
+    :root{
+      --bg:#071015; --card:#0b1820cc; --stroke:#1b3a44;
+      --text:#e7f2f6; --muted:#9fb6bf; --teal:#3fe0c5;
+    }
+    html,body{height:100%; margin:0; background:radial-gradient(1200px 800px at 30% 10%, #0c2a2f 0%, var(--bg) 55%);}
+    body{font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color:var(--text);}
+    .wrap{height:100%; display:flex; flex-direction:column; padding:18px;}
+    .top{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+    .title{font-weight:700; letter-spacing:.06em; opacity:.95}
+    .pill{display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border:1px solid var(--stroke); border-radius:999px; background:#07161d99;}
+    .dot{width:8px; height:8px; border-radius:50%; background:var(--teal); box-shadow:0 0 14px #3fe0c5aa;}
+    .card{flex:1; border-radius:18px; border:1px solid var(--stroke); background:linear-gradient(180deg, var(--card), #07141a99); padding:18px; position:relative; overflow:hidden;}
+    .kicker{color:var(--muted); font-size:12px; letter-spacing:.12em; text-transform:uppercase}
+    h1{margin:.35rem 0 .6rem; font-size:34px; line-height:1.05}
+    .meta{display:flex; gap:12px; flex-wrap:wrap; color:var(--muted); font-size:13px}
+    .summary{margin-top:12px; font-size:16px; line-height:1.4; color:#d7e7ee}
+    a{color:inherit}
+    .foot{display:flex; justify-content:space-between; margin-top:10px; color:var(--muted); font-size:12px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="title">HEADLINE STREAM</div>
+      <div class="pill"><span class="dot"></span><span id="status">LIVE</span></div>
+    </div>
+
+    <div class="card">
+      <div class="kicker" id="source">Loading…</div>
+      <h1 id="headline">Fetching the next headline…</h1>
+      <div class="meta">
+        <span id="time">—</span>
+        <span id="cache">—</span>
+        <span><a id="link" href="#" target="_blank" rel="noreferrer">Open</a></span>
+      </div>
+      <div class="summary" id="summary">—</div>
+
+      <div class="foot">
+        <span>Updates every ~90s</span>
+        <span id="updated">—</span>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const REFRESH_MS = 90_000;
+
+  async function refresh() {
+    try{
+      document.getElementById("status").textContent = "SYNC";
+      const res = await fetch("/api/headlines", { cache: "no-store" });
+      const data = await res.json();
+
+      if(!data.ok) throw new Error(data.error || "Unknown error");
+
+      document.getElementById("source").textContent = data.headline.source;
+      document.getElementById("headline").textContent = data.headline.title;
+      document.getElementById("time").textContent = data.headline.publishedAt || "—";
+      document.getElementById("summary").textContent = data.summary || "—";
+      document.getElementById("cache").textContent = data.cache ? `Cache: ${data.cache}` : "";
+      document.getElementById("updated").textContent = `Updated ${new Date(data.updatedAt).toLocaleTimeString()}`;
+
+      const link = document.getElementById("link");
+      link.href = data.headline.url || "#";
+      link.style.pointerEvents = data.headline.url ? "auto" : "none";
+      link.style.opacity = data.headline.url ? "1" : ".5";
+
+      document.getElementById("status").textContent = "LIVE";
+    } catch(e){
+      document.getElementById("status").textContent = "ERROR";
+      document.getElementById("summary").textContent = String(e?.message || e);
+    }
+  }
+
+  refresh();
+  setInterval(refresh, REFRESH_MS);
+</script>
+</body>
+</html>
