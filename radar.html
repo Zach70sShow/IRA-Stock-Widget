@@ -6,155 +6,196 @@
 <title>Phoenix Radar</title>
 
 <style>
-html, body {
-  margin: 0;
-  padding: 0;
-  background: #05080c;
-  color: #e6f1ff;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  height: 100%;
-}
+  html, body { margin:0; height:100%; background:#05080c; color:#e6f1ff; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  .wrap { position:relative; width:100%; height:100vh; overflow:hidden; border-radius:16px; }
 
-.radar-wrapper {
-  position: relative;
-  width: 100%;
-  height: 100vh;
-  overflow: hidden;
-  border-radius: 16px;
-}
+  /* Use an <img> so we can detect load/error reliably */
+  .radarImg {
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    object-fit: cover;
+    filter: saturate(1.05) contrast(1.08);
+    opacity: 0.95;
+  }
 
-.radar {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-  transition: background-image 0.4s ease;
-}
+  /* Subtle scan texture */
+  .scan {
+    position:absolute; inset:0; pointer-events:none;
+    background:
+      repeating-linear-gradient(
+        135deg,
+        rgba(255,255,255,0.03) 0px,
+        rgba(255,255,255,0.03) 2px,
+        transparent 2px,
+        transparent 7px
+      );
+    opacity: 0.55;
+  }
 
-/* Dark overlay + scan texture */
-.radar::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    repeating-linear-gradient(
-      135deg,
-      rgba(255,255,255,0.03) 0px,
-      rgba(255,255,255,0.03) 2px,
-      transparent 2px,
-      transparent 6px
-    );
-  pointer-events: none;
-}
+  /* Header + controls */
+  .header { position:absolute; top:14px; left:18px; font-size:16px; font-weight:700; letter-spacing:.8px; opacity:.9; }
+  .controls { position:absolute; top:12px; right:18px; display:flex; gap:8px; }
+  .controls button {
+    background: rgba(0, 180, 160, 0.14);
+    color: #7fffe6;
+    border: 1px solid rgba(0,180,160,0.35);
+    padding: 6px 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 650;
+  }
+  .controls button.active { background: rgba(0,180,160,0.33); }
 
-.header {
-  position: absolute;
-  top: 14px;
-  left: 18px;
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
+  .footer { position:absolute; bottom:12px; left:18px; font-size:12px; opacity:.85; }
+  .footer .sub { display:block; font-size:11px; opacity:.6; margin-top:2px; }
 
-.zoom-controls {
-  position: absolute;
-  top: 14px;
-  right: 18px;
-  display: flex;
-  gap: 8px;
-}
-
-.zoom-controls button {
-  background: rgba(0, 180, 160, 0.15);
-  color: #7fffe6;
-  border: 1px solid rgba(0,180,160,0.35);
-  padding: 6px 10px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.zoom-controls button.active {
-  background: rgba(0,180,160,0.35);
-}
-
-.footer {
-  position: absolute;
-  bottom: 14px;
-  left: 18px;
-  font-size: 13px;
-  opacity: 0.85;
-}
-
-.footer span {
-  display: block;
-  font-size: 11px;
-  opacity: 0.6;
-}
+  /* Error / status card */
+  .statusCard{
+    position:absolute;
+    left:18px; right:18px;
+    bottom:54px;
+    padding:12px 14px;
+    border-radius:14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 14px 40px rgba(0,0,0,.35);
+    display:none;
+  }
+  .statusCard.show{ display:block; }
+  .statusTitle{ font-weight:800; letter-spacing:.4px; font-size:12px; opacity:.9; text-transform:uppercase; }
+  .statusMsg{ margin-top:6px; font-size:12px; opacity:.85; }
+  .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
 </style>
 </head>
 
 <body>
+<div class="wrap">
+  <img id="radarImg" class="radarImg" alt="Radar tile"/>
+  <div class="scan"></div>
 
-<div class="radar-wrapper">
-  <div id="radar" class="radar"></div>
+  <div class="header">PHOENIX WEATHER RADAR</div>
 
-  <div class="header">
-    PHOENIX WEATHER RADAR
+  <div class="controls">
+    <button id="z11" onclick="setZoom(11)">Metro</button>
+    <button id="z9"  onclick="setZoom(9)" class="active">Valley</button>
+    <button id="z7"  onclick="setZoom(7)">Regional</button>
   </div>
 
-  <div class="zoom-controls">
-    <button onclick="setZoom(11)" id="z11">Metro</button>
-    <button onclick="setZoom(9)" id="z9" class="active">Valley</button>
-    <button onclick="setZoom(7)" id="z7">Regional</button>
+  <div id="statusCard" class="statusCard">
+    <div class="statusTitle" id="statusTitle">Status</div>
+    <div class="statusMsg" id="statusMsg">—</div>
   </div>
 
   <div class="footer">
     Live radar · RainViewer
-    <span>Shows measurable reflectivity (light drizzle may be faint)</span>
+    <span class="sub">If it’s “blank,” we’ll show you why (bad frame, no data, etc.)</span>
   </div>
 </div>
 
 <script>
-const LAT = 33.4484;
-const LON = -112.0740;
+  // Phoenix
+  const LAT = 33.4484;
+  const LON = -112.0740;
 
-// Convert lat/lon to tile X/Y
-function lon2tile(lon, zoom) {
-  return Math.floor((lon + 180) / 360 * Math.pow(2, zoom));
-}
-function lat2tile(lat, zoom) {
-  return Math.floor(
-    (1 - Math.log(Math.tan(lat * Math.PI / 180) +
-    1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 *
-    Math.pow(2, zoom)
-  );
-}
+  let zoom = 9;
+  let frameTime = null; // latest available radar frame time (seconds)
 
-let currentZoom = 9;
+  function lon2tile(lon, z){ return Math.floor((lon + 180) / 360 * Math.pow(2, z)); }
+  function lat2tile(lat, z){
+    return Math.floor(
+      (1 - Math.log(Math.tan(lat*Math.PI/180) + 1/Math.cos(lat*Math.PI/180)) / Math.PI) / 2
+      * Math.pow(2, z)
+    );
+  }
 
-function setZoom(z) {
-  currentZoom = z;
-  document.querySelectorAll(".zoom-controls button")
-    .forEach(b => b.classList.remove("active"));
-  document.getElementById("z"+z).classList.add("active");
-  updateRadar();
-}
+  function showStatus(title, msg){
+    document.getElementById("statusTitle").textContent = title;
+    document.getElementById("statusMsg").innerHTML = msg;
+    document.getElementById("statusCard").classList.add("show");
+  }
+  function hideStatus(){
+    document.getElementById("statusCard").classList.remove("show");
+  }
 
-function updateRadar() {
-  const x = lon2tile(LON, currentZoom);
-  const y = lat2tile(LAT, currentZoom);
-  const ts = Math.floor(Date.now() / 1000 / 300) * 300;
+  async function fetchLatestFrame(){
+    // RainViewer publishes available frames here (no key)
+    const url = "https://api.rainviewer.com/public/weather-maps.json";
+    const r = await fetch(url, { cache: "no-store" });
+    if(!r.ok) throw new Error(`weather-maps.json HTTP ${r.status}`);
+    const data = await r.json();
 
-  const url = `https://tilecache.rainviewer.com/v2/radar/${ts}/${currentZoom}/${x}/${y}/2/1_0.png`;
+    // Prefer latest "past" frame (most recent observation)
+    const past = data?.radar?.past;
+    if(!Array.isArray(past) || past.length === 0) throw new Error("No radar frames returned");
 
-  document.getElementById("radar").style.backgroundImage =
-    `url("${url}")`;
-}
+    // The last element is usually the most recent
+    const latest = past[past.length - 1];
+    if(!latest?.time) throw new Error("Radar frame missing time");
 
-updateRadar();
-setInterval(updateRadar, 300000); // refresh every 5 min
+    return latest.time; // seconds
+  }
+
+  function setZoom(z){
+    zoom = z;
+    document.querySelectorAll(".controls button").forEach(b => b.classList.remove("active"));
+    document.getElementById("z"+z).classList.add("active");
+    updateRadar();
+  }
+
+  function buildTileUrl(timeSec){
+    const x = lon2tile(LON, zoom);
+    const y = lat2tile(LAT, zoom);
+
+    // RainViewer tile format:
+    // https://tilecache.rainviewer.com/v2/radar/{time}/{z}/{x}/{y}/2/1_1.png
+    // "1_1" tends to be the more visible palette than "1_0".
+    return `https://tilecache.rainviewer.com/v2/radar/${timeSec}/${zoom}/${x}/${y}/2/1_1.png?cb=${Date.now()}`;
+  }
+
+  function updateRadar(){
+    if(!frameTime){
+      showStatus("Loading radar…", "Fetching latest radar frame…");
+      return;
+    }
+
+    const img = document.getElementById("radarImg");
+    const url = buildTileUrl(frameTime);
+
+    hideStatus();
+
+    img.onerror = () => {
+      showStatus(
+        "Radar tile failed to load",
+        `Tried: <span class="mono">${url.replaceAll("&","&amp;")}</span><br/><br/>
+         This usually means the frame expired or the tile for this zoom/cell isn’t available.`
+      );
+    };
+
+    img.onload = () => {
+      // If the tile loads but contains no rain, it may look “empty” but that’s real data.
+      hideStatus();
+    };
+
+    img.src = url;
+  }
+
+  async function refresh(){
+    try{
+      frameTime = await fetchLatestFrame();
+      updateRadar();
+      // Debug-ish status (optional): comment this out if you hate it.
+      // showStatus("Radar OK", `Frame: <span class="mono">${frameTime}</span> · Zoom ${zoom}`);
+      // setTimeout(hideStatus, 1200);
+    }catch(e){
+      showStatus("Radar unavailable", `${String(e.message || e)}`);
+    }
+  }
+
+  // Initial load + refresh every 2 minutes
+  refresh();
+  setInterval(refresh, 120000);
 </script>
-
 </body>
 </html>
