@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Phoenix Weather Radar</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Phoenix Weather Radar (Live)</title>
 
   <!-- Leaflet (map) -->
   <link
@@ -21,15 +21,19 @@
   <style>
     :root{
       color-scheme: dark;
+
       --bg0:#060b14;
       --bg1:#0a1020;
       --card: rgba(255,255,255,0.06);
       --stroke: rgba(255,255,255,0.12);
-      --text: #e9eefc;
+      --text:#e9eefc;
       --muted: rgba(233,238,252,0.72);
-      --teal: #33e6d1;
+      --teal:#33e6d1;
+      --teal2: rgba(51,230,209,0.22);
+
       --radius: 22px;
     }
+
     *{ box-sizing:border-box; }
     body{
       margin:0;
@@ -42,9 +46,12 @@
         radial-gradient(1000px 650px at 20% 80%, rgba(120,170,255,0.10), transparent 55%),
         linear-gradient(180deg, var(--bg0), var(--bg1));
     }
+
+    /* subtle grid */
     body:before{
       content:"";
-      position:fixed; inset:0;
+      position:fixed;
+      inset:0;
       pointer-events:none;
       background:
         linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
@@ -54,36 +61,38 @@
       mask-image: radial-gradient(circle at 55% 45%, black 55%, transparent 78%);
     }
 
-    .wrap{ height:100%; padding: 12px 14px; display:flex; flex-direction:column; gap:10px; }
-    .card{
-      flex:1;
-      border-radius: var(--radius);
-      background: var(--card);
-      border: 1px solid var(--stroke);
-      overflow:hidden;
+    .wrap{
+      height:100%;
+      padding: 12px 14px;
       display:flex;
       flex-direction:column;
+      gap:10px;
     }
 
-    .topbar{
+    .top{
       display:flex;
       justify-content:space-between;
       align-items:center;
-      padding: 14px 16px;
-      border-bottom: 1px solid rgba(255,255,255,0.10);
-      background: rgba(0,0,0,0.14);
-      gap: 10px;
+      gap:12px;
+      padding: 2px 2px 0 2px;
     }
+
     .title{
-      font-weight: 950;
-      letter-spacing: 0.4px;
-      font-size: 18px;
-      opacity: 0.95;
+      font-weight:900;
+      letter-spacing:0.5px;
+      font-size:18px;
+      opacity:0.95;
     }
-    .right{
-      display:flex; align-items:center; gap:10px;
+
+    .stamp{
+      font-size:12px;
+      color: var(--muted);
+      white-space:nowrap;
+      display:flex;
+      align-items:center;
+      gap:10px;
     }
-    .stamp{ font-size:12px; color: var(--muted); white-space:nowrap; }
+
     .pill{
       display:inline-flex;
       align-items:center;
@@ -95,7 +104,6 @@
       background: rgba(51,230,209,0.10);
       border: 1px solid rgba(51,230,209,0.22);
       color: rgba(233,238,252,0.92);
-      user-select:none;
     }
     .dot{
       width:8px; height:8px; border-radius:999px;
@@ -103,159 +111,199 @@
       box-shadow: 0 0 12px rgba(51,230,209,0.5);
     }
 
+    .card{
+      flex:1;
+      border-radius: var(--radius);
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+    }
+
+    .cardHead{
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      background: rgba(0,0,0,0.12);
+    }
+
+    .sub{
+      font-size:12px;
+      color: rgba(233,238,252,0.70);
+      font-weight: 800;
+      letter-spacing:0.4px;
+      text-transform: uppercase;
+    }
+
+    .controls{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .btnRow{
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+
+    button{
+      appearance:none;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      color: rgba(233,238,252,0.92);
+      font-weight: 900;
+      font-size: 12px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      cursor:pointer;
+      letter-spacing:0.2px;
+    }
+    button:hover{ border-color: rgba(51,230,209,0.35); }
+    button.active{
+      border-color: rgba(51,230,209,0.55);
+      box-shadow: 0 0 0 2px rgba(51,230,209,0.10) inset;
+    }
+
     .mapWrap{
       position:relative;
       flex:1;
-      padding: 12px;
+      min-height:0;
     }
-    .mapCard{
-      position:absolute;
-      inset:12px;
-      border-radius: 18px;
-      overflow:hidden;
-      border: 1px solid rgba(255,255,255,0.10);
-      background: rgba(0,0,0,0.18);
-    }
-    #map{ width:100%; height:100%; }
 
-    /* Controls overlay */
-    .controls{
+    #map{
       position:absolute;
-      top: 22px;
-      right: 22px;
-      display:flex;
-      gap:8px;
-      z-index: 9999;
-    }
-    .btn{
-      border: 1px solid rgba(51,230,209,0.25);
-      background: rgba(0,0,0,0.35);
-      color: rgba(233,238,252,0.92);
-      padding: 7px 10px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 900;
-      cursor: pointer;
-      user-select:none;
-      backdrop-filter: blur(8px);
-    }
-    .btn.active{
-      border-color: rgba(51,230,209,0.55);
-      box-shadow: 0 0 18px rgba(51,230,209,0.18);
+      inset:0;
+      width:100%;
+      height:100%;
+      border-radius: 0 0 var(--radius) var(--radius);
     }
 
     .hud{
       position:absolute;
-      left: 22px;
-      bottom: 22px;
-      z-index:9999;
+      left: 12px;
+      bottom: 12px;
+      right: 12px;
       display:flex;
-      flex-direction:column;
-      gap: 10px;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:10px;
       pointer-events:none;
     }
-    .hudLine{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      pointer-events:auto;
-    }
 
-    .play{
+    .hud .box{
       pointer-events:auto;
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding: 8px 12px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,0.14);
       background: rgba(0,0,0,0.35);
-      backdrop-filter: blur(8px);
-      font-weight: 900;
-      cursor:pointer;
-      user-select:none;
-    }
-    .mini{
-      font-size: 12px;
-      color: rgba(233,238,252,0.72);
-      max-width: 520px;
-      line-height: 1.25;
-    }
-
-    .error{
-      position:absolute;
-      left: 22px;
-      top: 70px;
-      right: 22px;
-      z-index: 9999;
-      padding: 12px 14px;
+      border: 1px solid rgba(255,255,255,0.14);
       border-radius: 14px;
-      background: rgba(255,80,80,0.10);
-      border: 1px solid rgba(255,80,80,0.28);
-      color: rgba(233,238,252,0.92);
-      display:none;
-    }
-    .error b{ display:block; margin-bottom: 6px; }
-    .error code{
-      display:block;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size: 11px;
-      opacity:0.95;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      padding: 10px 12px;
+      backdrop-filter: blur(10px);
+      max-width: 70%;
     }
 
-    /* Leaflet tweaks (dark, subtle) */
+    .hud .big{
+      font-size:14px;
+      font-weight: 950;
+      line-height:1.1;
+    }
+    .hud .small{
+      margin-top:4px;
+      font-size:12px;
+      color: rgba(233,238,252,0.72);
+      font-weight: 700;
+    }
+
+    .err{
+      padding: 12px 14px;
+      background: rgba(255,122,122,0.10);
+      border: 1px solid rgba(255,122,122,0.35);
+      border-radius: 14px;
+      color: rgba(233,238,252,0.95);
+      font-weight: 800;
+    }
+
+    /* Make Leaflet controls fit the vibe */
     .leaflet-control-zoom a{
-      background: rgba(0,0,0,0.45) !important;
+      background: rgba(0,0,0,0.35) !important;
       color: rgba(233,238,252,0.92) !important;
       border: 1px solid rgba(255,255,255,0.14) !important;
-      backdrop-filter: blur(8px);
+      backdrop-filter: blur(10px);
     }
     .leaflet-control-attribution{
-      background: rgba(0,0,0,0.35) !important;
-      color: rgba(233,238,252,0.65) !important;
+      background: rgba(0,0,0,0.25) !important;
+      color: rgba(233,238,252,0.70) !important;
       border-radius: 10px;
-      margin: 0 10px 10px 0;
-      padding: 4px 8px !important;
+      border: 1px solid rgba(255,255,255,0.10);
+      backdrop-filter: blur(10px);
+    }
+    .leaflet-container{
+      background: rgba(0,0,0,0.15);
+    }
+
+    /* Diagonal “scan glass” overlay */
+    .scanGlass{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background: repeating-linear-gradient(
+        135deg,
+        rgba(255,255,255,0.06) 0px,
+        rgba(255,255,255,0.06) 2px,
+        rgba(0,0,0,0) 12px,
+        rgba(0,0,0,0) 18px
+      );
+      opacity:0.20;
+      mix-blend-mode: overlay;
     }
   </style>
 </head>
+
 <body>
   <div class="wrap">
+    <div class="top">
+      <div class="title">PHOENIX WEATHER RADAR</div>
+      <div class="stamp">
+        <span id="stamp">Loading…</span>
+        <span class="pill"><span class="dot"></span><span id="status">LIVE</span></span>
+      </div>
+    </div>
+
     <div class="card">
-      <div class="topbar">
-        <div class="title">PHOENIX WEATHER RADAR</div>
-        <div class="right">
-          <div class="stamp" id="stamp">Loading…</div>
-          <div class="pill"><span class="dot"></span><span id="status">LIVE</span></div>
+      <div class="cardHead">
+        <div class="sub" id="subLeft">Live radar overlay</div>
+
+        <div class="controls">
+          <div class="btnRow">
+            <button id="btnPlay">⏸ Pause</button>
+          </div>
+          <div class="btnRow">
+            <button id="zMetro" class="active">Metro</button>
+            <button id="zValley">Valley</button>
+            <button id="zRegional">Regional</button>
+          </div>
         </div>
       </div>
 
       <div class="mapWrap">
-        <div class="mapCard">
-          <div id="map"></div>
-        </div>
-
-        <div class="controls" aria-label="zoom presets">
-          <div class="btn active" id="btnMetro">Metro</div>
-          <div class="btn" id="btnValley">Valley</div>
-          <div class="btn" id="btnRegional">Regional</div>
-        </div>
-
-        <div class="error" id="err">
-          <b>RADAR FAILED TO LOAD</b>
-          <div id="errMsg">—</div>
-          <code id="errUrl">—</code>
-        </div>
+        <div id="map"></div>
+        <div class="scanGlass"></div>
 
         <div class="hud">
-          <div class="hudLine">
-            <div class="play" id="playBtn">⏸︎ Pause</div>
-            <div class="mini" id="hudText">Fetching RainViewer frames…</div>
+          <div class="box">
+            <div class="big" id="frameLine">Frame: —</div>
+            <div class="small" id="hintLine">If it’s “blank”, it can be light/virga (no reflectivity) or just no echoes in this frame.</div>
           </div>
-          <div class="mini" id="hudNote">Live radar overlay • RainViewer tiles over OpenStreetMap</div>
+          <div class="box" style="max-width:40%; text-align:right;">
+            <div class="big" id="zoomLine">Zoom: —</div>
+            <div class="small" id="srcLine">RainViewer tiles over OpenStreetMap</div>
+          </div>
         </div>
       </div>
     </div>
@@ -265,140 +313,113 @@
   // Phoenix center
   const PHX = { lat: 33.4484, lon: -112.0740 };
 
-  // Zoom presets (tune these anytime)
-  const PRESETS = {
-    metro:   { center: [33.4484, -112.0740], zoom: 10 },
-    valley:  { center: [33.45,   -111.95  ], zoom: 9  },
-    regional:{ center: [33.45,   -112.3   ], zoom: 7  }
+  // Three “feels good on Edge” zooms
+  const Z = {
+    metro:   10,
+    valley:   9,
+    regional: 7
   };
 
-  // RainViewer endpoints
-  const RV_MAPS = "https://api.rainviewer.com/public/weather-maps.json";
-  const RV_TILE = (time) => `https://tilecache.rainviewer.com/v2/radar/${time}/{z}/{x}/{y}/2/1_1.png`;
+  const el = (id) => document.getElementById(id);
 
-  // Basic helpers
-  const $ = (id) => document.getElementById(id);
-  const setActive = (which) => {
-    ["btnMetro","btnValley","btnRegional"].forEach(id => $(id).classList.remove("active"));
-    $(which).classList.add("active");
-  };
-
-  // Map init
-  const map = L.map("map", {
-    zoomControl: true,
-    attributionControl: true
-  }).setView(PRESETS.metro.center, PRESETS.metro.zoom);
-
-  // Basemap (dark-ish OSM via low opacity + our UI overlay)
-  const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 14,
-    minZoom: 5,
-    opacity: 0.55,
-    attribution: "&copy; OpenStreetMap"
-  }).addTo(map);
-
-  // Radar overlay layer (created after we know a valid frame time)
+  let map;
   let radarLayer = null;
 
-  // Animation state
-  let frames = [];        // list of {time, path?}
-  let frameIndex = 0;
+  let frames = [];        // array of unix timestamps (seconds)
+  let frameIdx = 0;
   let playing = true;
+
   let animTimer = null;
   let refreshTimer = null;
-  let lastGoodFrameTime = null;
 
-  function showError(msg, url=""){
-    $("err").style.display = "block";
-    $("errMsg").textContent = msg || "Unknown error";
-    $("errUrl").textContent = url || "";
-    $("status").textContent = "SYNC";
-  }
-  function hideError(){
-    $("err").style.display = "none";
-    $("status").textContent = "LIVE";
+  function setStamp(text){
+    el("stamp").textContent = text;
   }
 
-  function stamp(text){
-    $("stamp").textContent = text;
+  function setStatus(text){
+    el("status").textContent = text;
   }
 
-  // Pull the *valid* timestamps RainViewer currently supports.
-  async function loadRainViewerFrames(){
-    // cache in localStorage for 10 minutes to avoid rate limiting
-    const cacheKey = "rv_frames_v1";
-    const cached = (() => {
-      try { return JSON.parse(localStorage.getItem(cacheKey) || "null"); } catch { return null; }
-    })();
+  function fmtTime(tsSec){
+    const d = new Date(tsSec * 1000);
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
 
-    const now = Date.now();
-    if (cached && cached.when && (now - cached.when) < 10*60*1000 && Array.isArray(cached.frames) && cached.frames.length){
-      return cached.frames;
+  function setActive(btnId){
+    ["zMetro","zValley","zRegional"].forEach(id => el(id).classList.remove("active"));
+    el(btnId).classList.add("active");
+  }
+
+  function setZoom(mode){
+    const zoom = Z[mode];
+    map.setView([PHX.lat, PHX.lon], zoom, { animate: true });
+    el("zoomLine").textContent = "Zoom: " + zoom;
+  }
+
+  function tileUrlFor(tsSec){
+    // Public RainViewer tile pattern used in their example repos:
+    // https://tilecache.rainviewer.com/v2/radar/{time}/256/{z}/{x}/{y}/2/1_1.png
+    // (Some tiles can be missing for certain zoom/cells; that's normal.)
+    return `https://tilecache.rainviewer.com/v2/radar/${tsSec}/256/{z}/{x}/{y}/2/1_1.png`;
+  }
+
+  function applyFrame(tsSec){
+    setStatus("LIVE");
+    setStamp("Updated " + new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }));
+    el("frameLine").textContent = `Frame: ${fmtTime(tsSec)} (local)`;
+
+    // Swap the overlay layer to the new timestamp
+    if(radarLayer){
+      map.removeLayer(radarLayer);
+      radarLayer = null;
     }
 
-    const r = await fetch(RV_MAPS, { cache: "no-store" });
+    radarLayer = L.tileLayer(tileUrlFor(tsSec), {
+      opacity: 0.72,
+      zIndex: 500,
+      // If a tile 404s, Leaflet just leaves it blank; that’s okay.
+      // We keep the basemap so it never looks “broken”.
+    });
+
+    radarLayer.addTo(map);
+  }
+
+  async function loadFrames(){
+    // RainViewer public JSON that lists available radar frames
+    // Cache-busted so you always get current timestamps
+    const url = `https://api.rainviewer.com/public/weather-maps.json?cb=${Date.now()}`;
+
+    setStatus("SYNC");
+    setStamp("Syncing…");
+
+    const r = await fetch(url, { cache: "no-store" });
     if(!r.ok) throw new Error(`RainViewer frames HTTP ${r.status}`);
-    const j = await r.json();
 
-    // RainViewer shape: radar.past[] and radar.nowcast[]
-    const past = (j?.radar?.past || []).map(x => ({ time: x.time }));
-    const nowcast = (j?.radar?.nowcast || []).map(x => ({ time: x.time }));
+    const data = await r.json();
 
-    // Prefer nowcast if present; otherwise use past
-    const combined = [...past, ...nowcast].filter(x => Number.isFinite(x.time));
-    if(!combined.length) throw new Error("RainViewer returned no radar frames");
+    // Prefer "radar.past" frames (actual observations).
+    // Some responses also include nowcast; we keep it simple.
+    const past = data?.radar?.past;
+    if(!Array.isArray(past) || past.length === 0) throw new Error("No radar frames available");
 
-    // Keep last ~10 frames for smooth animation
-    const trimmed = combined.slice(-10);
+    // Each item: { time: <unix seconds>, path: ... }
+    frames = past.map(x => x.time).filter(Boolean);
 
-    try{
-      localStorage.setItem(cacheKey, JSON.stringify({ when: now, frames: trimmed }));
-    }catch{}
+    // newest frame = last
+    frameIdx = Math.max(0, frames.length - 1);
 
-    return trimmed;
-  }
-
-  function setRadarFrame(time){
-    if(!Number.isFinite(time)) return;
-
-    // If frame hasn't changed, don't thrash
-    if (lastGoodFrameTime === time && radarLayer) return;
-
-    const url = RV_TILE(time);
-
-    if(!radarLayer){
-      radarLayer = L.tileLayer(url, {
-        opacity: 0.70,
-        zIndex: 10,
-        // If a tile errors, Leaflet will just leave it blank; we show a friendly msg in our HUD instead.
-      }).addTo(map);
-
-      // Listen for tile errors to help debug (usually: expired frame or zoom unavailable)
-      radarLayer.on("tileerror", (e) => {
-        const tried = (e?.tile?.src || url);
-        showError("Tile failed to load (expired frame or unavailable zoom cell). Re-syncing frames…", tried);
-      });
-      radarLayer.on("load", () => {
-        hideError();
-      });
-
-    } else {
-      radarLayer.setUrl(url);
-    }
-
-    lastGoodFrameTime = time;
-    const d = new Date(time * 1000);
-    $("hudText").textContent = `Frame: ${d.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"})} • Zoom ${map.getZoom()}`;
-    stamp(`Updated ${new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"})}`);
+    setStatus("LIVE");
+    setStamp("Updated " + new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }));
+    return frames[frameIdx];
   }
 
   function startAnimation(){
     stopAnimation();
     animTimer = setInterval(() => {
       if(!playing || frames.length === 0) return;
-      frameIndex = (frameIndex + 1) % frames.length;
-      setRadarFrame(frames[frameIndex].time);
-    }, 900); // speed of the loop
+      frameIdx = (frameIdx + 1) % frames.length;
+      applyFrame(frames[frameIdx]);
+    }, 1200); // 1.2s per frame looks good on Edge
   }
 
   function stopAnimation(){
@@ -406,58 +427,74 @@
     animTimer = null;
   }
 
-  async function sync(){
-    try{
-      stamp("Syncing…");
-      frames = await loadRainViewerFrames();
-      // start on the latest frame
-      frameIndex = frames.length - 1;
-      setRadarFrame(frames[frameIndex].time);
-      hideError();
-    }catch(e){
-      console.error(e);
-      showError(String(e?.message || e), "");
-    }
-  }
-
-  // Zoom buttons
-  $("btnMetro").addEventListener("click", () => {
-    setActive("btnMetro");
-    map.setView(PRESETS.metro.center, PRESETS.metro.zoom, { animate:true });
-    // Force refresh frame at new zoom
-    if(frames.length) setRadarFrame(frames[frameIndex].time);
-  });
-  $("btnValley").addEventListener("click", () => {
-    setActive("btnValley");
-    map.setView(PRESETS.valley.center, PRESETS.valley.zoom, { animate:true });
-    if(frames.length) setRadarFrame(frames[frameIndex].time);
-  });
-  $("btnRegional").addEventListener("click", () => {
-    setActive("btnRegional");
-    map.setView(PRESETS.regional.center, PRESETS.regional.zoom, { animate:true });
-    if(frames.length) setRadarFrame(frames[frameIndex].time);
-  });
-
-  // Play/pause
-  $("playBtn").addEventListener("click", () => {
-    playing = !playing;
-    $("playBtn").textContent = playing ? "⏸︎ Pause" : "▶︎ Play";
-    $("hudNote").textContent = playing
-      ? "Live radar overlay • RainViewer tiles over OpenStreetMap"
-      : "Paused • Tap Play to animate recent frames";
-  });
-
-  // Periodic refresh so timestamps never expire (this is what fixes your “frame expired” issue)
   function startRefresh(){
     if(refreshTimer) clearInterval(refreshTimer);
-    refreshTimer = setInterval(sync, 10 * 60 * 1000); // every 10 minutes
+    // Refresh frame list every 5 minutes so timestamps don't go stale
+    refreshTimer = setInterval(async () => {
+      try{
+        const ts = await loadFrames();
+        // If we're playing, keep the newest frame as anchor
+        if(playing){
+          frameIdx = Math.max(0, frames.length - 1);
+          applyFrame(ts);
+        }
+      }catch(e){
+        console.error(e);
+        setStatus("SYNC");
+        setStamp("Radar sync failed");
+        el("hintLine").textContent = "Could not refresh frames. Try reload; RainViewer may be temporarily throttling.";
+      }
+    }, 5 * 60 * 1000);
   }
 
-  // Boot
-  (async function init(){
-    await sync();
-    startAnimation();
-    startRefresh();
+  function showError(msg){
+    setStatus("SYNC");
+    setStamp("—");
+    el("hintLine").innerHTML = `<div class="err">${msg}</div>`;
+  }
+
+  (function init(){
+    // Build map
+    map = L.map("map", {
+      zoomControl: true,
+      attributionControl: true
+    }).setView([PHX.lat, PHX.lon], Z.metro);
+
+    el("zoomLine").textContent = "Zoom: " + Z.metro;
+
+    // Basemap (OSM)
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 12,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Buttons
+    el("zMetro").addEventListener("click", () => { setActive("zMetro"); setZoom("metro"); });
+    el("zValley").addEventListener("click", () => { setActive("zValley"); setZoom("valley"); });
+    el("zRegional").addEventListener("click", () => { setActive("zRegional"); setZoom("regional"); });
+
+    el("btnPlay").addEventListener("click", () => {
+      playing = !playing;
+      el("btnPlay").textContent = playing ? "⏸ Pause" : "▶ Play";
+      if(playing){
+        // snap to newest when resuming
+        frameIdx = Math.max(0, frames.length - 1);
+        if(frames[frameIdx]) applyFrame(frames[frameIdx]);
+      }
+    });
+
+    // Load frames + start animation
+    (async () => {
+      try{
+        const ts = await loadFrames();
+        applyFrame(ts);
+        startAnimation();
+        startRefresh();
+      }catch(e){
+        console.error(e);
+        showError("Radar failed to load frames. RainViewer may be down/throttling, or blocked on your network.");
+      }
+    })();
   })();
 </script>
 </body>
