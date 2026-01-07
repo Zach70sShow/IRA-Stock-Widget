@@ -3,453 +3,613 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Phoenix Weather Radar (RadarV2)</title>
+  <title>Phoenix Weather Radar (Edge)</title>
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
   <style>
     :root{
-      --bg0:#070a0f; --bg1:#0b111a;
-      --stroke: rgba(255,255,255,.09);
-      --stroke2: rgba(255,255,255,.07);
-      --text: rgba(255,255,255,.92);
-      --muted: rgba(255,255,255,.70);
-      --dim: rgba(255,255,255,.55);
-      --teal: #28d7c3;
-      --shadow: 0 16px 45px rgba(0,0,0,.45);
-      --radius: 24px; --radius2: 18px;
-    }
-    *{box-sizing:border-box}
-    html,body{
-      height:100%; margin:0; overflow:hidden;
-      background:
-        radial-gradient(1400px 900px at 65% 35%, rgba(40,215,195,.12), transparent 55%),
-        radial-gradient(1200px 800px at 25% 80%, rgba(64,120,255,.10), transparent 60%),
-        linear-gradient(180deg, var(--bg0), var(--bg1));
-      color:var(--text);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-    }
-    body::before{
-      content:""; position:fixed; inset:0;
-      background: repeating-linear-gradient(135deg, rgba(255,255,255,.045) 0px, rgba(255,255,255,.045) 2px, transparent 2px, transparent 10px);
-      opacity:.25; pointer-events:none; mix-blend-mode: overlay;
+      --bg0:#081015;
+      --bg1:#0b141a;
+      --panel:#0b141acc;
+      --stroke:rgba(255,255,255,.08);
+      --stroke2:rgba(0,255,210,.18);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.62);
+      --teal:#2ef5d6;
+
+      /* radar look */
+      --radar-opacity: .55;
+      --radar-filter: saturate(1.05) contrast(1.08) brightness(.95);
+      --radar-blend: screen;
+
+      /* cleaner mode */
+      --radar-opacity-clean: .40;
+      --radar-filter-clean: saturate(.85) contrast(1.15) brightness(.92) blur(.35px);
+      --radar-blend-clean: screen;
+
+      /* scanner */
+      --scanline-opacity:.10;
+      --beam-opacity:.18;
+      --beam-softness: 42%;
     }
 
-    .frame{
-      position:fixed; inset:14px;
-      border-radius: var(--radius);
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      border:1px solid var(--stroke);
-      box-shadow: var(--shadow);
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background: radial-gradient(1200px 900px at 50% -10%, #10303a 0%, var(--bg0) 55%, #05080b 100%);
+      color:var(--text);
       overflow:hidden;
+    }
+
+    /* Edge-like frame */
+    .frame{
+      position:fixed;
+      inset:0;
+      padding:18px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
     }
 
     .topbar{
-      height:72px; display:flex; align-items:center; justify-content:space-between;
-      padding: 14px 16px;
-      background:
-        radial-gradient(900px 300px at 55% 30%, rgba(40,215,195,.20), transparent 60%),
-        linear-gradient(180deg, rgba(10,18,26,.85), rgba(10,18,26,.55));
-      border-bottom:1px solid var(--stroke2);
-      backdrop-filter: blur(10px);
-    }
-    .left{ display:flex; align-items:baseline; gap:14px; min-width:0; }
-    .clock{
-      font-size:40px; font-weight:800; letter-spacing:.5px; line-height:1; white-space:nowrap;
-      text-shadow: 0 2px 14px rgba(0,0,0,.35);
-    }
-    .meta{ display:flex; flex-direction:column; gap:2px; min-width:0; }
-    .meta .line1{ font-size:13px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 52vw; }
-    .meta .line2{ font-size:12px; color:var(--dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 52vw; }
-    .right{ display:flex; align-items:center; gap:10px; }
-    .pill{
-      display:inline-flex; align-items:center; gap:8px;
-      padding: 8px 12px; border-radius: 999px;
-      background: rgba(10, 18, 26, .55);
+      height:64px;
+      border-radius:22px;
+      background: linear-gradient(180deg, rgba(20,35,42,.86), rgba(10,18,23,.82));
       border:1px solid var(--stroke);
-      backdrop-filter: blur(8px);
-      white-space:nowrap;
-      user-select:none;
-    }
-    .dot{ width:8px; height:8px; border-radius:50%; background: var(--teal); box-shadow: 0 0 0 3px rgba(40,215,195,.16); }
-    .pill b{font-size:12px}
-    .updated{ font-size:12px; color:var(--muted); }
-
-    .content{
-      position:absolute; left:12px; right:12px; top:84px; bottom:12px;
-      border-radius: var(--radius2);
-      background: rgba(5, 8, 12, .30);
-      border:1px solid var(--stroke2);
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:12px 16px;
+      position:relative;
       overflow:hidden;
     }
-
-    .panelhead{
-      position:absolute; left:0; right:0; top:0;
-      padding: 12px 14px;
-      display:flex; align-items:center; justify-content:space-between;
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.00));
-      border-bottom:1px solid var(--stroke2);
-      z-index: 500;
+    .topbar:before{
+      content:"";
+      position:absolute; inset:-2px;
+      background:
+        radial-gradient(600px 240px at 50% 0%, rgba(46,245,214,.16), transparent 55%),
+        radial-gradient(900px 340px at 20% 0%, rgba(80,180,255,.10), transparent 60%);
       pointer-events:none;
     }
-    .paneltitle{ font-size:18px; font-weight:800; letter-spacing:.4px; }
-    .modes{ display:flex; gap:8px; pointer-events:auto; }
-    .btn{
-      cursor:pointer;
+
+    .left{
+      display:flex; align-items:baseline; gap:12px;
+      position:relative;
+      z-index:1;
+    }
+    .clock{
+      font-weight:800;
+      letter-spacing:.5px;
+      font-size:38px;
+      line-height:1;
+      text-shadow:0 2px 12px rgba(0,0,0,.35);
+    }
+    .meta{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      margin-top:2px;
+    }
+    .meta .loc{
+      font-size:13px;
+      color:var(--muted);
+    }
+    .meta .sub{
       font-size:12px;
-      color: rgba(255,255,255,.85);
-      background: rgba(10,18,26,.55);
-      border:1px solid rgba(40,215,195,.35);
-      border-radius: 999px;
-      padding: 6px 10px;
+      color:rgba(255,255,255,.48);
+    }
+
+    .right{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      z-index:1;
+      position:relative;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:9px 12px;
+      border-radius:999px;
+      background: rgba(7,16,20,.55);
+      border: 1px solid rgba(46,245,214,.25);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.03);
+      font-size:12px;
+      color:rgba(255,255,255,.75);
       user-select:none;
-      transition: transform .06s ease, background .12s ease, border-color .12s ease;
     }
-    .btn:hover{ transform: translateY(-1px); border-color: rgba(40,215,195,.55); }
+    .dot{
+      width:8px;height:8px;border-radius:50%;
+      background: var(--teal);
+      box-shadow:0 0 0 4px rgba(46,245,214,.12);
+    }
+
+    .content{
+      flex:1;
+      border-radius:26px;
+      border:1px solid var(--stroke);
+      background: linear-gradient(180deg, rgba(20,35,42,.36), rgba(10,18,23,.38));
+      box-shadow: 0 18px 45px rgba(0,0,0,.40);
+      overflow:hidden;
+      position:relative;
+      display:flex;
+      flex-direction:column;
+    }
+
+    .headerRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:14px 16px 10px 16px;
+    }
+    .title{
+      font-weight:800;
+      letter-spacing:.8px;
+      font-size:18px;
+    }
+    .controls{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .btn{
+      height:32px;
+      padding:0 12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(8,14,18,.42);
+      color: rgba(255,255,255,.80);
+      font-size:12px;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      cursor:pointer;
+      user-select:none;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.03);
+    }
+    .btn:hover{ border-color: rgba(46,245,214,.28); }
     .btn.active{
-      background: rgba(40,215,195,.16);
-      border-color: rgba(40,215,195,.75);
-      box-shadow: 0 0 0 3px rgba(40,215,195,.10);
+      border-color: rgba(46,245,214,.55);
+      color: rgba(255,255,255,.92);
+      background: rgba(46,245,214,.12);
     }
 
-    #map{ position:absolute; left:0; right:0; top:48px; bottom:0; }
-
-    .leaflet-control-zoom a{
-      background: rgba(10,18,26,.55) !important;
-      color: rgba(255,255,255,.9) !important;
-      border:1px solid var(--stroke) !important;
-      backdrop-filter: blur(8px);
-    }
-    .leaflet-control-attribution{
-      background: rgba(10,18,26,.35) !important;
-      color: rgba(255,255,255,.6) !important;
-      border-radius: 10px !important;
-      border: 1px solid rgba(255,255,255,.06) !important;
-      padding: 2px 8px !important;
+    .mapWrap{
+      position:relative;
+      flex:1;
+      margin: 0 12px 12px 12px;
+      border-radius:20px;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.08);
+      background: #070c10;
     }
 
+    #map{ position:absolute; inset:0; }
+
+    /* --- Radar styling hooks --- */
+    .radarPane .leaflet-tile{
+      opacity: var(--radar-opacity);
+      filter: var(--radar-filter);
+      mix-blend-mode: var(--radar-blend);
+    }
+    .cleaner .radarPane .leaflet-tile{
+      opacity: var(--radar-opacity-clean);
+      filter: var(--radar-filter-clean);
+      mix-blend-mode: var(--radar-blend-clean);
+    }
+
+    /* Extra darkening so it matches Edge tiles */
+    .leaflet-container{
+      background:#060a0d;
+      filter: saturate(.95) contrast(1.05) brightness(.92);
+    }
+
+    /* --- Scanner overlay (visual only) --- */
     .scanner{
-      position:absolute; inset:48px 0 0 0;
-      pointer-events:none; z-index: 450;
-      mix-blend-mode: screen; opacity: .55;
-      background:
-        radial-gradient(circle at center, rgba(40,215,195,.13) 0%, rgba(40,215,195,.06) 25%, transparent 55%),
-        repeating-radial-gradient(circle at center, rgba(255,255,255,.035) 0px, rgba(255,255,255,.035) 1px, transparent 1px, transparent 26px),
-        repeating-linear-gradient(135deg, rgba(255,255,255,.04) 0px, rgba(255,255,255,.04) 1px, transparent 1px, transparent 10px);
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      z-index:600; /* above tiles, below leaflet controls is OK */
+      mix-blend-mode: screen;
     }
-    .sweep{
-      position:absolute; inset:48px 0 0 0;
-      pointer-events:none; z-index: 460;
-      opacity:.55; mix-blend-mode: screen;
-      background: conic-gradient(from 0deg at 50% 50%, rgba(40,215,195,.00) 0deg, rgba(40,215,195,.00) 300deg, rgba(40,215,195,.30) 330deg, rgba(40,215,195,.00) 360deg);
-      animation: sweep 4.8s linear infinite;
-    }
-    @keyframes sweep{ from{ transform: rotate(0deg); } to{ transform: rotate(360deg); } }
-    .cleanOverlay .scanner,.cleanOverlay .sweep{ opacity:.35; }
 
-    .statusbar{
-      position:absolute; left:14px; bottom:14px;
-      z-index: 600; display:flex; gap:10px;
+    .scanlines{
+      position:absolute; inset:0;
+      opacity: var(--scanline-opacity);
+      background:
+        repeating-linear-gradient(
+          135deg,
+          rgba(46,245,214,.22) 0px,
+          rgba(46,245,214,.22) 2px,
+          rgba(0,0,0,0) 2px,
+          rgba(0,0,0,0) 12px
+        );
+    }
+    .vignette{
+      position:absolute; inset:-1px;
+      background:
+        radial-gradient(1200px 700px at 50% 60%, rgba(0,0,0,0) 0%, rgba(0,0,0,.55) 65%, rgba(0,0,0,.78) 100%),
+        radial-gradient(800px 500px at 50% 40%, rgba(46,245,214,.08), transparent 60%);
+      opacity:.9;
+    }
+
+    /* sweeping beam */
+    .beam{
+      position:absolute;
+      inset:-30%;
+      opacity: var(--beam-opacity);
+      background:
+        conic-gradient(from 0deg at 50% 52%,
+          rgba(46,245,214,0) 0deg,
+          rgba(46,245,214,0) calc(360deg - var(--beam-softness)),
+          rgba(46,245,214,.38) 360deg
+        );
+      animation: sweep 5.4s linear infinite;
+      filter: blur(0.6px);
+      transform-origin: 50% 52%;
+    }
+    @keyframes sweep{
+      from{ transform: rotate(0deg); }
+      to{ transform: rotate(360deg); }
+    }
+
+    /* footer badges */
+    .badgeRow{
+      position:absolute;
+      left:14px;
+      bottom:14px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      z-index:700;
       pointer-events:none;
     }
     .badge{
-      display:flex; align-items:center; gap:8px;
-      padding: 8px 12px; border-radius: 999px;
-      background: rgba(10,18,26,.55);
-      border:1px solid var(--stroke);
-      backdrop-filter: blur(10px);
-      font-size:12px; color: rgba(255,255,255,.85);
-      white-space:nowrap;
+      pointer-events:none;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 12px;
+      border-radius:999px;
+      background: rgba(8,14,18,.55);
+      border:1px solid rgba(255,255,255,.10);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.03);
+      font-size:12px;
+      color: rgba(255,255,255,.78);
     }
-    .badge .dot{ width:7px; height:7px; }
+    .badge .dot{ width:10px; height:10px; }
 
+    /* note / error toast */
     .toast{
-      position:absolute; left:14px; right:14px;
-      bottom:60px; z-index: 800;
-      background: rgba(10,18,26,.72);
-      border:1px solid rgba(255,99,99,.35);
-      border-radius: 16px;
-      padding: 12px 14px;
+      position:absolute;
+      left:14px;
+      right:14px;
+      bottom:64px;
+      z-index:800;
+      border-radius:18px;
+      padding:14px 16px;
+      background: rgba(8,14,18,.75);
+      border:1px solid rgba(255,255,255,.10);
+      box-shadow: 0 18px 40px rgba(0,0,0,.35);
+      color: rgba(255,255,255,.82);
+      font-size:13px;
       display:none;
+    }
+    .toast strong{ display:block; letter-spacing:.6px; margin-bottom:4px; }
+    .toast.warn{ border-color: rgba(255,120,120,.35); }
+    .toast.ok{ border-color: rgba(46,245,214,.30); }
+
+    /* Leaflet control tweaks */
+    .leaflet-control-zoom a{
+      background: rgba(8,14,18,.45) !important;
+      color: rgba(255,255,255,.82) !important;
+      border: 1px solid rgba(255,255,255,.10) !important;
       backdrop-filter: blur(10px);
     }
-    .toast b{ display:block; font-size:12px; color: rgba(255,255,255,.7); margin-bottom:4px;}
-    .toast .small{ font-size:12px; color: rgba(255,255,255,.70); }
-
-    .footer{ position:absolute; left:18px; bottom:10px; z-index: 650; font-size:12px; color: rgba(255,255,255,.55); pointer-events:none; }
-    .footerR{ position:absolute; right:18px; bottom:10px; z-index: 650; font-size:12px; color: rgba(255,255,255,.60); pointer-events:none; }
+    .leaflet-control-attribution{
+      background: rgba(0,0,0,.28) !important;
+      color: rgba(255,255,255,.55) !important;
+      border-radius: 10px;
+      padding: 4px 8px !important;
+      margin: 0 10px 10px 0 !important;
+    }
   </style>
 </head>
 
 <body>
-  <div class="frame">
+  <div class="frame" id="root">
     <div class="topbar">
       <div class="left">
         <div class="clock" id="clock">--:--</div>
         <div class="meta">
-          <div class="line1" id="line1">Phoenix • Radar</div>
-          <div class="line2" id="line2">Live radar overlay • RainViewer</div>
+          <div class="loc" id="locLine">Phoenix • Radar</div>
+          <div class="sub" id="subLine">Live radar overlay • RainViewer</div>
         </div>
       </div>
       <div class="right">
-        <div class="updated" id="updated">Updated --:--</div>
-        <div class="pill"><span class="dot"></span><b>LIVE</b></div>
+        <div class="pill" title="Live">
+          <span class="dot"></span>
+          LIVE
+        </div>
+        <div class="pill" title="Last updated">
+          Updated <span id="updated">--:--</span>
+        </div>
       </div>
     </div>
 
     <div class="content" id="content">
-      <div class="panelhead">
-        <div class="paneltitle">PHOENIX WEATHER RADAR</div>
-        <div class="modes">
-          <div class="btn" id="btnMetro">Metro</div>
+      <div class="headerRow">
+        <div class="title">PHOENIX WEATHER RADAR</div>
+        <div class="controls">
+          <div class="btn active" id="btnMetro">Metro</div>
           <div class="btn" id="btnValley">Valley</div>
-          <div class="btn active" id="btnRegional">Regional</div>
-          <div class="btn" id="btnClean">Cleaner</div>
+          <div class="btn" id="btnRegional">Regional</div>
+
+          <div class="btn" id="btnCleaner" title="Reduce speckle / make precip softer">Cleaner</div>
+          <div class="btn active" id="btnPlay">⏸ Pause</div>
         </div>
       </div>
 
-      <div id="map"></div>
-      <div class="scanner"></div>
-      <div class="sweep"></div>
+      <div class="mapWrap">
+        <div id="map"></div>
 
-      <div class="toast" id="toast">
-        <b>RADAR NOTE</b>
-        <div class="small" id="toastMsg"></div>
+        <!-- Scanner overlay -->
+        <div class="scanner">
+          <div class="beam"></div>
+          <div class="scanlines"></div>
+          <div class="vignette"></div>
+        </div>
+
+        <div class="toast" id="toast">
+          <strong id="toastTitle">RADAR NOTE</strong>
+          <div id="toastMsg">—</div>
+        </div>
+
+        <div class="badgeRow">
+          <div class="badge">
+            <span class="dot"></span>
+            PHX LIVE RADAR
+          </div>
+          <div class="badge" id="frameBadge">Frame: -- • Zoom --</div>
+        </div>
       </div>
-
-      <div class="statusbar">
-        <div class="badge"><span class="dot"></span>PHX LIVE RADAR</div>
-        <div class="badge" id="frameBadge">Frame: -- • Zoom --</div>
-      </div>
-
-      <div class="footer">Edge Dashboard</div>
-      <div class="footerR" id="footerR">Updated --:--</div>
     </div>
   </div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // === CONFIG ===
+    /**********************
+     * CONFIG
+     **********************/
     const PHX = { lat: 33.4484, lon: -112.0740 };
 
-    // Use safer defaults (tiles are MUCH more consistently available here)
+    // View presets (tuned so you usually see something without being ridiculously zoomed out)
     const VIEWS = {
-      metro:   { center: [PHX.lat, PHX.lon], zoom: 10.5 },
-      valley:  { center: [PHX.lat, PHX.lon], zoom: 10.0 },
-      regional:{ center: [PHX.lat, PHX.lon], zoom: 9.0  }
+      metro:   { center:[PHX.lat, PHX.lon], zoom: 10.6 },
+      valley:  { center:[PHX.lat, PHX.lon], zoom:  9.4 },
+      regional:{ center:[PHX.lat, PHX.lon], zoom:  8.2 }
     };
 
-    const RADAR = { color: 2, smooth: 1, snow: 1, opacity: 0.55 };
+    // RainViewer public weather maps JSON (frames list)
+    const RV_INDEX = "https://api.rainviewer.com/public/weather-maps.json";
 
-    // Animation like your earlier version
-    const ANIM = { enabled: true, msPerFrame: 850, refreshFramesMs: 120000 };
+    // Radar tile URL template. RainViewer radar tiles are time-based.
+    function radarUrl(ts){
+      // The "256" part is standard tile size, the trailing "2/1_1.png" are RainViewer style params.
+      // Keep this EXACT; it matches the common public RainViewer tile format.
+      return `https://tilecache.rainviewer.com/v2/radar/${ts}/256/{z}/{x}/{y}/2/1_1.png`;
+    }
 
-    // When tiles fail, how hard we try to recover
-    const RECOVERY = {
-      tileErrorsBeforeFallback: 12,   // number of tileerror events
-      fallbackZoomStep: 1,            // zoom out 1 step
-      maxFallbackZoomOut: 2,          // at most 2 zoom-out steps
-      fallbackFrameStepsBack: 2,      // step back a couple frames if latest has holes
-      coolDownMs: 2500                // don't spam recovery
-    };
-
-    // === UI helpers ===
-    function pad(n){ return (n<10?'0':'')+n; }
+    /**********************
+     * UI helpers
+     **********************/
+    const $ = (id)=>document.getElementById(id);
+    function pad2(n){ return String(n).padStart(2,"0"); }
     function fmtTime(d){
-      let h = d.getHours();
-      const m = pad(d.getMinutes());
-      const ampm = h >= 12 ? 'PM' : 'AM';
-      h = h % 12; if (h === 0) h = 12;
-      return `${h}:${m} ${ampm}`;
+      let h=d.getHours(), m=d.getMinutes();
+      const ap = h>=12 ? "PM":"AM";
+      h = h%12; if(h===0) h=12;
+      return `${h}:${pad2(m)} ${ap}`;
+    }
+    function setClock(){
+      const now = new Date();
+      $("clock").textContent = fmtTime(now);
     }
     function setUpdatedNow(){
-      const now = new Date();
-      document.getElementById('updated').textContent = `Updated ${fmtTime(now)}`;
-      document.getElementById('footerR').textContent = `Updated ${fmtTime(now)}`;
+      $("updated").textContent = fmtTime(new Date());
     }
-    function tickClock(){
-      const now = new Date();
-      const h = now.getHours();
-      const m = pad(now.getMinutes());
-      const ampm = h >= 12 ? 'PM' : 'AM';
-      let hh = h % 12; if (hh === 0) hh = 12;
-      document.getElementById('clock').textContent = `${pad(hh)}:${m} ${ampm}`;
-    }
-    function showToast(msg, isError=false){
-      const toast = document.getElementById('toast');
-      document.getElementById('toastMsg').textContent = msg;
-      toast.style.borderColor = isError ? 'rgba(255,99,99,.40)' : 'rgba(40,215,195,.35)';
-      toast.style.display = 'block';
-      clearTimeout(showToast._t);
-      showToast._t = setTimeout(()=> toast.style.display='none', 4200);
+    setClock();
+    setInterval(setClock, 1000);
+
+    function showToast(msg, warn=false, title="RADAR NOTE"){
+      const t = $("toast");
+      $("toastTitle").textContent = title;
+      $("toastMsg").textContent = msg;
+      t.classList.toggle("warn", !!warn);
+      t.classList.toggle("ok", !warn);
+      t.style.display = "block";
+      clearTimeout(showToast._tm);
+      showToast._tm = setTimeout(()=>{ t.style.display="none"; }, warn ? 5000 : 2600);
     }
 
-    // === Map ===
-    const map = L.map('map', { zoomControl:true, attributionControl:true, zoomSnap:0.25, zoomDelta:0.5 });
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      subdomains:'abcd', maxZoom:19, attribution:'&copy; OpenStreetMap &copy; CARTO'
-    }).addTo(map);
+    /**********************
+     * Map init (dark basemap)
+     **********************/
+    const map = L.map('map', {
+      zoomControl: true,
+      attributionControl: true,
+      preferCanvas: true
+    });
 
-    L.circleMarker([PHX.lat, PHX.lon], { radius:5, color:'#28d7c3', weight:2, opacity:0.9, fillOpacity:0.08 }).addTo(map);
-    map.setView(VIEWS.regional.center, VIEWS.regional.zoom);
+    // Dark basemap (no key). CARTO dark tiles.
+    const base = L.tileLayer(
+      "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+      {
+        subdomains: "abcd",
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap &copy; CARTO'
+      }
+    ).addTo(map);
 
-    // === RainViewer ===
-    let frames = [];          // [{ts, kind}]
+    // Put radar tiles in their own pane so we can style them via CSS (radarPane class)
+    map.createPane("radar");
+    map.getPane("radar").classList.add("radarPane");
+    map.getPane("radar").style.zIndex = 350;
+
+    map.setView(VIEWS.metro.center, VIEWS.metro.zoom);
+
+    /**********************
+     * Radar animation engine
+     **********************/
+    let frames = [];     // [{ts:number}]
     let idx = 0;
-    let animTimer = null;
+    let playing = true;
     let radarLayer = null;
-
-    let tileErrCount = 0;
-    let lastRecoveryAt = 0;
-    let zoomFallbacksUsed = 0;
-
-    function radarUrl(ts){
-      return `https://tilecache.rainviewer.com/v2/radar/${ts}/{z}/{x}/{y}/${RADAR.color}/${RADAR.smooth}_${RADAR.snow}.png`;
-    }
+    let timer = null;
 
     function setFrameBadge(ts){
-      const z = map.getZoom().toFixed(1);
+      const z = map.getZoom();
       const d = new Date(ts * 1000);
-      document.getElementById('frameBadge').textContent = `Frame: ${fmtTime(d)} • Zoom ${z}`;
+      $("frameBadge").textContent = `Frame: ${fmtTime(d)} • Zoom ${z.toFixed(1)}`;
     }
 
-    function applyFrame(ts){
+    // Try to advance to next frame if a tile errors a lot
+    let tileErrorsInWindow = 0;
+    let tileErrorReset = null;
+
+    function bumpTileError(){
+      tileErrorsInWindow++;
+      clearTimeout(tileErrorReset);
+      tileErrorReset = setTimeout(()=>{ tileErrorsInWindow = 0; }, 2000);
+
+      // If we’re seeing lots of errors quickly, assume this frame is partially missing at this zoom
+      if (tileErrorsInWindow >= 5){
+        tileErrorsInWindow = 0;
+        // jump to next frame (very common "expired frame" symptom)
+        idx = (idx + 1) % frames.length;
+        applyFrame(frames[idx].ts, { silent:true });
+        showToast("A radar tile was missing for this zoom/frame. Switching to next available frame…", false);
+      }
+    }
+
+    function applyFrame(ts, {silent=false} = {}){
+      if (!frames.length) return;
+
       if (!radarLayer){
         radarLayer = L.tileLayer(radarUrl(ts), {
-          opacity: RADAR.opacity,
-          zIndex: 250,
+          pane: "radar",
+          opacity: 1, // actual opacity controlled by CSS on tiles
           maxZoom: 19,
           updateWhenIdle: true,
           keepBuffer: 2
         }).addTo(map);
 
-        // Listen for tile loading failures and auto-recover
-        radarLayer.on('tileerror', onTileError);
-        radarLayer.on('tileload', () => { /* successful loads happen constantly */ });
+        radarLayer.on("tileerror", () => {
+          bumpTileError();
+        });
       } else {
         radarLayer.setUrl(radarUrl(ts));
       }
+
       setFrameBadge(ts);
       setUpdatedNow();
+      if (!silent) showToast("Radar frame updated.", false, "LIVE");
+    }
+
+    function step(){
+      if (!frames.length) return;
+      idx = (idx + 1) % frames.length;
+      applyFrame(frames[idx].ts, { silent:true });
+    }
+
+    function start(){
+      stop();
+      timer = setInterval(step, 900); // speed: change for smoother/slower
+    }
+
+    function stop(){
+      if (timer){ clearInterval(timer); timer = null; }
     }
 
     async function loadFrames(){
-      const res = await fetch('https://api.rainviewer.com/public/weather-maps.json', { cache:'no-store' });
-      if (!res.ok) throw new Error(`Frames request failed (${res.status})`);
-      const data = await res.json();
-
-      const past = (data?.radar?.past || []).map(x => ({ ts:x.time, kind:'past' }));
-      const nowc = (data?.radar?.nowcast || []).map(x => ({ ts:x.time, kind:'nowcast' }));
-
-      const recentPast = past.slice(Math.max(0, past.length - 10));
-      const recentNow  = nowc.slice(0, 6);
-
-      frames = [...recentPast, ...recentNow];
-      if (!frames.length) throw new Error('No frames returned by RainViewer');
-      idx = frames.length - 1; // newest
-    }
-
-    function startAnim(){
-      stopAnim();
-      if (!ANIM.enabled) return;
-      if (frames.length <= 1) return;
-      animTimer = setInterval(() => {
-        idx = (idx + 1) % frames.length;
-        tileErrCount = 0; // reset per frame change
-        applyFrame(frames[idx].ts);
-      }, ANIM.msPerFrame);
-    }
-
-    function stopAnim(){
-      if (animTimer) clearInterval(animTimer);
-      animTimer = null;
-    }
-
-    function onTileError(e){
-      tileErrCount++;
-
-      const now = Date.now();
-      if (now - lastRecoveryAt < RECOVERY.coolDownMs) return;
-
-      if (tileErrCount >= RECOVERY.tileErrorsBeforeFallback){
-        lastRecoveryAt = now;
-
-        // 1) Try stepping back a frame (often fixes “holey” newest frame)
-        const back = Math.max(0, idx - RECOVERY.fallbackFrameStepsBack);
-        if (back !== idx){
-          idx = back;
-          tileErrCount = 0;
-          showToast('Radar tile missing — switching to a nearby frame…', false);
-          applyFrame(frames[idx].ts);
-          return;
-        }
-
-        // 2) If still bad, zoom out (tiles more likely at lower zoom)
-        if (zoomFallbacksUsed < RECOVERY.maxFallbackZoomOut){
-          zoomFallbacksUsed++;
-          tileErrCount = 0;
-          showToast('Radar tiles spotty at this zoom — zooming out for reliability…', false);
-          map.setZoom(map.getZoom() - RECOVERY.fallbackZoomStep);
-          return;
-        }
-
-        // 3) Give user a helpful note (but don’t kill the radar)
-        tileErrCount = 0;
-        showToast('Radar tiles are temporarily unavailable for this area/zoom. Try Regional or wait a minute.', true);
-      }
-    }
-
-    // Buttons
-    function setActive(id){
-      ['btnMetro','btnValley','btnRegional'].forEach(x => {
-        document.getElementById(x).classList.toggle('active', x === id);
-      });
-      zoomFallbacksUsed = 0; // new view = reset fallback budget
-      tileErrCount = 0;
-    }
-    function setView(key){
-      const v = VIEWS[key];
-      map.setView(v.center, v.zoom, { animate:true, duration:0.55 });
-      setUpdatedNow();
-    }
-    document.getElementById('btnMetro').addEventListener('click', ()=>{ setActive('btnMetro'); setView('metro'); });
-    document.getElementById('btnValley').addEventListener('click', ()=>{ setActive('btnValley'); setView('valley'); });
-    document.getElementById('btnRegional').addEventListener('click', ()=>{ setActive('btnRegional'); setView('regional'); });
-
-    document.getElementById('btnClean').addEventListener('click', (e)=>{
-      const on = document.getElementById('content').classList.toggle('cleanOverlay');
-      e.currentTarget.classList.toggle('active', on);
-    });
-
-    // Boot
-    tickClock();
-    setUpdatedNow();
-    setInterval(tickClock, 1000);
-    setInterval(setUpdatedNow, 30000);
-
-    (async function init(){
       try{
-        await loadFrames();
-        applyFrame(frames[idx].ts);
-        startAnim();
+        const res = await fetch(RV_INDEX, { cache: "no-store" });
+        if (!res.ok) throw new Error(`Index HTTP ${res.status}`);
+        const json = await res.json();
+
+        const radar = json?.radar?.past || [];
+        if (!radar.length) throw new Error("No radar frames in index.");
+
+        // Use last ~12 frames for a “recent motion” loop (feels like animated incoming weather)
+        const take = radar.slice(-12);
+        frames = take.map(x => ({ ts: x.time }));
+        idx = frames.length - 1;
+
+        applyFrame(frames[idx].ts, { silent:true });
+        if (playing) start();
+
+        showToast("Radar loaded.", false, "LIVE");
       }catch(err){
         console.error(err);
-        showToast(`Radar failed to initialize: ${err.message}`, true);
+        showToast("Could not load radar frames. Check RainViewer availability or try again shortly.", true);
       }
-    })();
+    }
 
-    setInterval(async ()=>{
-      try{
-        await loadFrames();
-        // keep viewing "near newest" after refresh
-        idx = Math.max(0, frames.length - 1);
-        tileErrCount = 0;
-        applyFrame(frames[idx].ts);
-        startAnim();
-      }catch(e){
-        console.warn('Frame refresh failed:', e);
-      }
-    }, ANIM.refreshFramesMs);
+    /**********************
+     * Controls
+     **********************/
+    function setActive(btnId){
+      ["btnMetro","btnValley","btnRegional"].forEach(id=>{
+        $(id).classList.toggle("active", id===btnId);
+      });
+    }
+    $("btnMetro").addEventListener("click", ()=>{
+      setActive("btnMetro");
+      map.setView(VIEWS.metro.center, VIEWS.metro.zoom, { animate:true });
+    });
+    $("btnValley").addEventListener("click", ()=>{
+      setActive("btnValley");
+      map.setView(VIEWS.valley.center, VIEWS.valley.zoom, { animate:true });
+    });
+    $("btnRegional").addEventListener("click", ()=>{
+      setActive("btnRegional");
+      map.setView(VIEWS.regional.center, VIEWS.regional.zoom, { animate:true });
+    });
+
+    $("btnCleaner").addEventListener("click", (e)=>{
+      const on = $("content").classList.toggle("cleaner");
+      e.currentTarget.classList.toggle("active", on);
+      showToast(on ? "Cleaner overlay enabled." : "Cleaner overlay disabled.", false);
+    });
+
+    $("btnPlay").addEventListener("click", (e)=>{
+      playing = !playing;
+      e.currentTarget.classList.toggle("active", playing);
+      e.currentTarget.textContent = playing ? "⏸ Pause" : "▶ Play";
+      if (playing) start(); else stop();
+    });
+
+    // Keep badge updated when zoom changes
+    map.on("zoomend", ()=>{
+      if (frames[idx]) setFrameBadge(frames[idx].ts);
+    });
+
+    /**********************
+     * Boot
+     **********************/
+    loadFrames();
+
+    // Refresh frames periodically so "expired frame" issues reduce over time
+    setInterval(loadFrames, 1000 * 60 * 5);
   </script>
 </body>
 </html>
