@@ -307,28 +307,17 @@
       regional:{ center: [PHX.lat, PHX.lon], zoom: 9.0  }
     };
 
-    // Radar styling
-    const RADAR = {
-      color: 2,
-      smooth: 1,
-      snow: 1,
-      opacity: 0.55
-    };
+    const RADAR = { color: 2, smooth: 1, snow: 1, opacity: 0.55 };
 
-    // Animation timing
     const ANIM = {
       enabled: true,
       msPerFrame: 850,
       refreshFramesMs: 120000
     };
 
-    // “Missing frame” avoidance
     const VALIDATION = {
-      // only validate last N frames for speed
-      maxFramesToTest: 14,  // recent past + nowcast
-      // prefer past (usually more complete) vs nowcast
+      maxFramesToTest: 14,
       preferPast: true,
-      // how long we wait before calling a test "failed"
       testTimeoutMs: 1400
     };
 
@@ -375,8 +364,8 @@
     map.setView(VIEWS.regional.center, VIEWS.regional.zoom);
 
     // ===== RAINVIEWER =====
-    let allFrames = [];      // raw frames (past + nowcast)
-    let validFrames = [];    // frames that have a real tile at this zoom (tested)
+    let allFrames = [];
+    let validFrames = [];
     let frameIndex = 0;
     let animTimer = null;
     let radarLayer = null;
@@ -419,24 +408,39 @@
       return { x, y };
     }
 
-    // Quick test: does a single tile exist for this frame at current zoom/center?
-    async function testFrameHasTile(ts, z){
-      const zi = Math.max(0, Math.min(19, Math.round(z))); // RainViewer tiles are integer zoom levels
+    // IMPORTANT FIX: use Image() (not fetch) to avoid CORS blocking
+    function testFrameHasTile(ts, z){
+      const zi = Math.max(0, Math.min(19, Math.round(z))); // integer zoom for tiles
       const { x, y } = latLonToTile(PHX.lat, PHX.lon, zi);
       const url = radarTileUrlXYZ(ts, zi, x, y) + `?cb=${Date.now()}`;
 
-      const controller = new AbortController();
-      const t = setTimeout(()=>controller.abort(), VALIDATION.testTimeoutMs);
+      return new Promise((resolve) => {
+        const img = new Image();
+        let done = false;
 
-      try{
-        const res = await fetch(url, { method: 'GET', cache: 'no-store', signal: controller.signal });
-        clearTimeout(t);
-        // 200 with an image => good; 404/403/etc => missing
-        return res.ok;
-      }catch(e){
-        clearTimeout(t);
-        return false;
-      }
+        const timer = setTimeout(() => {
+          if (done) return;
+          done = true;
+          img.src = ""; // stop loading
+          resolve(false);
+        }, VALIDATION.testTimeoutMs);
+
+        img.onload = () => {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          resolve(true);
+        };
+
+        img.onerror = () => {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          resolve(false);
+        };
+
+        img.src = url; // cross-origin image load is allowed
+      });
     }
 
     async function fetchFrames(){
@@ -447,12 +451,10 @@
       const past = (data?.radar?.past || []).map(x => ({ ts: x.time, kind: 'past' }));
       const nowcast = (data?.radar?.nowcast || []).map(x => ({ ts: x.time, kind: 'nowcast' }));
 
-      // keep only a recent slice so validation stays fast
       const recentPast = past.slice(Math.max(0, past.length - 10));
       const recentNow  = nowcast.slice(0, 6);
       allFrames = [...recentPast, ...recentNow];
 
-      // optionally prefer past-first ordering (more complete tiles)
       if (VALIDATION.preferPast){
         allFrames = [
           ...allFrames.filter(f=>f.kind==='past'),
@@ -460,7 +462,6 @@
         ];
       }
 
-      // cap how many we test
       allFrames = allFrames.slice(Math.max(0, allFrames.length - VALIDATION.maxFramesToTest));
     }
 
@@ -468,21 +469,16 @@
       const z = map.getZoom();
       validFrames = [];
 
-      // test newest-to-oldest so we pick the freshest working frames
-      const candidates = [...allFrames].reverse();
-
+      const candidates = [...allFrames].reverse(); // newest-first for freshness
       for (const f of candidates){
         const ok = await testFrameHasTile(f.ts, z);
         if (ok) validFrames.push(f);
       }
-
-      // restore chronological order for smooth animation
-      validFrames.reverse();
+      validFrames.reverse(); // chronological
 
       if (!validFrames.length){
-        showToast('No radar tiles available for this zoom right now. Try Regional or wait ~1–2 minutes.', true);
+        showToast('No radar tiles available for this zoom right now. Try Regional, or zoom out 1 step.', true);
       } else {
-        // start at the newest valid frame
         frameIndex = validFrames.length - 1;
         applyRadarFrame(validFrames[frameIndex].ts);
       }
@@ -506,7 +502,6 @@
       animTimer = null;
     }
 
-    // Revalidate when zoom changes (because a frame might exist at z=9 but not z=11)
     let zoomRevalTimer = null;
     map.on('zoomend', ()=>{
       clearTimeout(zoomRevalTimer);
@@ -549,14 +544,12 @@
         await fetchFrames();
         await buildValidFramesForCurrentZoom();
         startAnimation();
-        showToast('Radar initialized (only using frames that exist at this zoom).', false);
       }catch(err){
         console.error(err);
         showToast(`Radar failed to initialize: ${err.message}`, true);
       }
     })();
 
-    // Periodically refresh frame list + rebuild valid frames (prevents "expired" issues)
     setInterval(async ()=>{
       try{
         await fetchFrames();
