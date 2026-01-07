@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Edge Radar</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
+  <style>
+    :root{
+      color-scheme: dark;
+
+      /* Edge palette */
+      --bg0:#050912;
+      --bg1:#070f1d;
+      --glass: rgba(255,255,255,0.06);
+      --glass2: rgba(255,255,255,0.035);
+      --stroke: rgba(255,255,255,0.14);
+      --stroke2: rgba(255,255,255,0.09);
+      --text:#eaf1ff;
+      --muted: rgba(234,241,255,0.68);
+
+      --teal:#35f0d0;
+      --tealGlow: rgba(53,240,208,0.26);
+
+      --radiusOuter: 26px;
+      --radiusInner: 20px;
+
+      --pad: 14px;
+      --padSm: 12px;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      height:100vh;
+      overflow:hidden;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1000px 700px at 70% 25%, rgba(53,240,208,0.10), transparent 55%),
+        radial-gradient(900px 650px at 20% 80%, rgba(130,170,255,0.10), transparent 58%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+    }
+
+    /* Edge-like subtle top vignette */
+    body:before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background: radial-gradient(circle at 50% 0%, rgba(0,0,0,0.55), transparent 55%);
+      opacity:0.55;
+    }
+
+    .frame{
+      height:100%;
+      padding: 12px;
+      display:flex;
+    }
+
+    .panel{
+      width:100%;
+      height:100%;
+      border-radius: var(--radiusOuter);
+      background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.035));
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow:
+        0 18px 60px rgba(0,0,0,0.55),
+        inset 0 1px 0 rgba(255,255,255,0.10);
+      position:relative;
+      overflow:hidden;
+    }
+
+    /* top glass sheen */
+    .panel:before{
+      content:"";
+      position:absolute;
+      inset:-40% -10% auto -10%;
+      height:60%;
+      background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.12), transparent 55%);
+      pointer-events:none;
+      opacity:0.35;
+    }
+
+    /* diagonal texture */
+    .panel:after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: repeating-linear-gradient(
+        135deg,
+        rgba(255,255,255,0.055) 0px,
+        rgba(255,255,255,0.055) 2px,
+        rgba(0,0,0,0) 12px,
+        rgba(0,0,0,0) 18px
+      );
+      opacity:0.14;
+      pointer-events:none;
+      mix-blend-mode: overlay;
+    }
+
+    .content{
+      position:relative;
+      z-index:2;
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+      padding: var(--pad);
+    }
+
+    .topStrip{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.28);
+      border: 1px solid rgba(255,255,255,0.10);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+
+    .leftTime{
+      display:flex;
+      align-items:baseline;
+      gap: 10px;
+      white-space:nowrap;
+      min-width: 0;
+    }
+    .leftTime .big{
+      font-weight: 1000;
+      font-size: 34px;
+      letter-spacing: 0.3px;
+      line-height: 1;
+    }
+    .leftTime .small{
+      font-weight: 800;
+      font-size: 13px;
+      color: var(--muted);
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .livePill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(53,240,208,0.12);
+      border: 1px solid rgba(53,240,208,0.25);
+      box-shadow: 0 0 22px rgba(53,240,208,0.12);
+      font-weight: 1000;
+      font-size: 13px;
+      letter-spacing: 0.6px;
+    }
+    .dot{
+      width:8px; height:8px; border-radius:999px;
+      background: var(--teal);
+      box-shadow: 0 0 14px rgba(53,240,208,0.55);
+    }
+
+    .body{
+      flex:1;
+      min-height:0;
+      border-radius: var(--radiusInner);
+      background: rgba(0,0,0,0.18);
+      border: 1px solid rgba(255,255,255,0.10);
+      overflow:hidden;
+      position:relative;
+    }
+
+    .headerRow{
+      position:absolute;
+      left:0; right:0; top:0;
+      padding: 14px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      z-index: 50;
+      pointer-events:none; /* only buttons should take pointer events */
+      background: linear-gradient(180deg, rgba(0,0,0,0.45), transparent 85%);
+    }
+
+    .title{
+      font-weight: 1000;
+      letter-spacing: 0.6px;
+      font-size: 14px;
+      opacity:0.92;
+      pointer-events:none;
+    }
+
+    .controls{
+      display:flex;
+      gap: 8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      pointer-events:auto;
+    }
+
+    button{
+      appearance:none;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      color: rgba(234,241,255,0.92);
+      font-weight: 1000;
+      font-size: 12px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      cursor:pointer;
+      letter-spacing:0.2px;
+      backdrop-filter: blur(10px);
+    }
+    button:hover{ border-color: rgba(53,240,208,0.35); }
+    button.active{
+      border-color: rgba(53,240,208,0.55);
+      box-shadow: 0 0 0 2px rgba(53,240,208,0.10) inset;
+    }
+
+    #map{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+    }
+
+    /* Bottom HUD like your tiles */
+    .hud{
+      position:absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap: 10px;
+      z-index: 60;
+      pointer-events:none;
+    }
+
+    .hud .box{
+      pointer-events:auto;
+      background: rgba(0,0,0,0.32);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 10px 12px;
+      backdrop-filter: blur(12px);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
+    }
+
+    .hud .big{
+      font-size: 13px;
+      font-weight: 950;
+      line-height: 1.1;
+    }
+    .hud .small{
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 750;
+    }
+
+    .foot{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding: 8px 8px 0 8px;
+      color: rgba(234,241,255,0.60);
+      font-weight: 800;
+      font-size: 12px;
+    }
+
+    /* Leaflet styling to match */
+    .leaflet-control-zoom a{
+      background: rgba(0,0,0,0.35) !important;
+      color: rgba(234,241,255,0.92) !important;
+      border: 1px solid rgba(255,255,255,0.14) !important;
+      backdrop-filter: blur(10px);
+    }
+    .leaflet-control-attribution{
+      background: rgba(0,0,0,0.25) !important;
+      color: rgba(234,241,255,0.70) !important;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.10);
+      backdrop-filter: blur(10px);
+    }
+
+    /* Make sure map is never “blank-looking” */
+    .leaflet-container{ background: rgba(0,0,0,0.12); }
+
+    /* Error box */
+    .err{
+      background: rgba(255,120,120,0.10);
+      border: 1px solid rgba(255,120,120,0.35);
+      border-radius: 16px;
+      padding: 12px 12px;
+      font-weight: 900;
+      color: rgba(234,241,255,0.95);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="frame">
+    <div class="panel">
+      <div class="content">
+
+        <!-- Top strip (matches your Edge tiles) -->
+        <div class="topStrip">
+          <div class="leftTime">
+            <div class="big" id="clock">--:--</div>
+            <div class="small" id="locationLine">Phoenix • Radar</div>
+          </div>
+          <div class="livePill"><span class="dot"></span><span id="status">LIVE</span></div>
+        </div>
+
+        <!-- Main body -->
+        <div class="body">
+          <div class="headerRow">
+            <div class="title">RADAR</div>
+            <div class="controls">
+              <button id="btnPlay">⏸ Pause</button>
+              <button id="zMetro" class="active">Metro</button>
+              <button id="zValley">Valley</button>
+              <button id="zRegional">Regional</button>
+            </div>
+          </div>
+
+          <div id="map"></div>
+
+          <div class="hud">
+            <div class="box" style="max-width:65%;">
+              <div class="big" id="frameLine">Frame: —</div>
+              <div class="small" id="hintLine">RainViewer overlay over OSM. If it’s blank, there may be no reflectivity in this frame/area.</div>
+            </div>
+            <div class="box" style="text-align:right;">
+              <div class="big" id="zoomLine">Zoom: —</div>
+              <div class="small" id="updatedLine">Updated —</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom footer (matches your tiles) -->
+        <div class="foot">
+          <div>Edge Dashboard</div>
+          <div id="updatedFoot">Updated —</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+<script>
+  // Phoenix center
+  const PHX = { lat: 33.4484, lon: -112.0740 };
+
+  // Zoom presets
+  const Z = { metro: 10, valley: 9, regional: 7 };
+
+  const el = (id) => document.getElementById(id);
+
+  let map;
+  let radarLayer = null;
+
+  let frames = [];
+  let frameIdx = 0;
+  let playing = true;
+
+  let animTimer = null;
+  let refreshTimer = null;
+
+  function fmtTime(tsSec){
+    const d = new Date(tsSec * 1000);
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+
+  function nowHM(){
+    return new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
+  }
+
+  function setStatus(text){
+    el("status").textContent = text;
+  }
+
+  function setUpdated(){
+    const t = nowHM();
+    el("updatedLine").textContent = "Updated " + t;
+    el("updatedFoot").textContent = "Updated " + t;
+  }
+
+  function setActive(btnId){
+    ["zMetro","zValley","zRegional"].forEach(id => el(id).classList.remove("active"));
+    el(btnId).classList.add("active");
+  }
+
+  function setZoom(mode){
+    const zoom = Z[mode];
+    map.setView([PHX.lat, PHX.lon], zoom, { animate: true });
+    el("zoomLine").textContent = "Zoom: " + zoom;
+  }
+
+  function tileUrlFor(tsSec){
+    return `https://tilecache.rainviewer.com/v2/radar/${tsSec}/256/{z}/{x}/{y}/2/1_1.png`;
+  }
+
+  function applyFrame(tsSec){
+    setStatus("LIVE");
+    setUpdated();
+    el("frameLine").textContent = `Frame: ${fmtTime(tsSec)} (local)`;
+
+    if(radarLayer){
+      map.removeLayer(radarLayer);
+      radarLayer = null;
+    }
+
+    radarLayer = L.tileLayer(tileUrlFor(tsSec), {
+      opacity: 0.72,
+      zIndex: 500
+    });
+
+    radarLayer.addTo(map);
+  }
+
+  async function loadFrames(){
+    const url = `https://api.rainviewer.com/public/weather-maps.json?cb=${Date.now()}`;
+    setStatus("SYNC");
+
+    const r = await fetch(url, { cache: "no-store" });
+    if(!r.ok) throw new Error(`RainViewer frames HTTP ${r.status}`);
+    const data = await r.json();
+
+    const past = data?.radar?.past;
+    if(!Array.isArray(past) || past.length === 0) throw new Error("No radar frames available");
+
+    frames = past.map(x => x.time).filter(Boolean);
+    frameIdx = Math.max(0, frames.length - 1);
+
+    setStatus("LIVE");
+    setUpdated();
+    return frames[frameIdx];
+  }
+
+  function startAnimation(){
+    stopAnimation();
+    animTimer = setInterval(() => {
+      if(!playing || frames.length === 0) return;
+      frameIdx = (frameIdx + 1) % frames.length;
+      applyFrame(frames[frameIdx]);
+    }, 1200);
+  }
+
+  function stopAnimation(){
+    if(animTimer) clearInterval(animTimer);
+    animTimer = null;
+  }
+
+  function startRefresh(){
+    if(refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = setInterval(async () => {
+      try{
+        const ts = await loadFrames();
+        if(playing){
+          frameIdx = Math.max(0, frames.length - 1);
+          applyFrame(ts);
+        }
+      }catch(e){
+        console.error(e);
+        setStatus("SYNC");
+        el("hintLine").textContent = "Radar sync failed. Reload if it persists.";
+      }
+    }, 5 * 60 * 1000);
+  }
+
+  function showError(msg){
+    setStatus("SYNC");
+    el("hintLine").innerHTML = `<div class="err">${msg}</div>`;
+  }
+
+  function tickClock(){
+    el("clock").textContent = nowHM();
+  }
+
+  (function init(){
+    tickClock();
+    setInterval(tickClock, 1000 * 20);
+
+    map = L.map("map", {
+      zoomControl: true,
+      attributionControl: true
+    }).setView([PHX.lat, PHX.lon], Z.metro);
+
+    el("zoomLine").textContent = "Zoom: " + Z.metro;
+    setUpdated();
+
+    // Basemap
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 12,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Controls
+    el("zMetro").addEventListener("click", () => { setActive("zMetro"); setZoom("metro"); });
+    el("zValley").addEventListener("click", () => { setActive("zValley"); setZoom("valley"); });
+    el("zRegional").addEventListener("click", () => { setActive("zRegional"); setZoom("regional"); });
+
+    el("btnPlay").addEventListener("click", () => {
+      playing = !playing;
+      el("btnPlay").textContent = playing ? "⏸ Pause" : "▶ Play";
+      if(playing){
+        frameIdx = Math.max(0, frames.length - 1);
+        if(frames[frameIdx]) applyFrame(frames[frameIdx]);
+      }
+    });
+
+    // Load + run
+    (async () => {
+      try{
+        const ts = await loadFrames();
+        applyFrame(ts);
+        startAnimation();
+        startRefresh();
+      }catch(e){
+        console.error(e);
+        showError("Radar failed to load. RainViewer may be throttling/down, or blocked on your network.");
+      }
+    })();
+  })();
+</script>
+</body>
+</html>
