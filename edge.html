@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Phoenix Rain Radar (vibe)</title>
+  <title>PHX Live Radar</title>
 
-  <!-- Leaflet (map) - CDN only (no local files) -->
+  <!-- Leaflet (map) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -19,7 +19,6 @@
       --text:#e9eefc;
       --muted: rgba(233,238,252,0.72);
       --teal:#33e6d1;
-      --teal2: rgba(51,230,209,0.22);
       --radius: 22px;
     }
     *{ box-sizing:border-box; }
@@ -33,17 +32,6 @@
         radial-gradient(1100px 700px at 70% 30%, rgba(51,230,209,0.10), transparent 60%),
         radial-gradient(1000px 650px at 20% 80%, rgba(120,170,255,0.10), transparent 55%),
         linear-gradient(180deg, var(--bg0), var(--bg1));
-    }
-    body:before{
-      content:"";
-      position:fixed; inset:0;
-      pointer-events:none;
-      background:
-        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
-      background-size: 44px 44px;
-      opacity:0.10;
-      mask-image: radial-gradient(circle at 55% 45%, black 55%, transparent 78%);
     }
 
     .wrap{
@@ -84,10 +72,8 @@
       display:flex;
       flex-direction:column;
       min-height:0;
-      position:relative;
     }
 
-    /* Radar wrapper */
     .radar{
       flex:1;
       margin: 14px;
@@ -99,122 +85,58 @@
       min-height:0;
     }
 
-    /* === MAP LAYER === */
+    /* MAP */
     #map{
       position:absolute; inset:0;
       z-index: 0;
-      filter: saturate(0.9) contrast(1.05) brightness(0.92);
     }
 
-    /* Hide Leaflet UI completely */
+    /* Kill Leaflet UI */
     .leaflet-control-container{ display:none; }
-    .leaflet-tile{ opacity:0.85; }
 
-    /* Soft map vignette + glass */
+    /* Vignette + glass */
     .mapGlass{
       position:absolute; inset:0;
-      z-index: 1;
+      z-index: 3;
       background:
         radial-gradient(circle at 50% 45%, rgba(51,230,209,0.06), transparent 55%),
         radial-gradient(circle at 50% 45%, transparent 55%, rgba(0,0,0,0.55) 100%);
       pointer-events:none;
     }
 
-    /* Subtle rings (cleaner than the earlier “busy” texture) */
+    /* Subtle rings */
     .rings{
-      position:absolute; inset:-140px;
-      z-index: 2;
+      position:absolute; inset:0;
+      z-index: 4;
       background:
         repeating-radial-gradient(circle at 50% 50%,
           rgba(233,238,252,0.05) 0px,
           rgba(233,238,252,0.05) 1px,
           transparent 1px,
-          transparent 56px
+          transparent 58px
         );
-      opacity: 0.30;
+      opacity: 0.22;
       pointer-events:none;
     }
 
-    /* Radar sweep (subtle) */
+    /* OPTIONAL sweep */
     .sweep{
-      position:absolute;
-      inset:-70%;
-      z-index: 3;
+      position:absolute; inset:-60%;
+      z-index: 5;
       background: conic-gradient(from 0deg,
         rgba(51,230,209,0.0),
-        rgba(51,230,209,0.0) 28%,
-        rgba(51,230,209,0.18) 42%,
-        rgba(51,230,209,0.0) 56%,
+        rgba(51,230,209,0.0) 30%,
+        rgba(51,230,209,0.16) 44%,
+        rgba(51,230,209,0.0) 58%,
         rgba(51,230,209,0.0)
       );
-      animation: spin 5.4s linear infinite;
+      animation: spin 5.6s linear infinite;
       mix-blend-mode: screen;
-      opacity: 0.55;
+      opacity: 0.40;
       pointer-events:none;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* Storm “cells” (still fake, but now anchored visually by the map) */
-    .cells{
-      position:absolute; inset:0;
-      z-index: 4;
-      opacity: 0.85;
-      pointer-events:none;
-    }
-    .cell{
-      position:absolute;
-      width: 260px; height: 260px;
-      border-radius: 999px;
-      background: radial-gradient(circle at 40% 40%,
-        rgba(120,170,255,0.18),
-        rgba(51,230,209,0.12) 40%,
-        rgba(51,230,209,0.05) 62%,
-        transparent 75%
-      );
-      mix-blend-mode: screen;
-      animation: drift 11s ease-in-out infinite;
-    }
-    .cell:nth-child(2){ width: 340px; height: 340px; animation-duration: 14s; opacity:0.75; }
-    .cell:nth-child(3){ width: 210px; height: 210px; animation-duration: 12s; opacity:0.70; }
-
-    @keyframes drift{
-      0%   { transform: translate(0px, 0px) scale(1.0); }
-      50%  { transform: translate(46px, -28px) scale(1.06); }
-      100% { transform: translate(0px, 0px) scale(1.0); }
-    }
-
-    /* Rain streak overlay (cleaner + less loud) */
-    .rain{
-      position:absolute; inset:0;
-      z-index: 5;
-      pointer-events:none;
-      opacity: 0;
-      transition: opacity .35s ease;
-    }
-    .rain.on{ opacity: 1; }
-    .rain:before, .rain:after{
-      content:"";
-      position:absolute; inset:-55%;
-      background-image:
-        repeating-linear-gradient(115deg,
-          rgba(233,238,252,0.00) 0px,
-          rgba(233,238,252,0.00) 10px,
-          rgba(233,238,252,0.12) 11px,
-          rgba(233,238,252,0.00) 15px
-        );
-      background-size: 28px 28px;
-      animation: rainMove 0.85s linear infinite;
-      mix-blend-mode: screen;
-      opacity: 0.55;
-    }
-    .rain:after{
-      opacity: 0.25;
-      filter: blur(0.8px);
-      animation-duration: 1.05s;
-    }
-    @keyframes rainMove{
-      to { transform: translate3d(140px, 240px, 0); }
-    }
+    .sweep.off{ display:none; }
 
     /* HUD */
     .hud{
@@ -287,7 +209,7 @@
       white-space:nowrap;
     }
 
-    /* Top-left mini label for interpretability */
+    /* Top-left label */
     .mapLabel{
       position:absolute;
       left: 14px;
@@ -329,88 +251,54 @@
 
     <div class="card">
       <div class="radar">
-        <!-- Map underneath -->
         <div id="map"></div>
+
         <div class="mapGlass"></div>
-
-        <!-- Clean texture -->
         <div class="rings"></div>
+        <div class="sweep" id="sweep"></div>
 
-        <!-- Fake storm blobs -->
-        <div class="cells">
-          <div class="cell" style="left:14%; top:14%"></div>
-          <div class="cell" style="left:46%; top:8%"></div>
-          <div class="cell" style="left:58%; top:46%"></div>
-        </div>
-
-        <!-- Sweep + rain overlay -->
-        <div class="sweep"></div>
-        <div class="rain on" id="rain"></div>
-
-        <!-- Map label -->
         <div class="mapLabel">
-          <span class="pill"><span class="dot"></span>PHX AREA</span>
+          <span class="pill"><span class="dot"></span>PHX LIVE RADAR</span>
           <span id="zoomLbl">Zoom —</span>
         </div>
 
-        <!-- HUD -->
         <div class="hud">
           <div>
-            <div class="chip"><span class="dot"></span><span id="mode">RAIN MODE</span></div>
-            <div class="desc" id="desc">Moderate rain • scanning</div>
-            <div class="sub" id="sub">Basemap: Phoenix metro • Radar overlay is “vibe” (not real radar yet)</div>
+            <div class="chip"><span class="dot"></span><span id="mode">LIVE</span></div>
+            <div class="desc" id="desc">Reflectivity • Phoenix metro</div>
+            <div class="sub" id="sub">Radar tiles update automatically • If you see no echoes, it may be dry over PHX.</div>
           </div>
           <div class="hudRight">
-            <div class="big" id="temp">56°</div>
-            <div class="tiny" id="extra">Wind 14 mph • AQI 32</div>
+            <div class="big" id="temp">—</div>
+            <div class="tiny" id="extra">—</div>
           </div>
         </div>
+
       </div>
     </div>
   </div>
 
 <script>
-  // Toggle this for dry days:
-  const IS_RAINING = true;
+  // ====== Settings you’ll actually care about ======
+  const PHX = { lat: 33.4484, lon: -112.0740, zoom: 10.7 }; // <- more zoomed-in than before
+  const SHOW_SWEEP = true;            // set false if you want it cleaner
+  const RADAR_OPACITY = 0.55;         // 0.45-0.70 tends to look best
+  const RADAR_REFRESH_MS = 2 * 60 * 1000; // refresh radar timestamp every 2 minutes
 
-  // Phoenix center
-  const PHX = { lat: 33.4484, lon: -112.0740, zoom: 9 };
+  // Optional: if you have a weather endpoint later, set these:
+  // If you don’t, it will just display “—”
+  const DEMO_TEMP = "56°";
+  const DEMO_EXTRA = "Wind 14 mph • AQI 32";
 
-  // Demo readout (you can wire real data later)
-  const demo = {
-    descRain: "Rain today • scanning",
-    descClear: "Clear skies • scanning",
-    temp: 56,
-    wind: 14,
-    aqi: 32
-  };
-
-  function tickStamp(){
-    const d = new Date();
-    document.getElementById("stamp").textContent =
-      "Updated " + d.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
+  // ====== Helpers ======
+  function stamp(text){
+    document.getElementById("stamp").textContent = text;
+  }
+  function fmtTime(d){
+    return d.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
   }
 
-  function setMode(raining){
-    const rain = document.getElementById("rain");
-    const mode = document.getElementById("mode");
-    const desc = document.getElementById("desc");
-
-    if(raining){
-      rain.classList.add("on");
-      mode.textContent = "RAIN MODE";
-      desc.textContent = demo.descRain;
-    }else{
-      rain.classList.remove("on");
-      mode.textContent = "SCAN MODE";
-      desc.textContent = demo.descClear;
-    }
-
-    document.getElementById("temp").textContent = demo.temp + "°";
-    document.getElementById("extra").textContent = `Wind ${demo.wind} mph • AQI ${demo.aqi}`;
-  }
-
-  // ---- Map init (no key) ----
+  // ====== Leaflet Map init ======
   const map = L.map("map", {
     zoomControl: false,
     attributionControl: false,
@@ -422,27 +310,82 @@
     tap: false
   }).setView([PHX.lat, PHX.lon], PHX.zoom);
 
-  // Free dark tiles (no API key)
+  // Dark basemap (no key)
   L.tileLayer(
     "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
     { maxZoom: 18, subdomains: "abcd" }
   ).addTo(map);
 
-  // A faint Phoenix marker ring
-  const marker = L.circleMarker([PHX.lat, PHX.lon], {
-    radius: 8,
+  // Phoenix marker ring
+  L.circleMarker([PHX.lat, PHX.lon], {
+    radius: 7,
     color: "rgba(51,230,209,0.65)",
     weight: 2,
-    fillColor: "rgba(51,230,209,0.22)",
-    fillOpacity: 0.9
+    fillColor: "rgba(51,230,209,0.20)",
+    fillOpacity: 0.95
   }).addTo(map);
 
-  // Update zoom label
   document.getElementById("zoomLbl").textContent = "Zoom " + PHX.zoom;
 
-  setMode(IS_RAINING);
-  tickStamp();
-  setInterval(tickStamp, 15000);
+  // Sweep toggle
+  const sweep = document.getElementById("sweep");
+  if(!SHOW_SWEEP) sweep.classList.add("off");
+
+  // HUD fill (optional demo)
+  document.getElementById("temp").textContent = DEMO_TEMP;
+  document.getElementById("extra").textContent = DEMO_EXTRA;
+
+  // ====== LIVE RADAR (RainViewer) ======
+  // We fetch a list of available radar frames, then choose the latest timestamp.
+  // Then we set the tile URL:
+  // https://tilecache.rainviewer.com/v2/radar/{time}/256/{z}/{x}/{y}/2/1_1.png
+  // (color scheme/parameters can be adjusted)
+  let radarLayer = null;
+
+  async function loadLatestRadar(){
+    try{
+      // RainViewer public API (no key)
+      const r = await fetch("https://api.rainviewer.com/public/weather-maps.json", { cache:"no-store" });
+      if(!r.ok) throw new Error("Radar API failed: " + r.status);
+      const data = await r.json();
+
+      const frames = data?.radar?.past;
+      if(!frames || !frames.length) throw new Error("No radar frames returned");
+
+      const latest = frames[frames.length - 1]?.time;
+      if(!latest) throw new Error("Missing latest radar time");
+
+      // Remove old layer
+      if(radarLayer) {
+        map.removeLayer(radarLayer);
+        radarLayer = null;
+      }
+
+      const url =
+        `https://tilecache.rainviewer.com/v2/radar/${latest}/256/{z}/{x}/{y}/2/1_1.png`;
+
+      radarLayer = L.tileLayer(url, {
+        opacity: RADAR_OPACITY,
+        zIndex: 2
+      }).addTo(map);
+
+      const now = new Date();
+      stamp(`Updated ${fmtTime(now)} • Radar frame ${new Date(latest * 1000).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" })}`);
+
+      document.getElementById("sub").textContent =
+        "Live radar • echoes show where precipitation is happening now";
+
+    } catch(e){
+      console.error(e);
+      stamp(`Updated ${fmtTime(new Date())} • Radar unavailable`);
+      document.getElementById("sub").textContent =
+        "Radar layer failed to load (network / CORS / upstream). Try again in a minute.";
+    }
+  }
+
+  // Initial + refresh
+  loadLatestRadar();
+  setInterval(loadLatestRadar, RADAR_REFRESH_MS);
 </script>
 </body>
 </html>
