@@ -17,8 +17,8 @@
       --muted: rgba(245,244,255,.65);
       --hair: rgba(245,244,255,.14);
 
-      /* Single accent */
-      --accent: #ffd54a; /* warm yellow */
+      /* Back to the previous accent */
+      --accent: #c8ff3d; /* acid-lime */
 
       --sans: "Inter", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       --serif: "Instrument Serif", ui-serif, "Iowan Old Style", Palatino, "Times New Roman", serif;
@@ -52,7 +52,7 @@
     .corner-left, .corner-right{
       position: fixed;
       bottom: 14px;
-      z-index: 50;
+      z-index: 60;
       display:flex;
       align-items:center;
       gap: 10px;
@@ -97,39 +97,25 @@
       50%{ transform: scale(1.25); opacity:1; box-shadow: 0 0 0 10px color-mix(in srgb, var(--accent) 14%, transparent); }
     }
 
-    /* Bottom whisper strip (cycles your bullets) */
+    /* Whisper (no outline / no pill / lower into footer area) */
     .whisper{
       position: fixed;
       left: 50%;
       transform: translateX(-50%);
-      bottom: 64px;
-      z-index: 45;
+      bottom: 18px; /* lower */
+      z-index: 55;
       width: min(980px, calc(100% - 28px));
-      border: 1px solid rgba(245,244,255,.10);
-      border-radius: 999px;
-      background: rgba(255,255,255,.03);
-      backdrop-filter: blur(10px);
-      overflow:hidden;
-    }
-    .whisper-inner{
-      display:flex;
-      align-items:center;
-      gap: 10px;
-      padding: 10px 14px;
-      color: rgba(245,244,255,.66);
+      pointer-events:none; /* purely decorative */
+      text-align:center;
       font-size: 12px;
       letter-spacing: .08em;
-    }
-    .whisper-title{
-      color: rgba(245,244,255,.85);
-      letter-spacing: .14em;
-      text-transform: uppercase;
-      white-space: nowrap;
+      color: rgba(245,244,255,.60);
+      opacity: .92;
     }
     .whisper-line{
       position: relative;
-      flex: 1;
-      min-width: 0;
+      display:inline-block;
+      max-width: 92%;
       height: 18px;
       overflow:hidden;
     }
@@ -147,6 +133,10 @@
       transform: translateY(0px);
       opacity: 1;
     }
+    .whisper-bullet{
+      color: color-mix(in srgb, var(--accent) 75%, white);
+      margin-right: 10px;
+    }
 
     /* Page */
     .wrap{
@@ -158,11 +148,14 @@
     .hero{
       padding: clamp(18px, 4vw, 44px) 0 14px;
     }
+
+    /* Top line: name + bio (supporting) */
     .hero-top{
       display:grid;
-      grid-template-columns: 1.2fr .8fr;
+      grid-template-columns: 1.1fr .9fr;
       gap: 18px;
       align-items:end;
+      margin-bottom: 18px;
     }
 
     .name{
@@ -181,6 +174,7 @@
       line-height:1.55;
       font-size: clamp(14px, 1.7vw, 18px);
       max-width: 55ch;
+      justify-self:end;
     }
     .bio strong{ color: var(--fg); font-weight: 600; }
 
@@ -190,8 +184,12 @@
       margin: 18px 0 20px;
     }
 
+    /* Demo reel: centered focal block */
     .reel-wrap{
       position:relative;
+      margin: 0 auto;           /* center */
+      width: 100%;
+      max-width: var(--max);    /* focal but not weird */
       border-radius: calc(var(--r) + 10px);
       overflow:hidden;
       border: 1px solid rgba(245,244,255,.12);
@@ -225,17 +223,19 @@
       text-transform: uppercase;
       color: rgba(245,244,255,.78);
     }
-    .reel{
-      position:relative;
-      z-index:2;
+
+    /* The YouTube IFrame API injects the iframe into these divs */
+    #reelPlayer iframe{
       width:100%;
       aspect-ratio: 16 / 9;
       border:0;
       display:block;
       background:#000;
+      position:relative;
+      z-index:2;
     }
 
-    /* Tabs */
+    /* Tabs + grid */
     .section{ margin-top: 28px; }
     .tabs{
       display:flex;
@@ -267,7 +267,6 @@
       border-radius: 99px;
     }
 
-    /* Collage grid */
     .grid{
       display:grid;
       grid-template-columns: repeat(12, 1fr);
@@ -293,23 +292,12 @@
       border-color: rgba(245,244,255,.22);
       filter: saturate(1.05) contrast(1.03);
     }
-
     .tile.size-6{ grid-column: span 6; min-height: 260px; }
     .tile.size-8{ grid-column: span 8; min-height: 300px; }
     .tile.size-12{ grid-column: span 12; min-height: 340px; }
 
-    .tile .img{
-      position:absolute; inset:0;
-      background:
-        radial-gradient(700px 220px at 10% 20%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 60%),
-        rgba(0,0,0,.28);
-    }
-    .tile img{
-      width:100%; height:100%;
-      object-fit: cover;
-      display:block;
-      opacity:.92;
-    }
+    .tile .img{ position:absolute; inset:0; background: rgba(0,0,0,.28); }
+    .tile img{ width:100%; height:100%; object-fit: cover; display:block; opacity:.92; }
 
     .tile::after{
       content:"";
@@ -320,9 +308,7 @@
 
     .tile .cap{
       position:absolute;
-      left: 12px;
-      right: 12px;
-      bottom: 12px;
+      left: 12px; right: 12px; bottom: 12px;
       z-index:2;
       display:flex;
       align-items:flex-end;
@@ -347,8 +333,7 @@
 
     .play{
       position:absolute;
-      top: 12px;
-      right: 12px;
+      top: 12px; right: 12px;
       z-index:2;
       width: 44px; height: 44px;
       border-radius: 999px;
@@ -428,7 +413,7 @@
     }
     .close:hover{ border-color: rgba(245,244,255,.25); }
 
-    .modal-iframe{
+    #modalPlayer iframe{
       width:100%;
       aspect-ratio: 16 / 9;
       border:0;
@@ -436,12 +421,14 @@
       background:#000;
     }
 
+    /* Responsive */
     @media (max-width: 980px){
       .hero-top{ grid-template-columns: 1fr; }
+      .bio{ justify-self:start; }
       .tile{ grid-column: span 12; }
       .tile.size-6, .tile.size-8{ grid-column: span 12; }
       .corner-left, .corner-right{ position: static; margin: 0 var(--g) 10px; }
-      .whisper{ position: static; transform:none; left:auto; margin: 0 var(--g) 10px; width:auto; }
+      .whisper{ position: static; transform:none; left:auto; margin: 0 var(--g) 10px; width:auto; text-align:left; }
       .wrap{ padding-bottom: 40px; }
     }
   </style>
@@ -462,15 +449,10 @@
     <a href="mailto:Zacharycolemarshall@gmail.com">Zacharycolemarshall@gmail.com</a>
   </div>
 
-  <!-- Whisper strip (your pitch, subtle) -->
+  <!-- Whisper: just cycling bullets, no header/pill, lower -->
   <div class="whisper" aria-label="What you get">
-    <div class="whisper-inner">
-      <span class="dot" id="dotWhisper" aria-hidden="true"></span>
-      <span class="whisper-title">YOU, YES, YOU</span>
-      <span style="opacity:.55;">—</span>
-      <div class="whisper-line" aria-live="polite">
-        <span id="whisperText" class="show"></span>
-      </div>
+    <div class="whisper-line" aria-live="polite">
+      <span id="whisperText" class="show"></span>
     </div>
   </div>
 
@@ -489,15 +471,11 @@
         </p>
       </div>
 
-      <div class="rule"></div>
-
       <div class="reel-wrap" aria-label="Demo reel">
         <div class="reel-label">
           <span class="dot" id="dotReel" aria-hidden="true"></span>
           Demo Reel
         </div>
-
-        <!-- YouTube IFrame API will replace this iframe (same URL) so we can detect play/pause -->
         <div id="reelPlayer"></div>
       </div>
     </section>
@@ -522,7 +500,7 @@
   </div>
 
   <script>
-    // ---------- Content you wrote (cycled subtly) ----------
+    // ---------- Bullet lines (cycled, subtle) ----------
     const WHISPER_LINES = [
       "Edits that respect the audience’s time and reward them for paying attention.",
       "Short-form content selected for impact. Ads and VSLs proven to convert.",
@@ -531,9 +509,23 @@
       "A collaborator who understands how content fits into a larger business — not just vanity metrics."
     ];
 
+    const whisperText = document.getElementById("whisperText");
+    let whisperIndex = 0;
+
+    function setWhisper(text){
+      whisperText.classList.remove("show");
+      setTimeout(() => {
+        whisperText.innerHTML = `<span class="whisper-bullet">•</span>${escapeHtml(text)}`;
+        whisperText.classList.add("show");
+      }, 120);
+    }
+    setWhisper(WHISPER_LINES[0]);
+    setInterval(() => {
+      whisperIndex = (whisperIndex + 1) % WHISPER_LINES.length;
+      setWhisper(WHISPER_LINES[whisperIndex]);
+    }, 4200);
+
     // ---------- Your links ----------
-    // Add more videos by pasting more URLs. It will keep growing.
-    // Add more categories by adding another key (e.g. ads: [...]) — tabs auto-generate.
     const DATA = {
       youtube: [
         "https://youtu.be/vVvcPPGqJG4?si=OkOxCpCLWcgY1jS5",
@@ -557,13 +549,19 @@
       ]
     };
 
-    // Demo reel link you gave
     const DEMO_REEL_URL = "https://youtu.be/UJxDBGAlojc?si=rlXcVu7151f5zOKT";
-
-    // Collage sizing pattern
     const SIZE_PATTERN = ["size-6","", "", "size-8", "", "size-6", "", "size-12"];
 
     // ---------- Helpers ----------
+    function escapeHtml(str){
+      return String(str)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
     function youtubeId(url){
       try{
         const u = new URL(url);
@@ -581,7 +579,6 @@
       return `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
     }
 
-    // Title fetch (no key) via YouTube oEmbed
     async function fetchYouTubeTitle(videoUrl){
       const cacheKey = "yt_title_" + videoUrl;
       const cached = localStorage.getItem(cacheKey);
@@ -596,30 +593,27 @@
       return title;
     }
 
-    // ---------- Whisper cycle ----------
-    const whisperText = document.getElementById("whisperText");
-    let whisperIndex = 0;
-    function setWhisper(text){
-      whisperText.classList.remove("show");
-      // small delay to let transition reset
-      setTimeout(() => {
-        whisperText.textContent = text;
-        whisperText.classList.add("show");
-      }, 120);
-    }
-    setWhisper(WHISPER_LINES[0]);
-    setInterval(() => {
-      whisperIndex = (whisperIndex + 1) % WHISPER_LINES.length;
-      setWhisper(WHISPER_LINES[whisperIndex]);
-    }, 4200);
-
     // ---------- Tabs + Grid ----------
     const grid = document.getElementById("grid");
     const tabsWrap = document.getElementById("tabs");
 
     function prettyCat(cat){
-      // simple titlecase
       return cat.replace(/_/g," ").replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    function tileHTML({id, title, meta, sizeClass}){
+      return `
+        <article class="tile ${sizeClass || ""}" data-id="${id}" data-title="${escapeHtml(title)}">
+          <div class="img"><img loading="lazy" alt="" src="${thumbUrl(id)}" /></div>
+          <div class="play" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M9 7v10l9-5-9-5z"/></svg>
+          </div>
+          <div class="cap">
+            <h3 class="t">${escapeHtml(title)}</h3>
+            <div class="m">${escapeHtml(meta)}</div>
+          </div>
+        </article>
+      `;
     }
 
     function createTabs(){
@@ -637,32 +631,6 @@
       setActive(cats[0] || "youtube");
     }
 
-    function tileHTML({id, title, meta, sizeClass}){
-      return `
-        <article class="tile ${sizeClass || ""}" data-id="${id}" data-title="${escapeHtml(title)}">
-          <div class="img">
-            <img loading="lazy" alt="" src="${thumbUrl(id)}" />
-          </div>
-          <div class="play" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M9 7v10l9-5-9-5z"/></svg>
-          </div>
-          <div class="cap">
-            <h3 class="t">${escapeHtml(title)}</h3>
-            <div class="m">${escapeHtml(meta)}</div>
-          </div>
-        </article>
-      `;
-    }
-
-    function escapeHtml(str){
-      return String(str)
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-
     async function render(cat){
       const urls = DATA[cat] || [];
       if (!urls.length){
@@ -670,42 +638,30 @@
         return;
       }
 
-      // initial render with placeholders so UI is instant
-      const items = urls.map((u, i) => {
-        const id = youtubeId(u);
-        const sizeClass = SIZE_PATTERN[i % SIZE_PATTERN.length] || "";
-        return {
-          url: u,
-          id,
-          sizeClass,
-          title: "Loading title…",
-          meta: prettyCat(cat)
-        };
-      });
+      const items = urls.map((u, i) => ({
+        url: u,
+        id: youtubeId(u),
+        sizeClass: SIZE_PATTERN[i % SIZE_PATTERN.length] || "",
+        title: "Loading title…",
+        meta: prettyCat(cat)
+      }));
 
       grid.innerHTML = items.map(it => tileHTML(it)).join("");
 
-      // click handlers
       grid.querySelectorAll(".tile").forEach(tile => {
         tile.addEventListener("click", () => {
-          const id = tile.dataset.id;
-          const title = tile.dataset.title || "Playing";
-          openModalWithVideo(id, title);
+          openModalWithVideo(tile.dataset.id, tile.dataset.title || "Playing");
         });
       });
 
-      // fetch real titles and patch in place
       await Promise.all(items.map(async (it, idx) => {
         try{
           const title = await fetchYouTubeTitle(it.url);
-          // Update the tile DOM
           const tile = grid.querySelectorAll(".tile")[idx];
           if (!tile) return;
           tile.dataset.title = title;
           tile.querySelector(".t").textContent = title;
-        }catch(e){
-          // keep fallback
-        }
+        }catch(e){}
       }));
     }
 
@@ -723,12 +679,10 @@
     let modalPlayer = null;
 
     const dotReel = document.getElementById("dotReel");
-    const dotWhisper = document.getElementById("dotWhisper");
     const dotLinks = document.getElementById("dotLinks");
 
     function setPulsing(isPlaying){
-      // pulse a couple dots so it feels “alive” but not noisy
-      [dotReel, dotWhisper].forEach(d => d.classList.toggle("pulsing", !!isPlaying));
+      dotReel.classList.toggle("pulsing", !!isPlaying);
       // keep links dot steady
       dotLinks.classList.remove("pulsing");
     }
@@ -750,7 +704,6 @@
     async function initPlayers(){
       await loadYTApi();
 
-      // Reel player (embedded in-page)
       reelPlayer = new YT.Player("reelPlayer", {
         videoId: reelId(),
         playerVars: {
@@ -760,14 +713,12 @@
         },
         events: {
           onStateChange: (e) => {
-            // 1 = playing, 2 = paused, 0 = ended
             setPulsing(e.data === YT.PlayerState.PLAYING);
             if (e.data === YT.PlayerState.ENDED) setPulsing(false);
           }
         }
       });
     }
-
     initPlayers();
 
     // ---------- Modal ----------
@@ -781,7 +732,6 @@
       modal.setAttribute("aria-hidden", "false");
       document.body.style.overflow = "hidden";
 
-      // Create/replace modal player
       if (modalPlayer && modalPlayer.destroy) {
         modalPlayer.destroy();
         modalPlayer = null;
@@ -814,7 +764,7 @@
         modalPlayer.destroy();
         modalPlayer = null;
       }
-      // restore pulsing state to whatever the reel is doing
+
       try{
         if (reelPlayer && reelPlayer.getPlayerState) {
           setPulsing(reelPlayer.getPlayerState() === YT.PlayerState.PLAYING);
@@ -829,7 +779,6 @@
     closeBtn.addEventListener("click", closeModal);
     modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
     window.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
-
   </script>
 </body>
 </html>
