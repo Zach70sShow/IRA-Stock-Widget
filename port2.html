@@ -6,23 +6,27 @@
   <title>Zachary Marshall — Video Editor</title>
   <meta name="description" content="Zachary Marshall — professional video editor based in Phoenix, AZ. Demo reel + selected work." />
 
+  <!-- Optional: tasteful type pair (fast + widely cached). Remove if you want 100% system fonts. -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:opsz@8..60&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
   <style>
     :root{
+      /* Core */
       --bg: #07060a;
       --fg: #f5f4ff;
       --muted: rgba(245,244,255,.65);
       --hair: rgba(245,244,255,.14);
 
-      /* Back to the previous accent */
+      /* Single bold accent — change this ONE value to retheme */
       --accent: #c8ff3d; /* acid-lime */
 
+      /* Type */
       --sans: "Inter", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       --serif: "Instrument Serif", ui-serif, "Iowan Old Style", Palatino, "Times New Roman", serif;
 
+      /* Layout */
       --max: 1180px;
       --g: clamp(14px, 2vw, 22px);
       --r: 22px;
@@ -39,6 +43,7 @@
       overflow-x:hidden;
     }
 
+    /* Very subtle grain */
     body::before{
       content:"";
       position:fixed; inset:0;
@@ -48,11 +53,11 @@
       mix-blend-mode: overlay;
     }
 
-    /* Corners */
+    /* Corner UI (tiny, not “header/footer”) */
     .corner-left, .corner-right{
       position: fixed;
       bottom: 14px;
-      z-index: 60;
+      z-index: 50;
       display:flex;
       align-items:center;
       gap: 10px;
@@ -81,83 +86,29 @@
       color: var(--fg);
       border-color: rgba(245,244,255,.25);
     }
-
-    /* Accent dot + pulse */
     .dot{
       width:6px;height:6px;border-radius:99px;
       background: var(--accent);
       box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent);
-      flex: 0 0 auto;
-    }
-    .dot.pulsing{
-      animation: dotPulse 1.05s infinite ease-in-out;
-    }
-    @keyframes dotPulse{
-      0%,100%{ transform: scale(.85); opacity:.70; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent); }
-      50%{ transform: scale(1.25); opacity:1; box-shadow: 0 0 0 10px color-mix(in srgb, var(--accent) 14%, transparent); }
     }
 
-    /* Whisper (no outline / no pill / lower into footer area) */
-    .whisper{
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: 18px; /* lower */
-      z-index: 55;
-      width: min(980px, calc(100% - 28px));
-      pointer-events:none; /* purely decorative */
-      text-align:center;
-      font-size: 12px;
-      letter-spacing: .08em;
-      color: rgba(245,244,255,.60);
-      opacity: .92;
-    }
-    .whisper-line{
-      position: relative;
-      display:inline-block;
-      max-width: 92%;
-      height: 18px;
-      overflow:hidden;
-    }
-    .whisper-line span{
-      position:absolute;
-      left:0; right:0;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      overflow:hidden;
-      transform: translateY(14px);
-      opacity: 0;
-      transition: transform .55s ease, opacity .55s ease;
-    }
-    .whisper-line span.show{
-      transform: translateY(0px);
-      opacity: 1;
-    }
-    .whisper-bullet{
-      color: color-mix(in srgb, var(--accent) 75%, white);
-      margin-right: 10px;
-    }
-
-    /* Page */
+    /* Page wrapper */
     .wrap{
       max-width: var(--max);
       margin: 0 auto;
-      padding: 28px var(--g) 120px;
+      padding: 28px var(--g) 96px;
     }
 
+    /* HERO: big type + collage reel block */
     .hero{
       padding: clamp(18px, 4vw, 44px) 0 14px;
     }
-
-    /* Top line: name + bio (supporting) */
     .hero-top{
       display:grid;
-      grid-template-columns: 1.1fr .9fr;
+      grid-template-columns: 1.2fr .8fr;
       gap: 18px;
       align-items:end;
-      margin-bottom: 18px;
     }
-
     .name{
       font-family: var(--serif);
       font-weight: 400;
@@ -166,15 +117,16 @@
       font-size: clamp(56px, 8vw, 120px);
       margin:0;
     }
-    .name .accent{ color: var(--accent); }
-
+    .name .accent{
+      color: var(--accent);
+      text-shadow: 0 0 0 rgba(0,0,0,0);
+    }
     .bio{
       margin: 0 0 8px;
       color: var(--muted);
       line-height:1.55;
       font-size: clamp(14px, 1.7vw, 18px);
       max-width: 55ch;
-      justify-self:end;
     }
     .bio strong{ color: var(--fg); font-weight: 600; }
 
@@ -184,18 +136,15 @@
       margin: 18px 0 20px;
     }
 
-    /* Demo reel: centered focal block */
+    /* Reel “collage” container */
     .reel-wrap{
       position:relative;
-      margin: 0 auto;           /* center */
-      width: 100%;
-      max-width: var(--max);    /* focal but not weird */
       border-radius: calc(var(--r) + 10px);
       overflow:hidden;
       border: 1px solid rgba(245,244,255,.12);
       box-shadow: var(--shadow);
       background:
-        radial-gradient(900px 300px at 10% 20%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 60%),
+        radial-gradient(900px 300px at 10% 20%, color-mix(in srgb, var(--accent) 28%, transparent), transparent 60%),
         radial-gradient(700px 260px at 80% 70%, rgba(245,244,255,.08), transparent 60%),
         rgba(255,255,255,.03);
     }
@@ -203,8 +152,10 @@
       content:"";
       position:absolute; inset:0;
       pointer-events:none;
-      background: linear-gradient(180deg, rgba(0,0,0,.30), transparent 35%, rgba(0,0,0,.45));
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.30), transparent 35%, rgba(0,0,0,.45));
     }
+
     .reel-label{
       position:absolute;
       left: 14px;
@@ -224,19 +175,20 @@
       color: rgba(245,244,255,.78);
     }
 
-    /* The YouTube IFrame API injects the iframe into these divs */
-    #reelPlayer iframe{
+    .reel{
+      position:relative;
+      z-index:2;
       width:100%;
       aspect-ratio: 16 / 9;
       border:0;
       display:block;
       background:#000;
-      position:relative;
-      z-index:2;
     }
 
-    /* Tabs + grid */
-    .section{ margin-top: 28px; }
+    /* Tabs */
+    .section{
+      margin-top: 28px;
+    }
     .tabs{
       display:flex;
       gap: 14px;
@@ -256,7 +208,9 @@
       padding: 8px 2px;
       position:relative;
     }
-    .tab[aria-selected="true"]{ color: var(--fg); }
+    .tab[aria-selected="true"]{
+      color: var(--fg);
+    }
     .tab[aria-selected="true"]::after{
       content:"";
       position:absolute;
@@ -267,6 +221,7 @@
       border-radius: 99px;
     }
 
+    /* Collage grid */
     .grid{
       display:grid;
       grid-template-columns: repeat(12, 1fr);
@@ -282,33 +237,48 @@
       background: rgba(255,255,255,.03);
       box-shadow: 0 16px 55px rgba(0,0,0,.35);
       position:relative;
+      transform: translateZ(0);
       transition: transform .22s ease, border-color .22s ease, filter .22s ease;
       cursor:pointer;
       min-height: 210px;
-      transform: translateZ(0);
     }
     .tile:hover{
       transform: translateY(-6px) rotate(.15deg);
       border-color: rgba(245,244,255,.22);
       filter: saturate(1.05) contrast(1.03);
     }
+
+    /* Mixed spans (collage feel) */
     .tile.size-6{ grid-column: span 6; min-height: 260px; }
     .tile.size-8{ grid-column: span 8; min-height: 300px; }
     .tile.size-12{ grid-column: span 12; min-height: 340px; }
 
-    .tile .img{ position:absolute; inset:0; background: rgba(0,0,0,.28); }
-    .tile img{ width:100%; height:100%; object-fit: cover; display:block; opacity:.92; }
+    .tile .img{
+      position:absolute; inset:0;
+      background:
+        radial-gradient(700px 220px at 10% 20%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 60%),
+        rgba(0,0,0,.28);
+    }
+    .tile img{
+      width:100%; height:100%;
+      object-fit: cover;
+      display:block;
+      opacity:.92;
+    }
 
     .tile::after{
       content:"";
       position:absolute; inset:0;
-      background: linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.20) 55%, rgba(0,0,0,.55));
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.20) 55%, rgba(0,0,0,.55));
       pointer-events:none;
     }
 
     .tile .cap{
       position:absolute;
-      left: 12px; right: 12px; bottom: 12px;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
       z-index:2;
       display:flex;
       align-items:flex-end;
@@ -321,7 +291,6 @@
       line-height:1.05;
       letter-spacing:-0.01em;
       margin:0;
-      max-width: 70%;
     }
     .tile .m{
       font-size: 11px;
@@ -333,7 +302,8 @@
 
     .play{
       position:absolute;
-      top: 12px; right: 12px;
+      top: 12px;
+      right: 12px;
       z-index:2;
       width: 44px; height: 44px;
       border-radius: 999px;
@@ -350,6 +320,7 @@
     }
     .play svg{ width: 18px; height: 18px; fill: var(--accent); }
 
+    /* Subtle “collage rotation” variance without chaos */
     .tile:nth-child(3n){ transform: rotate(-.18deg); }
     .tile:nth-child(4n){ transform: rotate(.22deg); }
     .tile:nth-child(5n){ transform: rotate(-.12deg); }
@@ -413,7 +384,7 @@
     }
     .close:hover{ border-color: rgba(245,244,255,.25); }
 
-    #modalPlayer iframe{
+    .modal-iframe{
       width:100%;
       aspect-ratio: 16 / 9;
       border:0;
@@ -424,11 +395,9 @@
     /* Responsive */
     @media (max-width: 980px){
       .hero-top{ grid-template-columns: 1fr; }
-      .bio{ justify-self:start; }
       .tile{ grid-column: span 12; }
       .tile.size-6, .tile.size-8{ grid-column: span 12; }
       .corner-left, .corner-right{ position: static; margin: 0 var(--g) 10px; }
-      .whisper{ position: static; transform:none; left:auto; margin: 0 var(--g) 10px; width:auto; text-align:left; }
       .wrap{ padding-bottom: 40px; }
     }
   </style>
@@ -437,7 +406,7 @@
 <body>
   <!-- Tiny links (left) -->
   <div class="corner-left" aria-label="Links">
-    <span class="dot" id="dotLinks" aria-hidden="true"></span>
+    <span class="dot" aria-hidden="true"></span>
     <a href="https://www.instagram.com/zach70sshow/" target="_blank" rel="noreferrer">IG</a>
     <a href="https://www.youtube.com/@ZacharyMarshall" target="_blank" rel="noreferrer">YouTube</a>
     <a href="https://www.linkedin.com/in/zachary-marshall-18a837149/" target="_blank" rel="noreferrer">LinkedIn</a>
@@ -447,13 +416,6 @@
   <!-- Email (right) -->
   <div class="corner-right" aria-label="Email">
     <a href="mailto:Zacharycolemarshall@gmail.com">Zacharycolemarshall@gmail.com</a>
-  </div>
-
-  <!-- Whisper: just cycling bullets, no header/pill, lower -->
-  <div class="whisper" aria-label="What you get">
-    <div class="whisper-line" aria-live="polite">
-      <span id="whisperText" class="show"></span>
-    </div>
   </div>
 
   <main class="wrap">
@@ -471,17 +433,27 @@
         </p>
       </div>
 
+      <div class="rule"></div>
+
       <div class="reel-wrap" aria-label="Demo reel">
-        <div class="reel-label">
-          <span class="dot" id="dotReel" aria-hidden="true"></span>
-          Demo Reel
-        </div>
-        <div id="reelPlayer"></div>
+        <div class="reel-label"><span class="dot" aria-hidden="true"></span> Demo Reel</div>
+        <iframe
+          class="reel"
+          title="Zachary Marshall — Demo Reel"
+          src="https://www.youtube.com/embed/UJxDBGAlojc?rel=0&modestbranding=1&playsinline=1"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
+        ></iframe>
       </div>
     </section>
 
     <section class="section" aria-label="Selected work">
-      <div class="tabs" id="tabs" role="tablist" aria-label="Categories"></div>
+      <div class="tabs" role="tablist" aria-label="Categories">
+        <button class="tab" role="tab" aria-selected="true" data-cat="youtube">YouTube</button>
+        <button class="tab" role="tab" aria-selected="false" data-cat="podcasts">Podcasts</button>
+        <button class="tab" role="tab" aria-selected="false" data-cat="misc">Misc</button>
+      </div>
+
       <div class="grid" id="grid" aria-live="polite"></div>
     </section>
   </main>
@@ -495,63 +467,18 @@
         </div>
         <button class="close" id="closeBtn" type="button">Close</button>
       </div>
-      <div id="modalPlayer"></div>
+      <iframe
+        class="modal-iframe"
+        id="modalFrame"
+        title="Video"
+        src=""
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen
+      ></iframe>
     </div>
   </div>
 
   <script>
-    // ---------- Bullet lines (cycled, subtle) ----------
-    const WHISPER_LINES = [
-      "Edits that respect the audience’s time and reward them for paying attention.",
-      "Short-form content selected for impact. Ads and VSLs proven to convert.",
-      "Long-form YouTube videos cut with retention, clarity, and monetization in mind.",
-      "Support for content that actually has a job to do: growth, sales, or credibility.",
-      "A collaborator who understands how content fits into a larger business — not just vanity metrics."
-    ];
-
-    const whisperText = document.getElementById("whisperText");
-    let whisperIndex = 0;
-
-    function setWhisper(text){
-      whisperText.classList.remove("show");
-      setTimeout(() => {
-        whisperText.innerHTML = `<span class="whisper-bullet">•</span>${escapeHtml(text)}`;
-        whisperText.classList.add("show");
-      }, 120);
-    }
-    setWhisper(WHISPER_LINES[0]);
-    setInterval(() => {
-      whisperIndex = (whisperIndex + 1) % WHISPER_LINES.length;
-      setWhisper(WHISPER_LINES[whisperIndex]);
-    }, 4200);
-
-    // ---------- Your links ----------
-    const DATA = {
-      youtube: [
-        "https://youtu.be/vVvcPPGqJG4?si=OkOxCpCLWcgY1jS5",
-        "https://youtu.be/fWCICcXAjlc?si=ZybYpEq1rjPJ9pkB",
-        "https://youtu.be/j7tstp_JXL0?si=5s4udZ1zw1f_c2rV",
-        "https://youtu.be/hZM-tgonf2M?si=CvcjIuRL_YLK-IXU",
-        "https://youtu.be/O1DH6Ri_kF0?si=FEmz-MLYKFx4fubx"
-      ],
-      podcasts: [
-        "https://www.youtube.com/watch?v=EQJ7Iur4YdQ",
-        "https://youtu.be/GVn0nkDxL_M?si=9Zk1-y5ao6tc4Pnl",
-        "https://youtu.be/lEcJj_omaBg?si=0j2qEQB-bVuTG4FV",
-        "https://youtu.be/DObamfcjcQg?si=yJ2pmwi732fMtn1I"
-      ],
-      misc: [
-        "https://youtu.be/Rd4wmaq6o84?si=UXtDSzPEP-8wfq1K",
-        "https://youtu.be/sku6gwDS-vA?si=gUvRTrA0gDMGUaHi",
-        "https://youtu.be/oo0C0Ytybro?si=XSop8OBj9ybK3df6",
-        "https://youtu.be/8HgtRIzillo?si=cwhzassjdMMv3VlT",
-        "https://youtu.be/waseMxrWONA?si=8Um3l9RQTAMMIG4u"
-      ]
-    };
-
-    const DEMO_REEL_URL = "https://youtu.be/UJxDBGAlojc?si=rlXcVu7151f5zOKT";
-    const SIZE_PATTERN = ["size-6","", "", "size-8", "", "size-6", "", "size-12"];
-
     // ---------- Helpers ----------
     function escapeHtml(str){
       return String(str)
@@ -579,6 +506,11 @@
       return `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
     }
 
+    function embedUrl(id){
+      return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
+    }
+
+    // --- NEW: Fetch real YouTube titles via oEmbed (no API key) ---
     async function fetchYouTubeTitle(videoUrl){
       const cacheKey = "yt_title_" + videoUrl;
       const cached = localStorage.getItem(cacheKey);
@@ -588,23 +520,55 @@
       const res = await fetch(endpoint);
       if (!res.ok) throw new Error("oEmbed failed");
       const json = await res.json();
+
       const title = (json && json.title) ? json.title : "Untitled";
       localStorage.setItem(cacheKey, title);
       return title;
     }
 
-    // ---------- Tabs + Grid ----------
+    // ---------- Your links ----------
+    const DATA = {
+      youtube: [
+        "https://youtu.be/vVvcPPGqJG4?si=OkOxCpCLWcgY1jS5",
+        "https://youtu.be/fWCICcXAjlc?si=ZybYpEq1rjPJ9pkB",
+        "https://youtu.be/j7tstp_JXL0?si=5s4udZ1zw1f_c2rV",
+        "https://youtu.be/hZM-tgonf2M?si=CvcjIuRL_YLK-IXU",
+        "https://youtu.be/O1DH6Ri_kF0?si=FEmz-MLYKFx4fubx"
+      ],
+      podcasts: [
+        "https://www.youtube.com/watch?v=EQJ7Iur4YdQ",
+        "https://youtu.be/GVn0nkDxL_M?si=9Zk1-y5ao6tc4Pnl",
+        "https://youtu.be/lEcJj_omaBg?si=0j2qEQB-bVuTG4FV",
+        "https://youtu.be/DObamfcjcQg?si=yJ2pmwi732fMtn1I"
+      ],
+      misc: [
+        "https://youtu.be/Rd4wmaq6o84?si=UXtDSzPEP-8wfq1K",
+        "https://youtu.be/sku6gwDS-vA?si=gUvRTrA0gDMGUaHi",
+        "https://youtu.be/oo0C0Ytybro?si=XSop8OBj9ybK3df6",
+        "https://youtu.be/8HgtRIzillo?si=cwhzassjdMMv3VlT",
+        "https://youtu.be/waseMxrWONA?si=8Um3l9RQTAMMIG4u"
+      ]
+    };
+
+    // Collage sizing pattern (feel free to tweak)
+    const SIZE_PATTERN = ["size-6","", "size-4", "size-8", "", "size-6", "", "size-12"];
+
+    // ---------- Render ----------
     const grid = document.getElementById("grid");
-    const tabsWrap = document.getElementById("tabs");
+    const tabs = Array.from(document.querySelectorAll(".tab"));
 
-    function prettyCat(cat){
-      return cat.replace(/_/g," ").replace(/\b\w/g, c => c.toUpperCase());
-    }
+    const modal = document.getElementById("modal");
+    const modalFrame = document.getElementById("modalFrame");
+    const modalTitle = document.getElementById("modalTitle");
+    const closeBtn = document.getElementById("closeBtn");
 
-    function tileHTML({id, title, meta, sizeClass}){
+    function tileHTML({id, title, meta, sizeClass, videoUrl}){
+      // IMPORTANT: escape all user/content strings
       return `
-        <article class="tile ${sizeClass || ""}" data-id="${id}" data-title="${escapeHtml(title)}">
-          <div class="img"><img loading="lazy" alt="" src="${thumbUrl(id)}" /></div>
+        <article class="tile ${sizeClass || ""}" data-id="${escapeHtml(id)}" data-title="${escapeHtml(title)}" data-url="${escapeHtml(videoUrl)}">
+          <div class="img">
+            <img loading="lazy" alt="" src="${thumbUrl(id)}" />
+          </div>
           <div class="play" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="M9 7v10l9-5-9-5z"/></svg>
           </div>
@@ -616,169 +580,91 @@
       `;
     }
 
-    function createTabs(){
-      const cats = Object.keys(DATA);
-      tabsWrap.innerHTML = cats.map((cat, i) => `
-        <button class="tab" role="tab" aria-selected="${i===0 ? "true":"false"}" data-cat="${cat}">
-          ${prettyCat(cat)}
-        </button>
-      `).join("");
-
-      tabsWrap.querySelectorAll(".tab").forEach(btn => {
-        btn.addEventListener("click", () => setActive(btn.dataset.cat));
-      });
-
-      setActive(cats[0] || "youtube");
-    }
-
     async function render(cat){
       const urls = DATA[cat] || [];
       if (!urls.length){
-        grid.innerHTML = `<div style="grid-column:1/-1;color:rgba(245,244,255,.65);padding:12px 2px;">No items yet.</div>`;
+        grid.innerHTML = `<div style="grid-column:1/-1;color:rgba(245,244,255,.65);padding:12px 2px;">
+          No items yet.
+        </div>`;
         return;
       }
 
-      const items = urls.map((u, i) => ({
-        url: u,
-        id: youtubeId(u),
-        sizeClass: SIZE_PATTERN[i % SIZE_PATTERN.length] || "",
-        title: "Loading title…",
-        meta: prettyCat(cat)
-      }));
+      // 1) Render instantly with placeholders
+      const items = urls.map((u, i) => {
+        const id = youtubeId(u);
+        const sizeClass = SIZE_PATTERN[i % SIZE_PATTERN.length] || "";
+        const meta =
+          cat === "youtube" ? "YouTube" :
+          cat === "podcasts" ? "Podcast" :
+          "Misc";
+
+        return {
+          id,
+          sizeClass,
+          meta,
+          videoUrl: u,
+          title: "Loading title…"
+        };
+      });
 
       grid.innerHTML = items.map(it => tileHTML(it)).join("");
 
+      // click handlers (works immediately)
       grid.querySelectorAll(".tile").forEach(tile => {
         tile.addEventListener("click", () => {
-          openModalWithVideo(tile.dataset.id, tile.dataset.title || "Playing");
+          const id = tile.dataset.id;
+          const title = tile.dataset.title || "Playing";
+          openModal(id, title);
         });
       });
 
+      // 2) Fetch and patch titles in-place
+      const tiles = Array.from(grid.querySelectorAll(".tile"));
       await Promise.all(items.map(async (it, idx) => {
         try{
-          const title = await fetchYouTubeTitle(it.url);
-          const tile = grid.querySelectorAll(".tile")[idx];
+          const realTitle = await fetchYouTubeTitle(it.videoUrl);
+          const tile = tiles[idx];
           if (!tile) return;
-          tile.dataset.title = title;
-          tile.querySelector(".t").textContent = title;
-        }catch(e){}
+
+          tile.dataset.title = realTitle;
+          const h3 = tile.querySelector(".t");
+          if (h3) h3.textContent = realTitle;
+        }catch(e){
+          // keep "Loading title…" (or you could set a fallback here)
+        }
       }));
     }
 
     function setActive(cat){
-      tabsWrap.querySelectorAll(".tab").forEach(t => {
-        t.setAttribute("aria-selected", t.dataset.cat === cat ? "true" : "false");
-      });
+      tabs.forEach(t => t.setAttribute("aria-selected", t.dataset.cat === cat ? "true" : "false"));
       render(cat);
     }
 
-    createTabs();
-
-    // ---------- YouTube Iframe API (play detection for pulsing dot) ----------
-    let reelPlayer = null;
-    let modalPlayer = null;
-
-    const dotReel = document.getElementById("dotReel");
-    const dotLinks = document.getElementById("dotLinks");
-
-    function setPulsing(isPlaying){
-      dotReel.classList.toggle("pulsing", !!isPlaying);
-      // keep links dot steady
-      dotLinks.classList.remove("pulsing");
-    }
-
-    function loadYTApi(){
-      return new Promise((resolve) => {
-        if (window.YT && window.YT.Player) return resolve();
-        const tag = document.createElement("script");
-        tag.src = "https://www.youtube.com/iframe_api";
-        window.onYouTubeIframeAPIReady = () => resolve();
-        document.head.appendChild(tag);
-      });
-    }
-
-    function reelId(){
-      return youtubeId(DEMO_REEL_URL);
-    }
-
-    async function initPlayers(){
-      await loadYTApi();
-
-      reelPlayer = new YT.Player("reelPlayer", {
-        videoId: reelId(),
-        playerVars: {
-          rel: 0,
-          modestbranding: 1,
-          playsinline: 1
-        },
-        events: {
-          onStateChange: (e) => {
-            setPulsing(e.data === YT.PlayerState.PLAYING);
-            if (e.data === YT.PlayerState.ENDED) setPulsing(false);
-          }
-        }
-      });
-    }
-    initPlayers();
-
     // ---------- Modal ----------
-    const modal = document.getElementById("modal");
-    const modalTitle = document.getElementById("modalTitle");
-    const closeBtn = document.getElementById("closeBtn");
-
-    function openModalWithVideo(id, title){
+    function openModal(id, title){
       modalTitle.innerHTML = `<span class="dot" aria-hidden="true"></span> ${escapeHtml(title)}`;
+      modalFrame.src = embedUrl(id);
       modal.classList.add("open");
       modal.setAttribute("aria-hidden", "false");
       document.body.style.overflow = "hidden";
-
-      if (modalPlayer && modalPlayer.destroy) {
-        modalPlayer.destroy();
-        modalPlayer = null;
-      }
-
-      modalPlayer = new YT.Player("modalPlayer", {
-        videoId: id,
-        playerVars: {
-          autoplay: 1,
-          rel: 0,
-          modestbranding: 1,
-          playsinline: 1
-        },
-        events: {
-          onStateChange: (e) => {
-            // pulse while modal plays too
-            setPulsing(e.data === YT.PlayerState.PLAYING);
-            if (e.data === YT.PlayerState.ENDED) setPulsing(false);
-          }
-        }
-      });
     }
 
     function closeModal(){
       modal.classList.remove("open");
       modal.setAttribute("aria-hidden", "true");
+      modalFrame.src = ""; // stop playback
       document.body.style.overflow = "";
-
-      if (modalPlayer && modalPlayer.destroy) {
-        modalPlayer.destroy();
-        modalPlayer = null;
-      }
-
-      try{
-        if (reelPlayer && reelPlayer.getPlayerState) {
-          setPulsing(reelPlayer.getPlayerState() === YT.PlayerState.PLAYING);
-        } else {
-          setPulsing(false);
-        }
-      }catch{
-        setPulsing(false);
-      }
     }
 
     closeBtn.addEventListener("click", closeModal);
     modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
     window.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+
+    // Tabs
+    tabs.forEach(t => t.addEventListener("click", () => setActive(t.dataset.cat)));
+
+    // Default
+    setActive("youtube");
   </script>
 </body>
 </html>
