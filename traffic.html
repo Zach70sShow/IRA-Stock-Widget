@@ -46,37 +46,59 @@
     }
 
     * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
+
+    /* ✅ IMPORTANT: true fullscreen host (no centering, no margins) */
+    html, body {
+      width: 100%;
+      height: 100%;
       margin: 0;
-      display: grid;
-      place-items: center;
+      background: #000;
+      overflow: hidden;
+      font-family: var(--font-ui);
+      color: var(--ink);
+    }
+
+    /* ✅ A fixed stage that always fills the widget edge-to-edge */
+    #stage{
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
       background:
         radial-gradient(1200px 500px at 20% 30%, #7b6cff30, transparent 55%),
         radial-gradient(900px 420px at 75% 20%, #2bd9ff24, transparent 60%),
         radial-gradient(900px 500px at 60% 80%, #ff8fd124, transparent 60%),
         linear-gradient(180deg, var(--bg0), var(--bg1));
-      color: var(--ink);
-      font-family: var(--font-ui);
+      overflow: hidden;
     }
 
-    /* Outer “monitor bar” */
+    /* ✅ Your “designed at” native canvas size */
+    #canvas{
+      width: 2560px;
+      height: 720px;
+      transform-origin: top left;
+      will-change: transform;
+    }
+
+    /* Outer “monitor bar” — now truly 2560x720 and edge-friendly */
     .bar {
-      width: min(1920px, calc(100vw - 24px));
-      height: min(360px, calc(100vh - 24px));
-      aspect-ratio: 1920 / 360;
-      border-radius: 22px;
+      width: 2560px;
+      height: 720px;
+
+      /* ✅ remove the “card” look that causes edge padding + clipping */
+      border-radius: 0;
+      box-shadow: none;
+      border: 0;
+
       position: relative;
       overflow: hidden;
-      box-shadow: var(--shadow);
-      border: 1px solid #ffffff22;
 
       /* retro frame + subtle texture */
       background:
         linear-gradient(90deg, #ffffff14, #ffffff08 40%, #ffffff12),
-        radial-gradient(700px 280px at 20% 30%, #ffb48a18, transparent 60%),
-        radial-gradient(600px 260px at 75% 35%, #89f0d118, transparent 60%),
-        radial-gradient(700px 300px at 50% 120%, #c3a1ff14, transparent 55%),
+        radial-gradient(900px 360px at 18% 35%, #ffb48a18, transparent 60%),
+        radial-gradient(850px 340px at 78% 40%, #89f0d118, transparent 60%),
+        radial-gradient(1000px 420px at 50% 120%, #c3a1ff14, transparent 55%),
         linear-gradient(180deg, #13163a, #0f1232);
     }
 
@@ -600,234 +622,255 @@
     .pin rect { fill: var(--lemon); stroke: #00000055; stroke-width: 1; rx: 6; }
     .pin .n { font-size: 20px; }
 
-    /* Small responsive tweak: keep it nice if window is narrower */
+    /* ✅ Disable the responsive “hide rest panel” rules on the Edge */
     @media (max-width: 1200px){
-      .main { grid-template-columns: 1fr 1.2fr 1fr; }
-      .panel.rest { display:none; }
+      /* keep 4 columns even if the widget reports weird sizes */
+      .main { grid-template-columns: 1.05fr 1.6fr 1fr 0.95fr; }
+      .panel.rest { display:block; }
     }
     @media (max-width: 900px){
-      .main { grid-template-columns: 1fr; }
-      .ticker { grid-template-columns: 1fr; gap: 8px; height: auto; }
-      .clockBox { justify-self: end; }
+      .main { grid-template-columns: 1.05fr 1.6fr 1fr 0.95fr; }
     }
   </style>
 </head>
 
 <body>
-  <div class="bar" role="img" aria-label="Retro AZ NOW traffic and weather dashboard mockup">
-    <!-- HEADER -->
-    <div class="header">
-      <div class="brand">
-        <div class="logo">AZ NOW</div>
-        <div class="sub">LIVE TRAFFIC + ROAD WEATHER</div>
-      </div>
-
-      <div class="meta">
-        <div class="pill"><span class="dot"></span><span>LIVE</span></div>
-        <div class="pill" id="datePill">TUES APR 23, 2024</div>
-        <div class="retroBadge">RETRO <b>8s</b> LIVE</div>
-      </div>
-    </div>
-
-    <!-- MAIN GRID -->
-    <div class="main">
-      <!-- TRAFFIC ALERTS -->
-      <section class="panel">
-        <div class="panelTitle">
-          <h3>TRAFFIC ALERTS</h3>
-          <small id="alertsCount">3 ITEMS</small>
-        </div>
-
-        <div class="alerts" id="alertsList">
-          <div class="alert a-danger">
-            <div class="icon">!</div>
-            <div class="text">
-              <div class="top">ACCIDENT</div>
-              <div class="sub">I-10 @ 75th Ave — Right lanes blocked</div>
-            </div>
-            <div class="tag">SEV 3</div>
+  <!-- ✅ Stage + Canvas: scales perfectly and prevents cropping -->
+  <div id="stage">
+    <div id="canvas">
+      <div class="bar" role="img" aria-label="Retro AZ NOW traffic and weather dashboard mockup">
+        <!-- HEADER -->
+        <div class="header">
+          <div class="brand">
+            <div class="logo">AZ NOW</div>
+            <div class="sub">LIVE TRAFFIC + ROAD WEATHER</div>
           </div>
 
-          <div class="alert a-warn">
-            <div class="icon">⛏</div>
-            <div class="text">
-              <div class="top">CONSTRUCTION</div>
-              <div class="sub">I-17 Southbound — Night work (reduced lanes)</div>
-            </div>
-            <div class="tag">SEV 2</div>
-          </div>
-
-          <div class="alert a-ok">
-            <div class="icon">☁</div>
-            <div class="text">
-              <div class="top">WEATHER ADVISORY</div>
-              <div class="sub">SR-89A — Gusty winds; watch for debris</div>
-            </div>
-            <div class="tag">INFO</div>
+          <div class="meta">
+            <div class="pill"><span class="dot"></span><span>LIVE</span></div>
+            <div class="pill" id="datePill">TUES APR 23, 2024</div>
+            <div class="retroBadge">RETRO <b>8s</b> LIVE</div>
           </div>
         </div>
-      </section>
 
-      <!-- PHOENIX TRAFFIC MAP -->
-      <section class="panel">
-        <div class="panelTitle">
-          <h3>PHOENIX TRAFFIC MAP</h3>
-          <small id="updateLabel">LIVE UPDATE: <span id="updateClock">00:27</span></small>
-        </div>
-
-        <div class="mapWrap">
-          <div class="mapCanvas">
-            <div class="incidentBadge"><span class="tri"></span><span id="incidentCount">11 INCIDENT</span></div>
-
-            <!-- Fake “map” as SVG -->
-            <svg viewBox="0 0 900 320" preserveAspectRatio="none" aria-hidden="true">
-              <!-- grid -->
-              <g class="grid">
-                <path d="M0 40 H900 M0 80 H900 M0 120 H900 M0 160 H900 M0 200 H900 M0 240 H900 M0 280 H900" stroke="#ffffff" stroke-width="1"/>
-                <path d="M60 0 V320 M120 0 V320 M180 0 V320 M240 0 V320 M300 0 V320 M360 0 V320 M420 0 V320 M480 0 V320 M540 0 V320 M600 0 V320 M660 0 V320 M720 0 V320 M780 0 V320 M840 0 V320" stroke="#ffffff" stroke-width="1"/>
-              </g>
-
-              <!-- roads -->
-              <path class="road r-main r-green" d="M40 210 C 190 190, 330 190, 500 205 S 760 235, 860 220" />
-              <path class="road r-mid r-yellow" d="M90 80 C 180 120, 260 150, 360 160 S 560 160, 720 120 S 820 90, 880 100" />
-              <path class="road r-mid r-red" d="M120 300 C 250 250, 320 235, 420 230 S 600 230, 720 260 S 830 300, 890 290" />
-              <path class="road r-min r-green" d="M260 40 C 280 110, 290 170, 300 320" />
-              <path class="road r-min r-yellow" d="M560 20 C 540 80, 520 160, 520 320" />
-              <path class="road r-min r-green" d="M740 40 C 700 120, 690 190, 680 320" />
-
-              <!-- incident pins -->
-              <g class="pin" transform="translate(340,145)">
-                <rect x="-16" y="-16" width="32" height="26"></rect>
-                <text class="n" x="0" y="3" text-anchor="middle">3</text>
-              </g>
-              <g class="pin" transform="translate(600,120)">
-                <rect x="-16" y="-16" width="32" height="26"></rect>
-                <text class="n" x="0" y="3" text-anchor="middle">3</text>
-              </g>
-              <g class="pin" transform="translate(690,205)">
-                <rect x="-16" y="-16" width="32" height="26"></rect>
-                <text class="n" x="0" y="3" text-anchor="middle">1</text>
-              </g>
-
-              <!-- subtle city silhouette -->
-              <path d="M0 320 L0 260 L60 260 L60 240 L90 240 L90 265 L125 265 L125 230 L150 230 L150 250 L180 250 L180 220 L210 220 L210 260 L250 260 L250 235 L280 235 L280 265 L330 265 L330 245 L360 245 L360 260 L420 260 L420 235 L470 235 L470 250 L520 250 L520 235 L560 235 L560 260 L620 260 L620 240 L650 240 L650 265 L690 265 L690 230 L730 230 L730 260 L780 260 L780 245 L820 245 L820 260 L900 260 L900 320 Z"
-                    fill="#ff8fd10f"/>
-            </svg>
-          </div>
-
-          <div class="mapLegend">
-            <div class="stat">
-              <div class="k">I-10 TO DOWNTOWN</div>
-              <div class="v"><b id="eta1">32</b> mins</div>
+        <!-- MAIN GRID -->
+        <div class="main">
+          <!-- TRAFFIC ALERTS -->
+          <section class="panel">
+            <div class="panelTitle">
+              <h3>TRAFFIC ALERTS</h3>
+              <small id="alertsCount">3 ITEMS</small>
             </div>
-            <div class="stat">
-              <div class="k">I-17 TO SKY HARBOR</div>
-              <div class="v"><b id="eta2">25</b> mins</div>
-            </div>
-            <div class="stat">
-              <div class="k">BEST DEPARTURE IN</div>
-              <div class="v"><b id="bestDep">20</b> mins</div>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      <!-- ROAD WEATHER + LIVE CAM -->
-      <section class="panel">
-        <div class="panelTitle">
-          <h3>ROAD WEATHER</h3>
-          <small>STATION: <span id="stationName">PHX-07</span></small>
-        </div>
-
-        <div class="weatherWrap">
-          <div class="weatherStats">
-            <div class="ws">
-              <div class="lbl">TEMP</div>
-              <div class="val"><span id="temp">72</span>°</div>
-            </div>
-            <div class="ws">
-              <div class="lbl">WIND</div>
-              <div class="val"><span id="wind">14</span> mph W</div>
-            </div>
-            <div class="ws">
-              <div class="lbl">SURFACE</div>
-              <div class="val" style="color:var(--lemon)"><span id="surface">GOOD</span></div>
-            </div>
-            <div class="ws">
-              <div class="lbl">GRIP</div>
-              <div class="val" style="color:var(--mint)"><span id="grip">DRY</span></div>
-            </div>
-          </div>
-
-          <div class="cam">
-            <div class="camHeader">
-              <div class="left">
-                <span class="livePip"><span class="dot"></span>LIVE CAM</span>
-                <span id="camLabel">I-10 &amp; 7th Ave</span>
+            <div class="alerts" id="alertsList">
+              <div class="alert a-danger">
+                <div class="icon">!</div>
+                <div class="text">
+                  <div class="top">ACCIDENT</div>
+                  <div class="sub">I-10 @ 75th Ave — Right lanes blocked</div>
+                </div>
+                <div class="tag">SEV 3</div>
               </div>
-              <div class="left">NEXT: <span id="camNext">00:27</span></div>
+
+              <div class="alert a-warn">
+                <div class="icon">⛏</div>
+                <div class="text">
+                  <div class="top">CONSTRUCTION</div>
+                  <div class="sub">I-17 Southbound — Night work (reduced lanes)</div>
+                </div>
+                <div class="tag">SEV 2</div>
+              </div>
+
+              <div class="alert a-ok">
+                <div class="icon">☁</div>
+                <div class="text">
+                  <div class="top">WEATHER ADVISORY</div>
+                  <div class="sub">SR-89A — Gusty winds; watch for debris</div>
+                </div>
+                <div class="tag">INFO</div>
+              </div>
             </div>
-            <div class="camScene" aria-hidden="true"></div>
-          </div>
+          </section>
+
+          <!-- PHOENIX TRAFFIC MAP -->
+          <section class="panel">
+            <div class="panelTitle">
+              <h3>PHOENIX TRAFFIC MAP</h3>
+              <small id="updateLabel">LIVE UPDATE: <span id="updateClock">00:27</span></small>
+            </div>
+
+            <div class="mapWrap">
+              <div class="mapCanvas">
+                <div class="incidentBadge"><span class="tri"></span><span id="incidentCount">11 INCIDENT</span></div>
+
+                <!-- Fake “map” as SVG -->
+                <svg viewBox="0 0 900 320" preserveAspectRatio="none" aria-hidden="true">
+                  <!-- grid -->
+                  <g class="grid">
+                    <path d="M0 40 H900 M0 80 H900 M0 120 H900 M0 160 H900 M0 200 H900 M0 240 H900 M0 280 H900" stroke="#ffffff" stroke-width="1"/>
+                    <path d="M60 0 V320 M120 0 V320 M180 0 V320 M240 0 V320 M300 0 V320 M360 0 V320 M420 0 V320 M480 0 V320 M540 0 V320 M600 0 V320 M660 0 V320 M720 0 V320 M780 0 V320 M840 0 V320" stroke="#ffffff" stroke-width="1"/>
+                  </g>
+
+                  <!-- roads -->
+                  <path class="road r-main r-green" d="M40 210 C 190 190, 330 190, 500 205 S 760 235, 860 220" />
+                  <path class="road r-mid r-yellow" d="M90 80 C 180 120, 260 150, 360 160 S 560 160, 720 120 S 820 90, 880 100" />
+                  <path class="road r-mid r-red" d="M120 300 C 250 250, 320 235, 420 230 S 600 230, 720 260 S 830 300, 890 290" />
+                  <path class="road r-min r-green" d="M260 40 C 280 110, 290 170, 300 320" />
+                  <path class="road r-min r-yellow" d="M560 20 C 540 80, 520 160, 520 320" />
+                  <path class="road r-min r-green" d="M740 40 C 700 120, 690 190, 680 320" />
+
+                  <!-- incident pins -->
+                  <g class="pin" transform="translate(340,145)">
+                    <rect x="-16" y="-16" width="32" height="26"></rect>
+                    <text class="n" x="0" y="3" text-anchor="middle">3</text>
+                  </g>
+                  <g class="pin" transform="translate(600,120)">
+                    <rect x="-16" y="-16" width="32" height="26"></rect>
+                    <text class="n" x="0" y="3" text-anchor="middle">3</text>
+                  </g>
+                  <g class="pin" transform="translate(690,205)">
+                    <rect x="-16" y="-16" width="32" height="26"></rect>
+                    <text class="n" x="0" y="3" text-anchor="middle">1</text>
+                  </g>
+
+                  <!-- subtle city silhouette -->
+                  <path d="M0 320 L0 260 L60 260 L60 240 L90 240 L90 265 L125 265 L125 230 L150 230 L150 250 L180 250 L180 220 L210 220 L210 260 L250 260 L250 235 L280 235 L280 265 L330 265 L330 245 L360 245 L360 260 L420 260 L420 235 L470 235 L470 250 L520 250 L520 235 L560 235 L560 260 L620 260 L620 240 L650 240 L650 265 L690 265 L690 230 L730 230 L730 260 L780 260 L780 245 L820 245 L820 260 L900 260 L900 320 Z"
+                        fill="#ff8fd10f"/>
+                </svg>
+              </div>
+
+              <div class="mapLegend">
+                <div class="stat">
+                  <div class="k">I-10 TO DOWNTOWN</div>
+                  <div class="v"><b id="eta1">32</b> mins</div>
+                </div>
+                <div class="stat">
+                  <div class="k">I-17 TO SKY HARBOR</div>
+                  <div class="v"><b id="eta2">25</b> mins</div>
+                </div>
+                <div class="stat">
+                  <div class="k">BEST DEPARTURE IN</div>
+                  <div class="v"><b id="bestDep">20</b> mins</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ROAD WEATHER + LIVE CAM -->
+          <section class="panel">
+            <div class="panelTitle">
+              <h3>ROAD WEATHER</h3>
+              <small>STATION: <span id="stationName">PHX-07</span></small>
+            </div>
+
+            <div class="weatherWrap">
+              <div class="weatherStats">
+                <div class="ws">
+                  <div class="lbl">TEMP</div>
+                  <div class="val"><span id="temp">72</span>°</div>
+                </div>
+                <div class="ws">
+                  <div class="lbl">WIND</div>
+                  <div class="val"><span id="wind">14</span> mph W</div>
+                </div>
+                <div class="ws">
+                  <div class="lbl">SURFACE</div>
+                  <div class="val" style="color:var(--lemon)"><span id="surface">GOOD</span></div>
+                </div>
+                <div class="ws">
+                  <div class="lbl">GRIP</div>
+                  <div class="val" style="color:var(--mint)"><span id="grip">DRY</span></div>
+                </div>
+              </div>
+
+              <div class="cam">
+                <div class="camHeader">
+                  <div class="left">
+                    <span class="livePip"><span class="dot"></span>LIVE CAM</span>
+                    <span id="camLabel">I-10 &amp; 7th Ave</span>
+                  </div>
+                  <div class="left">NEXT: <span id="camNext">00:27</span></div>
+                </div>
+                <div class="camScene" aria-hidden="true"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- REST STOP -->
+          <section class="panel rest">
+            <div class="panelTitle">
+              <h3>REST STOP AHEAD</h3>
+              <small>STATUS: <span style="color:var(--ok); font-weight:900;">OPEN</span></small>
+            </div>
+
+            <div class="restWrap">
+              <div class="restTop">
+                <div class="name" id="restName">Sun Valley Rest Area</div>
+                <div class="open"><span id="openSpots">12</span> SPOTS</div>
+              </div>
+
+              <div class="amenities">
+                <div class="amenity">
+                  <div class="i">R</div>
+                  <div class="t">Restrooms</div>
+                  <div class="check">✓</div>
+                </div>
+                <div class="amenity">
+                  <div class="i">P</div>
+                  <div class="t">Picnic Area</div>
+                  <div class="check">✓</div>
+                </div>
+                <div class="amenity">
+                  <div class="i">🐾</div>
+                  <div class="t">Pet Area</div>
+                  <div class="check">✓</div>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
-      </section>
 
-      <!-- REST STOP -->
-      <section class="panel rest">
-        <div class="panelTitle">
-          <h3>REST STOP AHEAD</h3>
-          <small>STATUS: <span style="color:var(--ok); font-weight:900;">OPEN</span></small>
-        </div>
+        <!-- TICKER -->
+        <div class="ticker">
+          <div class="tickerBrand">AZ NOW</div>
 
-        <div class="restWrap">
-          <div class="restTop">
-            <div class="name" id="restName">Sun Valley Rest Area</div>
-            <div class="open"><span id="openSpots">12</span> SPOTS</div>
+          <div class="tickerLine" aria-label="Scrolling ticker">
+            <span id="tickerText">
+              HEAVY TRAFFIC ON I-10 • GUSTY WINDS SR-89A • LIGHT FOG SR-260 • BEST DEPARTURE IN: 20 MINUTES • STAY SAFE — DRIVE SMART!
+            </span>
           </div>
 
-          <div class="amenities">
-            <div class="amenity">
-              <div class="i">R</div>
-              <div class="t">Restrooms</div>
-              <div class="check">✓</div>
-            </div>
-            <div class="amenity">
-              <div class="i">P</div>
-              <div class="t">Picnic Area</div>
-              <div class="check">✓</div>
-            </div>
-            <div class="amenity">
-              <div class="i">🐾</div>
-              <div class="t">Pet Area</div>
-              <div class="check">✓</div>
-            </div>
-          </div>
+          <div class="clockBox" id="clock">6:43 AM</div>
         </div>
-      </section>
-    </div>
-
-    <!-- TICKER -->
-    <div class="ticker">
-      <div class="tickerBrand">AZ NOW</div>
-
-      <div class="tickerLine" aria-label="Scrolling ticker">
-        <span id="tickerText">
-          HEAVY TRAFFIC ON I-10 • GUSTY WINDS SR-89A • LIGHT FOG SR-260 • BEST DEPARTURE IN: 20 MINUTES • STAY SAFE — DRIVE SMART!
-        </span>
       </div>
-
-      <div class="clockBox" id="clock">6:43 AM</div>
     </div>
   </div>
 
   <script>
+    // -------- Fullscreen contain scaling (NO CROPPING) --------
+    const stage = document.getElementById("stage");
+    const canvas = document.getElementById("canvas");
+
+    function fitContain(){
+      const sw = stage.clientWidth;
+      const sh = stage.clientHeight;
+
+      // Contain: never crop
+      const scale = Math.min(sw / 2560, sh / 720);
+
+      const x = Math.floor((sw - 2560 * scale) / 2);
+      const y = Math.floor((sh - 720 * scale) / 2);
+
+      canvas.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+    }
+
+    window.addEventListener("resize", fitContain);
+    fitContain();
+
     // -------- Mock “live” behaviors (swap later with real API calls) --------
-
     const $ = (id) => document.getElementById(id);
+    const pad2 = (n) => String(n).padStart(2, "0");
 
-    function pad2(n){ return String(n).padStart(2, "0"); }
-
-    // Local clock (12-hour)
     function updateClock(){
       const d = new Date();
       const h24 = d.getHours();
@@ -837,34 +880,24 @@
       $("clock").textContent = `${h}:${pad2(m)} ${ampm}`;
     }
 
-    // Fake “next update” countdown
     let countdown = 27;
     function updateCountdown(){
       countdown--;
       if(countdown <= 0){
         countdown = 27;
 
-        // Nudge some numbers so it feels alive
         const jitter = (v, min, max, step=1) => {
           const n = v + (Math.random() < 0.5 ? -step : step);
           return Math.max(min, Math.min(max, n));
         };
 
-        const eta1 = jitter(Number($("eta1").textContent), 18, 55, 1);
-        const eta2 = jitter(Number($("eta2").textContent), 12, 45, 1);
-        const best = jitter(Number($("bestDep").textContent), 5, 40, 1);
-        const temp = jitter(Number($("temp").textContent), 55, 98, 1);
-        const wind = jitter(Number($("wind").textContent), 0, 35, 1);
-        const openSpots = jitter(Number($("openSpots").textContent), 0, 24, 1);
+        $("eta1").textContent = jitter(Number($("eta1").textContent), 18, 55, 1);
+        $("eta2").textContent = jitter(Number($("eta2").textContent), 12, 45, 1);
+        $("bestDep").textContent = jitter(Number($("bestDep").textContent), 5, 40, 1);
+        $("temp").textContent = jitter(Number($("temp").textContent), 55, 98, 1);
+        $("wind").textContent = jitter(Number($("wind").textContent), 0, 35, 1);
+        $("openSpots").textContent = jitter(Number($("openSpots").textContent), 0, 24, 1);
 
-        $("eta1").textContent = eta1;
-        $("eta2").textContent = eta2;
-        $("bestDep").textContent = best;
-        $("temp").textContent = temp;
-        $("wind").textContent = wind;
-        $("openSpots").textContent = openSpots;
-
-        // Occasionally “change” incident count & ticker
         if(Math.random() < 0.35){
           const inc = jitter(11, 3, 22, 1);
           $("incidentCount").textContent = `${inc} INCIDENT`;
@@ -878,7 +911,6 @@
             "CONSTRUCTION TONIGHT • PLAN EXTRA TIME • STAY SAFE",
             "LIGHT RAIN IN HIGHER ELEVATIONS • WATCH FOR SLICK SPOTS",
           ];
-          const base = $("tickerText").textContent.split(" • ")[0];
           const pick = lines[Math.floor(Math.random() * lines.length)];
           $("tickerText").textContent = `${pick} • HEAVY TRAFFIC ON I-10 • BEST DEPARTURE IN: ${$("bestDep").textContent} MINUTES • STAY SAFE — DRIVE SMART!`;
         }
@@ -888,13 +920,11 @@
       $("camNext").textContent = `00:${pad2(countdown)}`;
     }
 
-    // Set a nicer date pill (keeps your mock look)
     function setDatePill(){
       const d = new Date();
       const days = ["SUN","MON","TUES","WED","THUR","FRI","SAT"];
       const months = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
-      const txt = `${days[d.getDay()]} ${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
-      $("datePill").textContent = txt;
+      $("datePill").textContent = `${days[d.getDay()]} ${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
     }
 
     updateClock();
