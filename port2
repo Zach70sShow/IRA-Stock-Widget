@@ -1,0 +1,835 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Zachary Marshall — Video Editor</title>
+  <meta name="description" content="Zachary Marshall — professional video editor based in Phoenix, AZ. Demo reel + selected work." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:opsz@8..60&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg: #07060a;
+      --fg: #f5f4ff;
+      --muted: rgba(245,244,255,.65);
+      --hair: rgba(245,244,255,.14);
+
+      /* Single accent */
+      --accent: #ffd54a; /* warm yellow */
+
+      --sans: "Inter", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      --serif: "Instrument Serif", ui-serif, "Iowan Old Style", Palatino, "Times New Roman", serif;
+
+      --max: 1180px;
+      --g: clamp(14px, 2vw, 22px);
+      --r: 22px;
+      --shadow: 0 22px 80px rgba(0,0,0,.55);
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--sans);
+      overflow-x:hidden;
+    }
+
+    body::before{
+      content:"";
+      position:fixed; inset:0;
+      pointer-events:none;
+      opacity:.18;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E");
+      mix-blend-mode: overlay;
+    }
+
+    /* Corners */
+    .corner-left, .corner-right{
+      position: fixed;
+      bottom: 14px;
+      z-index: 50;
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      flex-wrap:wrap;
+      font-size: 12px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      user-select:none;
+      padding: 8px 10px;
+      border: 1px solid rgba(245,244,255,.10);
+      border-radius: 999px;
+      background: rgba(255,255,255,.04);
+      backdrop-filter: blur(10px);
+    }
+    .corner-left{ left: 14px; }
+    .corner-right{ right: 14px; }
+
+    .corner-left a, .corner-right a{
+      color: inherit;
+      text-decoration:none;
+      border-bottom: 1px solid transparent;
+      transition: color .18s ease, border-color .18s ease;
+    }
+    .corner-left a:hover, .corner-right a:hover{
+      color: var(--fg);
+      border-color: rgba(245,244,255,.25);
+    }
+
+    /* Accent dot + pulse */
+    .dot{
+      width:6px;height:6px;border-radius:99px;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent);
+      flex: 0 0 auto;
+    }
+    .dot.pulsing{
+      animation: dotPulse 1.05s infinite ease-in-out;
+    }
+    @keyframes dotPulse{
+      0%,100%{ transform: scale(.85); opacity:.70; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent); }
+      50%{ transform: scale(1.25); opacity:1; box-shadow: 0 0 0 10px color-mix(in srgb, var(--accent) 14%, transparent); }
+    }
+
+    /* Bottom whisper strip (cycles your bullets) */
+    .whisper{
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 64px;
+      z-index: 45;
+      width: min(980px, calc(100% - 28px));
+      border: 1px solid rgba(245,244,255,.10);
+      border-radius: 999px;
+      background: rgba(255,255,255,.03);
+      backdrop-filter: blur(10px);
+      overflow:hidden;
+    }
+    .whisper-inner{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      padding: 10px 14px;
+      color: rgba(245,244,255,.66);
+      font-size: 12px;
+      letter-spacing: .08em;
+    }
+    .whisper-title{
+      color: rgba(245,244,255,.85);
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .whisper-line{
+      position: relative;
+      flex: 1;
+      min-width: 0;
+      height: 18px;
+      overflow:hidden;
+    }
+    .whisper-line span{
+      position:absolute;
+      left:0; right:0;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow:hidden;
+      transform: translateY(14px);
+      opacity: 0;
+      transition: transform .55s ease, opacity .55s ease;
+    }
+    .whisper-line span.show{
+      transform: translateY(0px);
+      opacity: 1;
+    }
+
+    /* Page */
+    .wrap{
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 28px var(--g) 120px;
+    }
+
+    .hero{
+      padding: clamp(18px, 4vw, 44px) 0 14px;
+    }
+    .hero-top{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 18px;
+      align-items:end;
+    }
+
+    .name{
+      font-family: var(--serif);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: .92;
+      font-size: clamp(56px, 8vw, 120px);
+      margin:0;
+    }
+    .name .accent{ color: var(--accent); }
+
+    .bio{
+      margin: 0 0 8px;
+      color: var(--muted);
+      line-height:1.55;
+      font-size: clamp(14px, 1.7vw, 18px);
+      max-width: 55ch;
+    }
+    .bio strong{ color: var(--fg); font-weight: 600; }
+
+    .rule{
+      height:1px;
+      background: linear-gradient(90deg, transparent, rgba(245,244,255,.16), transparent);
+      margin: 18px 0 20px;
+    }
+
+    .reel-wrap{
+      position:relative;
+      border-radius: calc(var(--r) + 10px);
+      overflow:hidden;
+      border: 1px solid rgba(245,244,255,.12);
+      box-shadow: var(--shadow);
+      background:
+        radial-gradient(900px 300px at 10% 20%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 60%),
+        radial-gradient(700px 260px at 80% 70%, rgba(245,244,255,.08), transparent 60%),
+        rgba(255,255,255,.03);
+    }
+    .reel-wrap::after{
+      content:"";
+      position:absolute; inset:0;
+      pointer-events:none;
+      background: linear-gradient(180deg, rgba(0,0,0,.30), transparent 35%, rgba(0,0,0,.45));
+    }
+    .reel-label{
+      position:absolute;
+      left: 14px;
+      top: 12px;
+      z-index: 3;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(245,244,255,.12);
+      background: rgba(0,0,0,.30);
+      backdrop-filter: blur(10px);
+      font-size: 12px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: rgba(245,244,255,.78);
+    }
+    .reel{
+      position:relative;
+      z-index:2;
+      width:100%;
+      aspect-ratio: 16 / 9;
+      border:0;
+      display:block;
+      background:#000;
+    }
+
+    /* Tabs */
+    .section{ margin-top: 28px; }
+    .tabs{
+      display:flex;
+      gap: 14px;
+      flex-wrap:wrap;
+      align-items:baseline;
+      margin-bottom: 14px;
+    }
+    .tab{
+      appearance:none;
+      border:0;
+      background:transparent;
+      color: rgba(245,244,255,.68);
+      cursor:pointer;
+      font-size: 13px;
+      letter-spacing:.16em;
+      text-transform: uppercase;
+      padding: 8px 2px;
+      position:relative;
+    }
+    .tab[aria-selected="true"]{ color: var(--fg); }
+    .tab[aria-selected="true"]::after{
+      content:"";
+      position:absolute;
+      left:0; right:0; bottom:-4px;
+      height:2px;
+      background: var(--accent);
+      box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 12%, transparent);
+      border-radius: 99px;
+    }
+
+    /* Collage grid */
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 14px;
+      align-items:stretch;
+    }
+
+    .tile{
+      grid-column: span 4;
+      border-radius: var(--r);
+      overflow:hidden;
+      border: 1px solid rgba(245,244,255,.12);
+      background: rgba(255,255,255,.03);
+      box-shadow: 0 16px 55px rgba(0,0,0,.35);
+      position:relative;
+      transition: transform .22s ease, border-color .22s ease, filter .22s ease;
+      cursor:pointer;
+      min-height: 210px;
+      transform: translateZ(0);
+    }
+    .tile:hover{
+      transform: translateY(-6px) rotate(.15deg);
+      border-color: rgba(245,244,255,.22);
+      filter: saturate(1.05) contrast(1.03);
+    }
+
+    .tile.size-6{ grid-column: span 6; min-height: 260px; }
+    .tile.size-8{ grid-column: span 8; min-height: 300px; }
+    .tile.size-12{ grid-column: span 12; min-height: 340px; }
+
+    .tile .img{
+      position:absolute; inset:0;
+      background:
+        radial-gradient(700px 220px at 10% 20%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 60%),
+        rgba(0,0,0,.28);
+    }
+    .tile img{
+      width:100%; height:100%;
+      object-fit: cover;
+      display:block;
+      opacity:.92;
+    }
+
+    .tile::after{
+      content:"";
+      position:absolute; inset:0;
+      background: linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.20) 55%, rgba(0,0,0,.55));
+      pointer-events:none;
+    }
+
+    .tile .cap{
+      position:absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      z-index:2;
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap: 10px;
+    }
+    .tile .t{
+      font-family: var(--serif);
+      font-size: 22px;
+      line-height:1.05;
+      letter-spacing:-0.01em;
+      margin:0;
+      max-width: 70%;
+    }
+    .tile .m{
+      font-size: 11px;
+      letter-spacing:.16em;
+      text-transform: uppercase;
+      color: rgba(245,244,255,.70);
+      white-space:nowrap;
+    }
+
+    .play{
+      position:absolute;
+      top: 12px;
+      right: 12px;
+      z-index:2;
+      width: 44px; height: 44px;
+      border-radius: 999px;
+      border: 1px solid rgba(245,244,255,.14);
+      background: rgba(0,0,0,.30);
+      backdrop-filter: blur(10px);
+      display:grid;
+      place-items:center;
+      transition: transform .2s ease, background .2s ease;
+    }
+    .tile:hover .play{
+      transform: rotate(-6deg) scale(1.03);
+      background: rgba(0,0,0,.38);
+    }
+    .play svg{ width: 18px; height: 18px; fill: var(--accent); }
+
+    .tile:nth-child(3n){ transform: rotate(-.18deg); }
+    .tile:nth-child(4n){ transform: rotate(.22deg); }
+    .tile:nth-child(5n){ transform: rotate(-.12deg); }
+    .tile:hover:nth-child(3n),
+    .tile:hover:nth-child(4n),
+    .tile:hover:nth-child(5n){ transform: translateY(-6px) rotate(.12deg); }
+
+    /* Modal */
+    .modal{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.66);
+      backdrop-filter: blur(10px);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+      z-index: 999;
+    }
+    .modal.open{ display:flex; }
+
+    .modal-card{
+      width:min(1100px, 100%);
+      border-radius: calc(var(--r) + 12px);
+      overflow:hidden;
+      border: 1px solid rgba(245,244,255,.14);
+      background: rgba(255,255,255,.04);
+      box-shadow: var(--shadow);
+      position:relative;
+    }
+    .modal-top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(245,244,255,.10);
+      background: rgba(0,0,0,.22);
+    }
+    .modal-title{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      font-size: 12px;
+      letter-spacing:.14em;
+      text-transform: uppercase;
+      color: rgba(245,244,255,.78);
+      overflow:hidden;
+      text-overflow: ellipsis;
+      white-space:nowrap;
+    }
+    .close{
+      border:1px solid rgba(245,244,255,.14);
+      background: rgba(0,0,0,.24);
+      color: rgba(245,244,255,.85);
+      border-radius: 999px;
+      padding: 8px 10px;
+      cursor:pointer;
+      font-size: 12px;
+      letter-spacing:.14em;
+      text-transform: uppercase;
+    }
+    .close:hover{ border-color: rgba(245,244,255,.25); }
+
+    .modal-iframe{
+      width:100%;
+      aspect-ratio: 16 / 9;
+      border:0;
+      display:block;
+      background:#000;
+    }
+
+    @media (max-width: 980px){
+      .hero-top{ grid-template-columns: 1fr; }
+      .tile{ grid-column: span 12; }
+      .tile.size-6, .tile.size-8{ grid-column: span 12; }
+      .corner-left, .corner-right{ position: static; margin: 0 var(--g) 10px; }
+      .whisper{ position: static; transform:none; left:auto; margin: 0 var(--g) 10px; width:auto; }
+      .wrap{ padding-bottom: 40px; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Tiny links (left) -->
+  <div class="corner-left" aria-label="Links">
+    <span class="dot" id="dotLinks" aria-hidden="true"></span>
+    <a href="https://www.instagram.com/zach70sshow/" target="_blank" rel="noreferrer">IG</a>
+    <a href="https://www.youtube.com/@ZacharyMarshall" target="_blank" rel="noreferrer">YouTube</a>
+    <a href="https://www.linkedin.com/in/zachary-marshall-18a837149/" target="_blank" rel="noreferrer">LinkedIn</a>
+    <a href="https://ytjobs.co/talent/profile/249905" target="_blank" rel="noreferrer">YT Jobs</a>
+  </div>
+
+  <!-- Email (right) -->
+  <div class="corner-right" aria-label="Email">
+    <a href="mailto:Zacharycolemarshall@gmail.com">Zacharycolemarshall@gmail.com</a>
+  </div>
+
+  <!-- Whisper strip (your pitch, subtle) -->
+  <div class="whisper" aria-label="What you get">
+    <div class="whisper-inner">
+      <span class="dot" id="dotWhisper" aria-hidden="true"></span>
+      <span class="whisper-title">YOU, YES, YOU</span>
+      <span style="opacity:.55;">—</span>
+      <div class="whisper-line" aria-live="polite">
+        <span id="whisperText" class="show"></span>
+      </div>
+    </div>
+  </div>
+
+  <main class="wrap">
+    <section class="hero">
+      <div class="hero-top">
+        <h1 class="name">
+          Zachary<br/>
+          <span class="accent">Marshall</span>
+        </h1>
+
+        <p class="bio">
+          Professional video editor based in <strong>Phoenix, AZ</strong>.
+          Full-time with <strong>Pace Morby</strong> + <strong>Subto</strong>.
+          I cut for retention, clarity, and “how did this already end?” pacing.
+        </p>
+      </div>
+
+      <div class="rule"></div>
+
+      <div class="reel-wrap" aria-label="Demo reel">
+        <div class="reel-label">
+          <span class="dot" id="dotReel" aria-hidden="true"></span>
+          Demo Reel
+        </div>
+
+        <!-- YouTube IFrame API will replace this iframe (same URL) so we can detect play/pause -->
+        <div id="reelPlayer"></div>
+      </div>
+    </section>
+
+    <section class="section" aria-label="Selected work">
+      <div class="tabs" id="tabs" role="tablist" aria-label="Categories"></div>
+      <div class="grid" id="grid" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <!-- Modal -->
+  <div class="modal" id="modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-label="Video player">
+      <div class="modal-top">
+        <div class="modal-title" id="modalTitle">
+          <span class="dot" aria-hidden="true"></span> Playing
+        </div>
+        <button class="close" id="closeBtn" type="button">Close</button>
+      </div>
+      <div id="modalPlayer"></div>
+    </div>
+  </div>
+
+  <script>
+    // ---------- Content you wrote (cycled subtly) ----------
+    const WHISPER_LINES = [
+      "Edits that respect the audience’s time and reward them for paying attention.",
+      "Short-form content selected for impact. Ads and VSLs proven to convert.",
+      "Long-form YouTube videos cut with retention, clarity, and monetization in mind.",
+      "Support for content that actually has a job to do: growth, sales, or credibility.",
+      "A collaborator who understands how content fits into a larger business — not just vanity metrics."
+    ];
+
+    // ---------- Your links ----------
+    // Add more videos by pasting more URLs. It will keep growing.
+    // Add more categories by adding another key (e.g. ads: [...]) — tabs auto-generate.
+    const DATA = {
+      youtube: [
+        "https://youtu.be/vVvcPPGqJG4?si=OkOxCpCLWcgY1jS5",
+        "https://youtu.be/fWCICcXAjlc?si=ZybYpEq1rjPJ9pkB",
+        "https://youtu.be/j7tstp_JXL0?si=5s4udZ1zw1f_c2rV",
+        "https://youtu.be/hZM-tgonf2M?si=CvcjIuRL_YLK-IXU",
+        "https://youtu.be/O1DH6Ri_kF0?si=FEmz-MLYKFx4fubx"
+      ],
+      podcasts: [
+        "https://www.youtube.com/watch?v=EQJ7Iur4YdQ",
+        "https://youtu.be/GVn0nkDxL_M?si=9Zk1-y5ao6tc4Pnl",
+        "https://youtu.be/lEcJj_omaBg?si=0j2qEQB-bVuTG4FV",
+        "https://youtu.be/DObamfcjcQg?si=yJ2pmwi732fMtn1I"
+      ],
+      misc: [
+        "https://youtu.be/Rd4wmaq6o84?si=UXtDSzPEP-8wfq1K",
+        "https://youtu.be/sku6gwDS-vA?si=gUvRTrA0gDMGUaHi",
+        "https://youtu.be/oo0C0Ytybro?si=XSop8OBj9ybK3df6",
+        "https://youtu.be/8HgtRIzillo?si=cwhzassjdMMv3VlT",
+        "https://youtu.be/waseMxrWONA?si=8Um3l9RQTAMMIG4u"
+      ]
+    };
+
+    // Demo reel link you gave
+    const DEMO_REEL_URL = "https://youtu.be/UJxDBGAlojc?si=rlXcVu7151f5zOKT";
+
+    // Collage sizing pattern
+    const SIZE_PATTERN = ["size-6","", "", "size-8", "", "size-6", "", "size-12"];
+
+    // ---------- Helpers ----------
+    function youtubeId(url){
+      try{
+        const u = new URL(url);
+        if (u.hostname.includes("youtu.be")) return u.pathname.replace("/", "");
+        if (u.searchParams.get("v")) return u.searchParams.get("v");
+        const m = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})(?:\?|&|$)/);
+        return m ? m[1] : url;
+      }catch(e){
+        const m = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})(?:\?|&|$)/);
+        return m ? m[1] : url;
+      }
+    }
+
+    function thumbUrl(id){
+      return `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+    }
+
+    // Title fetch (no key) via YouTube oEmbed
+    async function fetchYouTubeTitle(videoUrl){
+      const cacheKey = "yt_title_" + videoUrl;
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) return cached;
+
+      const endpoint = "https://www.youtube.com/oembed?format=json&url=" + encodeURIComponent(videoUrl);
+      const res = await fetch(endpoint);
+      if (!res.ok) throw new Error("oEmbed failed");
+      const json = await res.json();
+      const title = (json && json.title) ? json.title : "Untitled";
+      localStorage.setItem(cacheKey, title);
+      return title;
+    }
+
+    // ---------- Whisper cycle ----------
+    const whisperText = document.getElementById("whisperText");
+    let whisperIndex = 0;
+    function setWhisper(text){
+      whisperText.classList.remove("show");
+      // small delay to let transition reset
+      setTimeout(() => {
+        whisperText.textContent = text;
+        whisperText.classList.add("show");
+      }, 120);
+    }
+    setWhisper(WHISPER_LINES[0]);
+    setInterval(() => {
+      whisperIndex = (whisperIndex + 1) % WHISPER_LINES.length;
+      setWhisper(WHISPER_LINES[whisperIndex]);
+    }, 4200);
+
+    // ---------- Tabs + Grid ----------
+    const grid = document.getElementById("grid");
+    const tabsWrap = document.getElementById("tabs");
+
+    function prettyCat(cat){
+      // simple titlecase
+      return cat.replace(/_/g," ").replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    function createTabs(){
+      const cats = Object.keys(DATA);
+      tabsWrap.innerHTML = cats.map((cat, i) => `
+        <button class="tab" role="tab" aria-selected="${i===0 ? "true":"false"}" data-cat="${cat}">
+          ${prettyCat(cat)}
+        </button>
+      `).join("");
+
+      tabsWrap.querySelectorAll(".tab").forEach(btn => {
+        btn.addEventListener("click", () => setActive(btn.dataset.cat));
+      });
+
+      setActive(cats[0] || "youtube");
+    }
+
+    function tileHTML({id, title, meta, sizeClass}){
+      return `
+        <article class="tile ${sizeClass || ""}" data-id="${id}" data-title="${escapeHtml(title)}">
+          <div class="img">
+            <img loading="lazy" alt="" src="${thumbUrl(id)}" />
+          </div>
+          <div class="play" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M9 7v10l9-5-9-5z"/></svg>
+          </div>
+          <div class="cap">
+            <h3 class="t">${escapeHtml(title)}</h3>
+            <div class="m">${escapeHtml(meta)}</div>
+          </div>
+        </article>
+      `;
+    }
+
+    function escapeHtml(str){
+      return String(str)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    async function render(cat){
+      const urls = DATA[cat] || [];
+      if (!urls.length){
+        grid.innerHTML = `<div style="grid-column:1/-1;color:rgba(245,244,255,.65);padding:12px 2px;">No items yet.</div>`;
+        return;
+      }
+
+      // initial render with placeholders so UI is instant
+      const items = urls.map((u, i) => {
+        const id = youtubeId(u);
+        const sizeClass = SIZE_PATTERN[i % SIZE_PATTERN.length] || "";
+        return {
+          url: u,
+          id,
+          sizeClass,
+          title: "Loading title…",
+          meta: prettyCat(cat)
+        };
+      });
+
+      grid.innerHTML = items.map(it => tileHTML(it)).join("");
+
+      // click handlers
+      grid.querySelectorAll(".tile").forEach(tile => {
+        tile.addEventListener("click", () => {
+          const id = tile.dataset.id;
+          const title = tile.dataset.title || "Playing";
+          openModalWithVideo(id, title);
+        });
+      });
+
+      // fetch real titles and patch in place
+      await Promise.all(items.map(async (it, idx) => {
+        try{
+          const title = await fetchYouTubeTitle(it.url);
+          // Update the tile DOM
+          const tile = grid.querySelectorAll(".tile")[idx];
+          if (!tile) return;
+          tile.dataset.title = title;
+          tile.querySelector(".t").textContent = title;
+        }catch(e){
+          // keep fallback
+        }
+      }));
+    }
+
+    function setActive(cat){
+      tabsWrap.querySelectorAll(".tab").forEach(t => {
+        t.setAttribute("aria-selected", t.dataset.cat === cat ? "true" : "false");
+      });
+      render(cat);
+    }
+
+    createTabs();
+
+    // ---------- YouTube Iframe API (play detection for pulsing dot) ----------
+    let reelPlayer = null;
+    let modalPlayer = null;
+
+    const dotReel = document.getElementById("dotReel");
+    const dotWhisper = document.getElementById("dotWhisper");
+    const dotLinks = document.getElementById("dotLinks");
+
+    function setPulsing(isPlaying){
+      // pulse a couple dots so it feels “alive” but not noisy
+      [dotReel, dotWhisper].forEach(d => d.classList.toggle("pulsing", !!isPlaying));
+      // keep links dot steady
+      dotLinks.classList.remove("pulsing");
+    }
+
+    function loadYTApi(){
+      return new Promise((resolve) => {
+        if (window.YT && window.YT.Player) return resolve();
+        const tag = document.createElement("script");
+        tag.src = "https://www.youtube.com/iframe_api";
+        window.onYouTubeIframeAPIReady = () => resolve();
+        document.head.appendChild(tag);
+      });
+    }
+
+    function reelId(){
+      return youtubeId(DEMO_REEL_URL);
+    }
+
+    async function initPlayers(){
+      await loadYTApi();
+
+      // Reel player (embedded in-page)
+      reelPlayer = new YT.Player("reelPlayer", {
+        videoId: reelId(),
+        playerVars: {
+          rel: 0,
+          modestbranding: 1,
+          playsinline: 1
+        },
+        events: {
+          onStateChange: (e) => {
+            // 1 = playing, 2 = paused, 0 = ended
+            setPulsing(e.data === YT.PlayerState.PLAYING);
+            if (e.data === YT.PlayerState.ENDED) setPulsing(false);
+          }
+        }
+      });
+    }
+
+    initPlayers();
+
+    // ---------- Modal ----------
+    const modal = document.getElementById("modal");
+    const modalTitle = document.getElementById("modalTitle");
+    const closeBtn = document.getElementById("closeBtn");
+
+    function openModalWithVideo(id, title){
+      modalTitle.innerHTML = `<span class="dot" aria-hidden="true"></span> ${escapeHtml(title)}`;
+      modal.classList.add("open");
+      modal.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+
+      // Create/replace modal player
+      if (modalPlayer && modalPlayer.destroy) {
+        modalPlayer.destroy();
+        modalPlayer = null;
+      }
+
+      modalPlayer = new YT.Player("modalPlayer", {
+        videoId: id,
+        playerVars: {
+          autoplay: 1,
+          rel: 0,
+          modestbranding: 1,
+          playsinline: 1
+        },
+        events: {
+          onStateChange: (e) => {
+            // pulse while modal plays too
+            setPulsing(e.data === YT.PlayerState.PLAYING);
+            if (e.data === YT.PlayerState.ENDED) setPulsing(false);
+          }
+        }
+      });
+    }
+
+    function closeModal(){
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+
+      if (modalPlayer && modalPlayer.destroy) {
+        modalPlayer.destroy();
+        modalPlayer = null;
+      }
+      // restore pulsing state to whatever the reel is doing
+      try{
+        if (reelPlayer && reelPlayer.getPlayerState) {
+          setPulsing(reelPlayer.getPlayerState() === YT.PlayerState.PLAYING);
+        } else {
+          setPulsing(false);
+        }
+      }catch{
+        setPulsing(false);
+      }
+    }
+
+    closeBtn.addEventListener("click", closeModal);
+    modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+    window.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+
+  </script>
+</body>
+</html>
