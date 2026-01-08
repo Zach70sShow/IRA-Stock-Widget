@@ -2,676 +2,599 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Your Name — Studio</title>
-  <meta name="description" content="A typography-forward portfolio with a minimalist studio vibe." />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Zachary Marshall — Video Editor (Phoenix)</title>
+  <meta name="description" content="Zachary Marshall — professional video editor based in Phoenix, AZ. YouTube, podcasts, social, ads, and more." />
   <style>
     :root{
-      --bg: #fbfaf7;
-      --ink: #141414;
-      --muted: rgba(20,20,20,.62);
-      --hair: rgba(20,20,20,.16);
-      --card: rgba(20,20,20,.04);
+      --bg:#07060a;
+      --fg:#f6f4ff;
+      --muted: rgba(246,244,255,.68);
+      --hair: rgba(246,244,255,.14);
 
+      /* punchy “studio” colors */
+      --a:#7c3aed; /* violet */
+      --b:#22d3ee; /* cyan */
+      --c:#fb7185; /* pink */
+      --d:#fbbf24; /* amber */
+
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       --serif: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", Times, serif;
-      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
 
       --max: 1120px;
       --g: clamp(14px, 2vw, 22px);
       --r: 22px;
-      --shadow: 0 18px 40px rgba(0,0,0,.08);
+      --shadow: 0 24px 80px rgba(0,0,0,.55);
     }
 
-    *{ box-sizing:border-box; }
+    *{ box-sizing: border-box; }
     html,body{ height:100%; }
     body{
       margin:0;
-      background: var(--bg);
-      color: var(--ink);
+      background: radial-gradient(1200px 800px at 20% 10%, rgba(124,58,237,.25), transparent 60%),
+                  radial-gradient(900px 700px at 90% 20%, rgba(34,211,238,.18), transparent 62%),
+                  radial-gradient(900px 800px at 75% 95%, rgba(251,113,133,.18), transparent 58%),
+                  var(--bg);
+      color: var(--fg);
+      font-family: var(--sans);
       overflow-x:hidden;
     }
 
-    /* Subtle grain */
-    body:before{
+    /* subtle grain */
+    body::before{
       content:"";
       position:fixed; inset:0;
       pointer-events:none;
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.14'/%3E%3C/svg%3E");
-      mix-blend-mode:multiply;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E");
+      mix-blend-mode: overlay;
       opacity:.22;
     }
 
-    /* Loading screen */
-    .loader{
-      position:fixed; inset:0;
-      display:grid; place-items:center;
-      background: var(--bg);
-      z-index:9999;
-      transition: opacity .45s ease, transform .45s ease;
-    }
-    .loader.hidden{
-      opacity:0; transform: translateY(-8px);
-      pointer-events:none;
-    }
-    .loader .word{
-      font-family: var(--sans);
-      letter-spacing:.22em;
-      font-size:12px;
-      text-transform:uppercase;
-      color: var(--muted);
-      display:flex; align-items:center; gap:10px;
-    }
-    .dot{
-      width:6px; height:6px; border-radius:999px;
-      background: var(--ink);
-      animation: pulse 1.1s infinite ease-in-out;
-    }
-    .dot:nth-child(2){ animation-delay:.12s }
-    .dot:nth-child(3){ animation-delay:.24s }
-    @keyframes pulse{
-      0%,100%{ transform:scale(.65); opacity:.35 }
-      50%{ transform:scale(1); opacity:1 }
+    .wrap{
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 28px var(--g) 90px;
+      position:relative;
     }
 
-    /* Top nav */
-    header{
-      position:sticky; top:0;
-      backdrop-filter: blur(10px);
-      background: color-mix(in srgb, var(--bg) 86%, transparent);
-      border-bottom:1px solid var(--hair);
-      z-index:50;
-    }
-    .nav{
-      max-width: var(--max);
-      margin:0 auto;
-      padding: 12px var(--g);
+    /* floating corner links */
+    .corner{
+      position: fixed;
+      left: 16px;
+      bottom: 14px;
+      z-index: 40;
       display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
       align-items:center;
-      justify-content:space-between;
-      gap:12px;
-    }
-    .brand{
-      font-family: var(--serif);
-      font-size: 18px;
-      letter-spacing:.02em;
-      display:flex; align-items:baseline; gap:10px;
-      text-decoration:none;
-      color: var(--ink);
-    }
-    .brand small{
-      font-family: var(--sans);
-      font-size: 11px;
-      letter-spacing:.18em;
-      text-transform:uppercase;
-      color: var(--muted);
-    }
-    nav a{
-      font-family: var(--sans);
       font-size: 12px;
-      letter-spacing:.18em;
-      text-transform:uppercase;
-      text-decoration:none;
+      letter-spacing: .14em;
+      text-transform: uppercase;
       color: var(--muted);
-      padding: 10px 10px;
+      user-select:none;
+    }
+    .corner a{
+      color: var(--muted);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      padding: 6px 8px;
       border-radius: 999px;
-      transition: background .2s ease, color .2s ease;
+      transition: background .2s ease, color .2s ease, border-color .2s ease;
     }
-    nav a:hover{
-      background: rgba(20,20,20,.06);
-      color: var(--ink);
-    }
-
-    /* Layout */
-    main{
-      max-width: var(--max);
-      margin:0 auto;
-      padding: clamp(28px, 4vw, 64px) var(--g) 90px;
+    .corner a:hover{
+      color: var(--fg);
+      background: rgba(246,244,255,.08);
+      border-color: rgba(246,244,255,.18);
     }
 
-    .hero{
-      padding: clamp(26px, 4vw, 54px) 0;
-      border-bottom: 1px solid var(--hair);
-    }
-    .kicker{
-      font-family: var(--sans);
-      letter-spacing:.22em;
-      text-transform:uppercase;
+    /* subtle email (right bottom) */
+    .email{
+      position: fixed;
+      right: 16px;
+      bottom: 14px;
+      z-index: 40;
       font-size: 12px;
-      color: var(--muted);
-      margin:0 0 14px;
+      color: rgba(246,244,255,.55);
+      letter-spacing: .04em;
     }
-    h1{
-      margin:0 0 16px;
+    .email a{
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(246,244,255,.18);
+    }
+    .email a:hover{ color: var(--fg); }
+
+    /* HERO */
+    .hero{
+      padding: clamp(18px, 3vw, 46px) 0 22px;
+    }
+    .tagline{
+      display:flex;
+      align-items:flex-end;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .name{
       font-family: var(--serif);
       font-weight: 500;
-      line-height: 1.02;
-      font-size: clamp(42px, 6.3vw, 92px);
       letter-spacing: -0.02em;
+      font-size: clamp(44px, 6.5vw, 92px);
+      line-height: 0.98;
+      margin:0;
     }
-    .sub{
-      max-width: 72ch;
-      font-family: var(--sans);
-      font-size: clamp(16px, 2.2vw, 20px);
-      line-height:1.55;
+    .meta{
+      max-width: 54ch;
+      margin: 0;
       color: var(--muted);
-      margin:0 0 20px;
+      font-size: clamp(14px, 1.8vw, 18px);
+      line-height: 1.5;
     }
+
     .chips{
-      display:flex; flex-wrap:wrap; gap:10px;
-      margin-top: 18px;
+      display:flex;
+      flex-wrap:wrap;
+      gap: 10px;
+      margin-top: 16px;
     }
     .chip{
-      font-family: var(--sans);
       font-size: 12px;
-      letter-spacing:.12em;
-      text-transform:uppercase;
+      letter-spacing: .14em;
+      text-transform: uppercase;
       padding: 10px 12px;
       border: 1px solid var(--hair);
       border-radius: 999px;
-      background: rgba(255,255,255,.55);
+      background: rgba(246,244,255,.06);
+      backdrop-filter: blur(8px);
+    }
+    .chip strong{ color: var(--fg); font-weight: 700; }
+
+    /* Reel */
+    .reel{
+      margin-top: 18px;
+      border-radius: calc(var(--r) + 8px);
+      overflow:hidden;
+      border: 1px solid rgba(246,244,255,.14);
+      background:
+        radial-gradient(800px 320px at 15% 20%, rgba(251,191,36,.18), transparent 60%),
+        radial-gradient(600px 260px at 85% 70%, rgba(34,211,238,.16), transparent 60%),
+        rgba(246,244,255,.04);
+      box-shadow: var(--shadow);
+      position:relative;
+    }
+    .reel::after{
+      content:"";
+      position:absolute; inset:0;
+      background: linear-gradient(180deg, rgba(0,0,0,.14), transparent 40%, rgba(0,0,0,.35));
+      pointer-events:none;
+    }
+    .reel-inner{
+      display:grid;
+      grid-template-columns: 1fr;
+    }
+    .reel iframe{
+      width:100%;
+      aspect-ratio: 16 / 9;
+      border:0;
+      display:block;
+      position:relative;
+      z-index: 2;
+      background: #000;
+    }
+    .reel-caption{
+      position:absolute;
+      left: 14px;
+      top: 12px;
+      z-index: 3;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(246,244,255,.14);
+      background: rgba(0,0,0,.32);
+      backdrop-filter: blur(10px);
+      font-size: 12px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: rgba(246,244,255,.78);
+    }
+    .liveDot{
+      width: 8px; height: 8px; border-radius:999px;
+      background: var(--c);
+      box-shadow: 0 0 0 4px rgba(251,113,133,.18);
+      animation: pulse 1.1s infinite ease-in-out;
+    }
+    @keyframes pulse{
+      0%,100%{ transform: scale(.85); opacity:.75 }
+      50%{ transform: scale(1.05); opacity:1 }
     }
 
-    section{
-      padding: clamp(28px, 4vw, 54px) 0;
-      border-bottom: 1px solid var(--hair);
+    /* Portfolio */
+    .portfolio{
+      margin-top: 34px;
+      padding-top: 18px;
+      border-top: 1px solid var(--hair);
     }
-    .section-title{
-      display:flex; align-items:baseline; justify-content:space-between;
-      gap: 18px;
-      margin-bottom: 18px;
+    .tabs{
+      display:flex;
+      flex-wrap:wrap;
+      gap: 10px;
+      margin: 10px 0 16px;
     }
-    .section-title h2{
-      margin:0;
-      font-family: var(--serif);
-      font-weight: 500;
-      font-size: clamp(22px, 3vw, 30px);
-      letter-spacing: -0.01em;
+    .tab{
+      appearance:none;
+      border:1px solid var(--hair);
+      border-radius: 999px;
+      background: rgba(246,244,255,.06);
+      color: rgba(246,244,255,.78);
+      padding: 10px 12px;
+      cursor:pointer;
+      font-size: 12px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      transition: transform .15s ease, background .2s ease, color .2s ease, border-color .2s ease;
     }
-    .section-title p{
-      margin:0;
-      font-family: var(--sans);
-      color: var(--muted);
-      max-width: 64ch;
-      line-height: 1.55;
-      font-size: 14px;
+    .tab:hover{ transform: translateY(-1px); background: rgba(246,244,255,.09); }
+    .tab[aria-selected="true"]{
+      background: linear-gradient(135deg, rgba(124,58,237,.35), rgba(34,211,238,.18));
+      border-color: rgba(246,244,255,.22);
+      color: var(--fg);
     }
 
-    /* Works grid */
     .grid{
       display:grid;
       grid-template-columns: repeat(12, 1fr);
       gap: 14px;
     }
-    .work{
+
+    .card{
       grid-column: span 6;
-      background: rgba(20,20,20,.03);
-      border: 1px solid var(--hair);
       border-radius: var(--r);
+      border: 1px solid rgba(246,244,255,.14);
+      background: rgba(246,244,255,.05);
       overflow:hidden;
-      min-height: 220px;
       position:relative;
-      transition: transform .25s ease, box-shadow .25s ease, background .25s ease;
+      transition: transform .22s ease, border-color .22s ease, background .22s ease;
     }
-    .work:hover{
+    .card:hover{
       transform: translateY(-4px);
-      box-shadow: var(--shadow);
-      background: rgba(20,20,20,.045);
-    }
-    .work a{
-      display:block;
-      height:100%;
-      color:inherit;
-      text-decoration:none;
-      padding: 18px;
-    }
-    .work .meta{
-      display:flex; align-items:flex-start; justify-content:space-between; gap:16px;
-    }
-    .work h3{
-      margin:0 0 8px;
-      font-family: var(--serif);
-      font-weight: 500;
-      letter-spacing:-0.01em;
-      font-size: 22px;
-    }
-    .work .tags{
-      font-family: var(--sans);
-      font-size: 11px;
-      letter-spacing:.18em;
-      text-transform:uppercase;
-      color: var(--muted);
-      white-space:nowrap;
-    }
-    .work .desc{
-      margin: 10px 0 0;
-      font-family: var(--sans);
-      color: var(--muted);
-      line-height: 1.55;
-      max-width: 60ch;
-      font-size: 14px;
+      border-color: rgba(246,244,255,.26);
+      background: rgba(246,244,255,.07);
     }
 
     .thumb{
-      position:absolute; inset:auto 0 0 0;
-      height: 46%;
-      border-top: 1px solid var(--hair);
+      height: 180px;
       background:
-        radial-gradient(1200px 260px at 15% 60%, rgba(0,0,0,.05), transparent 60%),
-        radial-gradient(800px 220px at 80% 30%, rgba(0,0,0,.06), transparent 55%),
-        linear-gradient(135deg, rgba(0,0,0,.03), rgba(0,0,0,.01));
-      display:flex; align-items:flex-end; justify-content:space-between;
-      padding: 12px 16px;
-      gap: 12px;
+        radial-gradient(600px 260px at 20% 30%, rgba(124,58,237,.22), transparent 60%),
+        radial-gradient(520px 240px at 80% 60%, rgba(34,211,238,.20), transparent 55%),
+        rgba(0,0,0,.28);
+      border-bottom: 1px solid rgba(246,244,255,.12);
+      position:relative;
+      overflow:hidden;
     }
-    .thumb .year{
-      font-family: var(--sans);
-      font-size: 11px;
-      letter-spacing:.22em;
-      text-transform:uppercase;
-      color: var(--muted);
-    }
-    .thumb .arrow{
-      width: 40px; height: 40px;
-      border-radius: 999px;
-      border: 1px solid var(--hair);
-      display:grid; place-items:center;
-      background: rgba(255,255,255,.55);
-      transition: transform .25s ease;
-    }
-    .work:hover .thumb .arrow{ transform: rotate(-10deg) scale(1.05); }
-    .arrow svg{ width: 18px; height: 18px; }
-
-    /* Studio split */
-    .split{
-      display:grid;
-      grid-template-columns: 1.4fr .9fr;
-      gap: 18px;
-      align-items:start;
-    }
-    .prose{
-      font-family: var(--sans);
-      color: var(--muted);
-      line-height:1.7;
-      font-size: 15px;
-      max-width: 78ch;
-    }
-    .cards{
-      display:grid;
-      gap: 12px;
-    }
-    .card{
-      border: 1px solid var(--hair);
-      border-radius: var(--r);
-      padding: 14px 14px 12px;
-      background: rgba(255,255,255,.55);
-    }
-    .card h4{
-      margin:0 0 6px;
-      font-family: var(--sans);
-      font-size: 12px;
-      letter-spacing:.22em;
-      text-transform:uppercase;
-    }
-    .card p{
-      margin:0;
-      font-family: var(--serif);
-      font-size: 18px;
-      letter-spacing:-0.01em;
-      color: var(--ink);
-      line-height:1.2;
-    }
-
-    /* Contact */
-    form{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 14px;
-    }
-    label{
-      display:block;
-      font-family: var(--sans);
-      font-size: 11px;
-      letter-spacing:.18em;
-      text-transform:uppercase;
-      color: var(--muted);
-      margin: 0 0 8px;
-    }
-    input, textarea{
+    .thumb img{
       width:100%;
-      font-family: var(--sans);
-      font-size: 14px;
-      padding: 12px 12px;
-      border-radius: 14px;
-      border: 1px solid var(--hair);
-      background: rgba(255,255,255,.66);
-      outline:none;
+      height:100%;
+      object-fit: cover;
+      display:block;
+      opacity:.92;
+      filter: saturate(1.05) contrast(1.05);
     }
-    textarea{ min-height: 120px; resize: vertical; }
-    input:focus, textarea:focus{
-      border-color: rgba(20,20,20,.35);
+    .badge{
+      position:absolute;
+      left: 12px;
+      top: 12px;
+      padding: 7px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(246,244,255,.14);
+      background: rgba(0,0,0,.35);
+      backdrop-filter: blur(10px);
+      font-size: 11px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: rgba(246,244,255,.78);
     }
-    .full{ grid-column: 1 / -1; }
-    .row{
-      display:flex; align-items:center; justify-content:space-between; gap: 12px;
-      margin-top: 12px;
+
+    .body{
+      padding: 14px 14px 12px;
+      display:flex;
+      align-items:flex-start;
+      justify-content: space-between;
+      gap: 12px;
     }
-    .check{
-      display:flex; gap:10px; align-items:flex-start;
-      font-family: var(--sans);
+    .title{
+      margin:0 0 6px;
+      font-family: var(--serif);
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      font-size: 20px;
+      line-height:1.15;
+    }
+    .desc{
+      margin:0;
       color: var(--muted);
       font-size: 13px;
-      line-height:1.4;
+      line-height:1.5;
+      max-width: 64ch;
     }
-    .check input{ width:18px; height:18px; margin-top:2px; }
-    .btn{
-      font-family: var(--sans);
-      font-size: 12px;
-      letter-spacing:.22em;
-      text-transform:uppercase;
-      padding: 12px 14px;
+    .meta2{
+      text-align:right;
+      font-size: 11px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: rgba(246,244,255,.62);
+      white-space: nowrap;
+    }
+    .card a{
+      color:inherit;
+      text-decoration:none;
+      display:block;
+    }
+
+    .ctaRow{
+      margin-top: 26px;
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      padding-top: 18px;
+      border-top: 1px solid var(--hair);
+      color: var(--muted);
+      font-size: 14px;
+      line-height:1.45;
+    }
+    .ctaRow .big{
+      color: var(--fg);
+      font-family: var(--serif);
+      font-size: 22px;
+      letter-spacing:-0.01em;
+    }
+    .ctaBtn{
+      border:1px solid rgba(246,244,255,.18);
       border-radius: 999px;
-      border: 1px solid var(--hair);
-      background: rgba(20,20,20,.90);
-      color: #fff;
+      padding: 12px 14px;
+      background: rgba(246,244,255,.08);
+      color: var(--fg);
       cursor:pointer;
-      transition: transform .2s ease, opacity .2s ease;
+      font-size: 12px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      transition: transform .15s ease, background .2s ease;
       white-space:nowrap;
     }
-    .btn:hover{ transform: translateY(-1px); opacity:.92; }
+    .ctaBtn:hover{ transform: translateY(-1px); background: rgba(246,244,255,.12); }
 
-    footer{
-      max-width: var(--max);
-      margin:0 auto;
-      padding: 22px var(--g) 34px;
-      display:flex; align-items:center; justify-content:space-between; gap: 14px;
-      font-family: var(--sans);
-      color: var(--muted);
-      font-size: 12px;
-    }
-    footer a{ color: inherit; text-decoration:none; border-bottom: 1px solid var(--hair); }
-
-    /* Responsive */
     @media (max-width: 900px){
-      .work{ grid-column: span 12; }
-      .split{ grid-template-columns: 1fr; }
-      form{ grid-template-columns: 1fr; }
+      .card{ grid-column: span 12; }
+      .corner, .email{ position: static; padding: 10px var(--g) 0; }
+      .wrap{ padding-bottom: 34px; }
     }
-
-    /* Smooth anchor offset for sticky header */
-    .anchor{ scroll-margin-top: 74px; }
   </style>
 </head>
 
 <body>
-  <div class="loader" id="loader" aria-hidden="true">
-    <div class="word">
-      LOADING
-      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-    </div>
+  <!-- tiny links + subtle email (no header/footer) -->
+  <div class="corner">
+    <a href="https://www.instagram.com/zach70sshow/" target="_blank" rel="noreferrer">IG</a>
+    <a href="https://www.youtube.com/@ZacharyMarshall" target="_blank" rel="noreferrer">YouTube</a>
+    <a href="https://www.linkedin.com/in/zachary-marshall-18a837149/" target="_blank" rel="noreferrer">LinkedIn</a>
+    <a href="https://ytjobs.co/talent/profile/249905" target="_blank" rel="noreferrer">YT Jobs</a>
+  </div>
+  <div class="email">
+    <a href="mailto:Zacharycolemarshall@gmail.com">Zacharycolemarshall@gmail.com</a>
   </div>
 
-  <header>
-    <div class="nav">
-      <a class="brand" href="#top">
-        Your Name <small>studio</small>
-      </a>
-      <nav aria-label="Primary">
-        <a href="#studio">Studio</a>
-        <a href="#works">Works</a>
-        <a href="#contact">Contact</a>
-      </nav>
-    </div>
-  </header>
-
-  <main id="top">
-    <div class="hero">
-      <p class="kicker">A small studio with big taste</p>
-      <h1>Design, motion, and stories — built to feel inevitable.</h1>
-      <p class="sub">
-        I craft branding, web experiences, and content systems that look simple on the surface
-        (because the hard work is underneath).
-      </p>
-      <div class="chips" aria-label="Services">
-        <span class="chip">Creative Direction</span>
-        <span class="chip">Web / UI</span>
-        <span class="chip">Brand</span>
-        <span class="chip">Motion</span>
-        <span class="chip">Copy</span>
-      </div>
-    </div>
-
-    <section id="studio" class="anchor">
-      <div class="section-title">
-        <h2>Studio</h2>
-        <p>
-          Collaborative, calm, detail-obsessed. I like strong typography, clear systems,
-          and projects that value meaning over noise.
+  <main class="wrap">
+    <section class="hero">
+      <div class="tagline">
+        <h1 class="name">Zachary<br/>Marshall</h1>
+        <p class="meta">
+          Professional video editor based in <strong style="color:var(--fg);font-weight:700;">Phoenix, AZ</strong>.
+          Full-time with <strong style="color:var(--fg);font-weight:700;">Pace Morby</strong> + <strong style="color:var(--fg);font-weight:700;">Subto</strong>.
+          Available for select freelance projects in 2026.
         </p>
       </div>
 
-      <div class="split">
-        <div class="prose">
-          <p>
-            My process starts with a human conversation — what you’re building, what it should
-            communicate, and what it should <em>never</em> feel like. Then we translate that into
-            a visual language: type, rhythm, hierarchy, motion, and a system that scales.
-          </p>
-          <p>
-            I’m happiest when the final result feels obvious in hindsight: coherent, confident,
-            and quietly sharp.
-          </p>
-        </div>
+      <div class="chips">
+        <span class="chip"><strong>Speed</strong> without slop</span>
+        <span class="chip">YouTube</span>
+        <span class="chip">Podcasts</span>
+        <span class="chip">Social</span>
+        <span class="chip">Ads</span>
+        <span class="chip">Story + pacing</span>
+      </div>
 
-        <div class="cards">
-          <div class="card">
-            <h4>Thinking</h4>
-            <p>Strategy → language → structure</p>
-          </div>
-          <div class="card">
-            <h4>Making</h4>
-            <p>Design → motion → implementation</p>
-          </div>
-          <div class="card">
-            <h4>Ingredients</h4>
-            <p>Time · curiosity · taste · trust</p>
-          </div>
-        </div>
+      <div class="reel" id="reel">
+        <div class="reel-caption"><span class="liveDot"></span> Demo Reel</div>
+        <!-- Replace src with your real embed URL -->
+        <iframe
+          title="Zachary Marshall — Demo Reel"
+          src="DEMO_REEL_EMBED_URL"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
+        ></iframe>
       </div>
     </section>
 
-    <section id="works" class="anchor">
-      <div class="section-title">
-        <h2>Works</h2>
-        <p>
-          A few selected pieces. Swap these for your real projects and link out to case studies,
-          videos, GitHub, or live sites.
-        </p>
+    <section class="portfolio" aria-label="Portfolio">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div style="font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:rgba(246,244,255,.72);">
+          Choose a lane. See work.
+        </div>
+        <div style="font-size:12px;letter-spacing:.12em;color:rgba(246,244,255,.55);">
+          Click any project to open.
+        </div>
       </div>
 
-      <div class="grid">
-        <article class="work">
-          <a href="#" target="_blank" rel="noreferrer">
-            <div class="meta">
-              <div>
-                <h3>Project One</h3>
-                <div class="desc">A brand + landing page that increased conversions with fewer words.</div>
-              </div>
-              <div class="tags">Brand · Web</div>
-            </div>
-            <div class="thumb">
-              <div class="year">2026</div>
-              <div class="arrow" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M7 17L17 7"/><path d="M9 7h8v8"/>
-                </svg>
-              </div>
-            </div>
-          </a>
-        </article>
-
-        <article class="work">
-          <a href="#" target="_blank" rel="noreferrer">
-            <div class="meta">
-              <div>
-                <h3>Project Two</h3>
-                <div class="desc">Motion system for a creator channel: templates, transitions, consistency.</div>
-              </div>
-              <div class="tags">Motion · Systems</div>
-            </div>
-            <div class="thumb">
-              <div class="year">2025</div>
-              <div class="arrow" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M7 17L17 7"/><path d="M9 7h8v8"/>
-                </svg>
-              </div>
-            </div>
-          </a>
-        </article>
-
-        <article class="work">
-          <a href="#" target="_blank" rel="noreferrer">
-            <div class="meta">
-              <div>
-                <h3>Project Three</h3>
-                <div class="desc">Dashboard UI concept: clean hierarchy, dense data, still readable.</div>
-              </div>
-              <div class="tags">UI · Data</div>
-            </div>
-            <div class="thumb">
-              <div class="year">2025</div>
-              <div class="arrow" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M7 17L17 7"/><path d="M9 7h8v8"/>
-                </svg>
-              </div>
-            </div>
-          </a>
-        </article>
-
-        <article class="work">
-          <a href="#" target="_blank" rel="noreferrer">
-            <div class="meta">
-              <div>
-                <h3>Project Four</h3>
-                <div class="desc">A one-page portfolio with a “quiet luxury” type palette and micro-motion.</div>
-              </div>
-              <div class="tags">Web · Copy</div>
-            </div>
-            <div class="thumb">
-              <div class="year">2024</div>
-              <div class="arrow" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M7 17L17 7"/><path d="M9 7h8v8"/>
-                </svg>
-              </div>
-            </div>
-          </a>
-        </article>
-      </div>
-    </section>
-
-    <section id="contact" class="anchor" style="border-bottom:none;padding-bottom:10px;">
-      <div class="section-title">
-        <h2>Contact</h2>
-        <p>
-          Tell me what you’re building and what “success” looks like. I’ll reply with next steps.
-        </p>
+      <div class="tabs" role="tablist" aria-label="Work categories">
+        <button class="tab" role="tab" aria-selected="true" data-cat="youtube">YouTube Videos</button>
+        <button class="tab" role="tab" aria-selected="false" data-cat="podcasts">Podcasts</button>
+        <button class="tab" role="tab" aria-selected="false" data-cat="social">Social</button>
+        <button class="tab" role="tab" aria-selected="false" data-cat="ads">Ads</button>
+        <button class="tab" role="tab" aria-selected="false" data-cat="misc">Misc</button>
       </div>
 
-      <!-- This form uses mailto as a placeholder; swap to Formspree/Netlify Forms when ready -->
-      <form id="contactForm">
+      <div class="grid" id="grid" aria-live="polite"></div>
+
+      <div class="ctaRow">
         <div>
-          <label for="name">Name</label>
-          <input id="name" name="name" autocomplete="name" placeholder="Your name" required />
+          <div class="big">Need edits that feel expensive?</div>
+          <div>Send a link + what “done” looks like. I’ll reply with a fast plan and an honest timeline.</div>
         </div>
-        <div>
-          <label for="email">Email</label>
-          <input id="email" name="email" type="email" autocomplete="email" placeholder="you@domain.com" required />
-        </div>
-        <div class="full">
-          <label for="message">Message</label>
-          <textarea id="message" name="message" placeholder="Project, timeline, links…" required></textarea>
-        </div>
-
-        <div class="full row">
-          <div class="check">
-            <input id="privacy" type="checkbox" required />
-            <div>
-              <strong style="color:var(--ink);font-weight:600;">Consent</strong><br />
-              I agree to be contacted back about this message.
-            </div>
-          </div>
-          <button class="btn" type="submit">Send email</button>
-        </div>
-
-        <p class="full" id="status" style="margin:10px 0 0;font-family:var(--sans);color:var(--muted);font-size:13px;"></p>
-      </form>
+        <button class="ctaBtn" id="emailBtn">Email Zachary</button>
+      </div>
     </section>
   </main>
 
-  <footer>
-    <div>© <span id="year"></span> Your Name</div>
-    <div style="display:flex;gap:14px;flex-wrap:wrap;">
-      <a href="#" target="_blank" rel="noreferrer">Instagram</a>
-      <a href="#" target="_blank" rel="noreferrer">LinkedIn</a>
-      <a href="#" target="_blank" rel="noreferrer">GitHub</a>
-    </div>
-  </footer>
-
   <script>
-    // Fake "LOADING" intro
-    const loader = document.getElementById('loader');
-    window.addEventListener('load', () => {
-      setTimeout(() => loader.classList.add('hidden'), 650);
-      setTimeout(() => loader.remove(), 1400);
-    });
+    // 1) Put your reel embed URL here (YouTube or Vimeo embed)
+    // YouTube example:
+    // "https://www.youtube.com/embed/VIDEO_ID?rel=0&modestbranding=1"
+    // Vimeo example:
+    // "https://player.vimeo.com/video/VIDEO_ID?h=HASH&title=0&byline=0&portrait=0"
+    const REEL_EMBED_URL = "DEMO_REEL_EMBED_URL";
 
-    // Footer year
-    document.getElementById('year').textContent = new Date().getFullYear();
+    // 2) Update this list over time — this is your whole portfolio “CMS”
+    // Tip: host thumbnails in /assets/ and use relative paths like "assets/thumb1.jpg"
+    const PROJECTS = [
+      // YOUTUBE
+      {
+        cat: "youtube",
+        title: "Subto — Episode Highlight",
+        desc: "Fast-paced highlights, punchy structure, retention-first pacing.",
+        client: "Subto",
+        year: "2026",
+        badge: "YouTube",
+        thumb: "", // e.g. "assets/subto-01.jpg"
+        url: "#"
+      },
+      {
+        cat: "youtube",
+        title: "Pace Morby — YouTube Cutdown",
+        desc: "Story beats tightened + visual rhythm, without losing the voice.",
+        client: "Pace Morby",
+        year: "2026",
+        badge: "YouTube",
+        thumb: "",
+        url: "#"
+      },
 
-    // Smooth scroll for in-page links
-    document.querySelectorAll('a[href^="#"]').forEach(a => {
-      a.addEventListener('click', (e) => {
-        const id = a.getAttribute('href');
-        if (!id || id === '#') return;
-        const el = document.querySelector(id);
-        if (!el) return;
-        e.preventDefault();
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        history.pushState(null, '', id);
-      });
-    });
+      // PODCASTS
+      {
+        cat: "podcasts",
+        title: "Podcast Clip Pack",
+        desc: "Multi-cam edit + branded captions, optimized for shareability.",
+        client: "Client Name",
+        year: "2025",
+        badge: "Podcast",
+        thumb: "",
+        url: "#"
+      },
 
-    // Contact form: mailto placeholder
-    const form = document.getElementById('contactForm');
-    const status = document.getElementById('status');
+      // SOCIAL
+      {
+        cat: "social",
+        title: "Short-form Reel Set",
+        desc: "Hook-first cuts, pattern interrupts, tasteful motion + sound design.",
+        client: "Client Name",
+        year: "2026",
+        badge: "Social",
+        thumb: "",
+        url: "#"
+      },
 
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      status.textContent = "";
+      // ADS
+      {
+        cat: "ads",
+        title: "VSL / Ad Creative",
+        desc: "Direct-response pacing: clarity, proof, punch, and payoff.",
+        client: "Client Name",
+        year: "2025",
+        badge: "Ads",
+        thumb: "",
+        url: "#"
+      },
 
-      const name = document.getElementById('name').value.trim();
-      const email = document.getElementById('email').value.trim();
-      const message = document.getElementById('message').value.trim();
-      const ok = document.getElementById('privacy').checked;
+      // MISC
+      {
+        cat: "misc",
+        title: "Misc Project",
+        desc: "Anything that doesn’t fit the bins (but still slaps).",
+        client: "—",
+        year: "2024",
+        badge: "Misc",
+        thumb: "",
+        url: "#"
+      }
+    ];
 
-      if (!name || !email || !message || !ok) {
-        status.textContent = "Please complete all fields and consent to be contacted.";
+    // ---------- Logic ----------
+    const grid = document.getElementById("grid");
+    const tabs = Array.from(document.querySelectorAll(".tab"));
+    const emailBtn = document.getElementById("emailBtn");
+
+    // Fill reel src if user forgot
+    const reelIframe = document.querySelector(".reel iframe");
+    if (reelIframe && REEL_EMBED_URL && REEL_EMBED_URL !== "DEMO_REEL_EMBED_URL") {
+      reelIframe.src = REEL_EMBED_URL;
+    }
+
+    function cardHTML(p){
+      const safeThumb = p.thumb && p.thumb.trim().length ? `<img alt="" loading="lazy" src="${p.thumb}">` : "";
+      return `
+        <article class="card">
+          <a href="${p.url}" target="_blank" rel="noreferrer">
+            <div class="thumb">
+              ${safeThumb}
+              <div class="badge">${p.badge || p.cat}</div>
+            </div>
+            <div class="body">
+              <div>
+                <h3 class="title">${p.title}</h3>
+                <p class="desc">${p.desc}</p>
+              </div>
+              <div class="meta2">
+                <div>${p.client || ""}</div>
+                <div>${p.year || ""}</div>
+              </div>
+            </div>
+          </a>
+        </article>
+      `;
+    }
+
+    function render(cat){
+      const items = PROJECTS.filter(p => p.cat === cat);
+      if (!items.length){
+        grid.innerHTML = `<div style="grid-column:1/-1;color:rgba(246,244,255,.65);padding:10px 2px;">
+          No projects in this tab yet — add items to the <code style="color:rgba(246,244,255,.85);">PROJECTS</code> array.
+        </div>`;
         return;
       }
+      grid.innerHTML = items.map(cardHTML).join("");
+    }
 
-      const subject = encodeURIComponent(`Portfolio inquiry — ${name}`);
-      const body = encodeURIComponent(
-        `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}\n`
-      );
+    function setActive(cat){
+      tabs.forEach(t => {
+        const active = t.dataset.cat === cat;
+        t.setAttribute("aria-selected", active ? "true" : "false");
+      });
+      render(cat);
+    }
 
-      // TODO: replace with your email
-      const to = "you@domain.com";
-      window.location.href = `mailto:${to}?subject=${subject}&body=${body}`;
-      status.textContent = "Opening your email client…";
+    tabs.forEach(t => t.addEventListener("click", () => setActive(t.dataset.cat)));
+
+    emailBtn.addEventListener("click", () => {
+      window.location.href = "mailto:Zacharycolemarshall@gmail.com?subject=" +
+        encodeURIComponent("Editing inquiry — ZacharyMarshall.com") +
+        "&body=" + encodeURIComponent("Hey Zachary,\n\nHere are the links + what I need:\n\nTimeline:\nBudget range:\n\n—");
     });
+
+    // default tab
+    setActive("youtube");
   </script>
 </body>
 </html>
