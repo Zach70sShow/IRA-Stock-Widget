@@ -3,21 +3,27 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AZ NOW — Live Traffic + Cams (Xeneon Edge)</title>
+  <title>AZ NOW — Live Traffic + Cams</title>
 
+  <!-- Fonts (optional; safe fallbacks if blocked) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Sans:wght@400;600;800&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      /* ====== YOU TWEAK THESE ====== */
-      --scale: 0.31;          /* overall fit on Xeneon Edge (you said ~0.31 is right) */
-      --textScale: 1.55;      /* bump text up WITHOUT zooming the camera */
-      --designW: 2560;
-      --designH: 720;
+      /* ========= YOU TUNE THESE ========= */
+      --camSize: 1.00;     /* <-- CAMERA VISUAL SIZE (0.85–1.25). 1.00 = default */
+      --tickerSeconds: 55; /* <-- TICKER SPEED (higher = slower) */
+      --maxIncidents: 7;   /* <-- how many incidents to list on the left */
 
-      /* Colors */
+      /* Location presets (used by buttons) */
+      --homeLat: 33.295147; --homeLon: -112.117982;
+      --workLat: 33.440492; --workLon: -111.953428;
+      --meganLat: 33.419155; --meganLon: -111.703516;
+      --dtLat:   33.448231; --dtLon:   -112.074975;
+
+      /* ========= THEME ========= */
       --bg0:#0d1230; --bg1:#171a3b;
       --ink:#f7f3ff; --muted:#d7d2ff;
       --line:#ffffff22;
@@ -25,29 +31,19 @@
       --peach:#ffb48a; --mint:#89f0d1; --sky:#86b7ff; --lav:#c3a1ff; --pink:#ff8fd1; --lemon:#ffe27a; --teal:#2bd9ff;
       --danger:#ff5b6e; --warn:#ffbf4a; --ok:#60ffb0;
 
-      --radius: 18px; --radius2: 14px;
-      --hdrH: 60px; --tickerH: 56px;
-      --pad: 14px;
+      --radius:18px; --radius2:14px;
+      --hdrH:60px; --tickerH:56px; --pad:14px;
 
-      --font-ui: "IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      --font-retro: "VT323", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --font-ui:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      --font-retro:"VT323", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-      /* Font bases (we multiply by --textScale below) */
-      --f-logo: 42px;
-      --f-sub: 22px;
-      --f-meta: 22px;
-      --f-title: 26px;
-      --f-small: 18px;
-      --f-alertTop: 14px;
-      --f-alertSub: 12px;
-      --f-tag: 18px;
-      --f-ticker: 24px;
-      --f-clock: 34px;
+      --shadow: 0 10px 30px #00000066;
     }
 
     *{ box-sizing:border-box; }
-    html,body{ width:100%; height:100%; margin:0; }
+    html,body{ width:100%; height:100%; }
     body{
+      margin:0;
       overflow:hidden;
       background:
         radial-gradient(1200px 500px at 20% 30%, #7b6cff30, transparent 55%),
@@ -58,16 +54,9 @@
       font-family:var(--font-ui);
     }
 
-    /* Stage + scaled canvas */
-    .stage{
-      position:fixed; inset:0;
-      overflow:hidden;
-    }
+    /* Fullscreen shell */
     .bar{
-      width: calc(var(--designW) * 1px);
-      height: calc(var(--designH) * 1px);
-      transform: scale(var(--scale));
-      transform-origin: top left;
+      width:100vw; height:100vh;
       position:relative;
       overflow:hidden;
       background:
@@ -89,10 +78,10 @@
         rgba(0,0,0,0.0) 2px,
         rgba(0,0,0,0.0) 4px
       );
-      opacity:.35;
+      opacity:.38;
       pointer-events:none;
       mix-blend-mode: overlay;
-      z-index: 9;
+      z-index: 50;
     }
 
     /* Header */
@@ -101,26 +90,26 @@
       display:grid;
       grid-template-columns: 1fr auto;
       align-items:center;
-      padding: 10px 14px;
+      padding:10px 14px;
       border-bottom:1px solid var(--line);
       background:
         linear-gradient(90deg, #ffb48a66, #c3a1ff55 35%, #86b7ff55 60%, #89f0d155),
         linear-gradient(180deg, #ffffff12, #0000);
-      z-index: 5;
       position:relative;
+      z-index: 10;
     }
 
     .brand{ display:flex; align-items:baseline; gap:12px; }
     .logo{
       font-family:var(--font-retro);
-      font-size: calc(var(--f-logo) * var(--textScale));
+      font-size:42px;
       letter-spacing:2px;
       text-shadow:0 2px 0 #0007;
       line-height:1;
     }
     .sub{
       font-family:var(--font-retro);
-      font-size: calc(var(--f-sub) * var(--textScale));
+      font-size:22px;
       letter-spacing:1px;
       opacity:.9;
     }
@@ -128,15 +117,17 @@
     .meta{
       display:flex; align-items:center; gap:14px;
       font-family:var(--font-retro);
-      font-size: calc(var(--f-meta) * var(--textScale));
+      font-size:22px;
       letter-spacing:1px;
       text-shadow:0 2px 0 #0007;
       white-space:nowrap;
     }
     .pill{
       display:inline-flex; align-items:center; gap:8px;
-      padding: 6px 10px; border-radius:999px;
-      background:#0003; border:1px solid #fff3;
+      padding: 6px 10px;
+      border-radius:999px;
+      background:#0003;
+      border:1px solid #fff3;
     }
     .dot{
       width:10px; height:10px; border-radius:50%;
@@ -144,15 +135,66 @@
       box-shadow:0 0 0 3px #fff2, 0 0 16px var(--ok);
     }
 
-    /* Main grid (bigger, simpler center) */
+    /* Buttons row */
+    .controls{
+      height: 54px;
+      padding: 10px 14px 0;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      position:relative;
+      z-index: 9;
+    }
+    .btn{
+      font-family: var(--font-retro);
+      font-size: 22px;
+      letter-spacing: 1px;
+      padding: 8px 12px;
+      border-radius: 14px;
+      border: 1px solid #ffffff26;
+      background: linear-gradient(180deg, #ffffff12, #00000020);
+      color: var(--ink);
+      cursor: pointer;
+      user-select:none;
+      box-shadow: inset 0 0 0 1px #00000025;
+    }
+    .btn:hover{ filter: brightness(1.05); }
+    .btn:active{ transform: translateY(1px); }
+    .btn.primary{
+      border-color: #89f0d155;
+      background: linear-gradient(180deg, #89f0d126, #00000020);
+    }
+    .btn.danger{
+      border-color: #ff5b6e66;
+      background: linear-gradient(180deg, #ff5b6e22, #00000020);
+    }
+    .modePill{
+      margin-left:auto;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-family: var(--font-retro);
+      font-size: 22px;
+      letter-spacing: 1px;
+      padding: 8px 12px;
+      border-radius: 14px;
+      border: 1px solid #ffffff26;
+      background:#0002;
+      white-space:nowrap;
+    }
+    .modePill b{ color: var(--lemon); }
+
+    /* Main layout */
     .main{
-      height: calc(100% - var(--hdrH) - var(--tickerH));
+      height: calc(100% - var(--hdrH) - var(--tickerH) - 54px);
       padding: var(--pad);
       display:grid;
-      grid-template-columns: 1.25fr 1.05fr 1.7fr; /* incidents | snapshot | camera */
-      gap: 12px;
+      grid-template-columns: 1.1fr 1.0fr 1.7fr; /* incidents | summary | camera */
+      gap:12px;
       position:relative;
       z-index: 2;
+      min-height: 0;
     }
 
     .panel{
@@ -166,8 +208,8 @@
     }
     .panelTitle{
       display:flex; justify-content:space-between; align-items:center;
-      padding: 10px 12px;
-      border-bottom: 1px solid #ffffff22;
+      padding:10px 12px;
+      border-bottom:1px solid #ffffff22;
       background:
         linear-gradient(90deg, #86b7ff30, #c3a1ff24, #ff8fd120),
         linear-gradient(180deg, #ffffff14, #0000);
@@ -175,221 +217,177 @@
     .panelTitle h3{
       margin:0;
       font-family:var(--font-retro);
-      font-size: calc(var(--f-title) * var(--textScale));
+      font-size:26px;
       letter-spacing:1px;
     }
     .panelTitle small{
       font-family:var(--font-retro);
-      font-size: calc(var(--f-small) * var(--textScale));
+      font-size:18px;
       opacity:.85;
       letter-spacing:.5px;
       white-space:nowrap;
     }
 
     /* Incidents list */
-    .alerts{
-      padding: 10px 12px 12px;
-      display:flex; flex-direction:column; gap:10px;
+    .incidents{
+      padding:10px 12px 12px;
       height: calc(100% - 52px);
       overflow:auto;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
     }
-    .alert{
+    .incident{
       display:grid;
-      grid-template-columns: 40px 1fr auto;
-      gap:12px;
+      grid-template-columns: 34px 1fr auto;
+      gap:10px;
       align-items:center;
-      padding: 12px 12px;
+      padding: 10px 10px;
       border-radius: var(--radius2);
       background:#0002;
       border:1px solid #ffffff1e;
     }
-    .icon{
-      width:40px; height:40px; border-radius:14px;
-      display:grid; place-items:center;
+    .ic{
+      width:34px; height:34px;
+      border-radius:12px;
+      display:grid;
+      place-items:center;
       font-family:var(--font-retro);
-      font-size: calc(22px * var(--textScale));
+      font-size:22px;
       color:#0b0f2a;
       box-shadow: inset 0 0 0 1px #0002;
     }
-    .text .top{
-      font-weight:900;
-      font-size: calc(var(--f-alertTop) * var(--textScale));
-      line-height:1.1;
-      letter-spacing:.2px;
-    }
-    .text .sub{
-      opacity:.9;
-      font-size: calc(var(--f-alertSub) * var(--textScale));
-      margin-top:4px;
-      line-height:1.15;
-    }
-    .tag{
+    .itop{ font-weight:900; font-size:14px; line-height:1.1; }
+    .isub{ opacity:.85; font-size:12px; margin-top:2px; }
+    .itag{
       font-family:var(--font-retro);
-      font-size: calc(var(--f-tag) * var(--textScale));
-      padding: 8px 10px;
+      font-size:18px;
+      padding: 6px 8px;
       border-radius:12px;
       border:1px solid #ffffff26;
       background:#0002;
       letter-spacing:1px;
       white-space:nowrap;
     }
-    .a-danger .icon{ background:var(--danger); }
-    .a-warn .icon{ background:var(--warn); }
-    .a-ok .icon{ background:var(--mint); }
+    .sev-high .ic{ background: var(--danger); }
+    .sev-med  .ic{ background: var(--warn); }
+    .sev-low  .ic{ background: var(--mint); }
 
-    /* Snapshot (replaces fake map) */
-    .snap{
-      padding: 12px;
+    /* Summary panel (simple, layman) */
+    .summary{
+      padding:10px 12px 12px;
       height: calc(100% - 52px);
-      display:grid;
-      grid-template-rows: auto auto 1fr;
-      gap: 12px;
-      min-height:0;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      overflow:hidden;
     }
-
-    .bigStats{
+    .bigNums{
       display:grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      gap:10px;
     }
     .card{
       border-radius: var(--radius2);
-      border:1px solid #ffffff1f;
+      border: 1px solid #ffffff1f;
       background:#0002;
-      padding: 12px 12px;
+      padding: 10px 10px;
+      min-height: 70px;
       display:flex;
       flex-direction:column;
-      gap: 6px;
-      min-height: 92px;
+      gap:4px;
     }
     .card .k{
-      font-family:var(--font-retro);
-      font-size: calc(18px * var(--textScale));
-      letter-spacing:1px;
-      opacity:.9;
+      font-family: var(--font-retro);
+      font-size: 18px;
+      letter-spacing: 1px;
+      opacity: .9;
     }
     .card .v{
-      font-family:var(--font-retro);
-      font-size: calc(34px * var(--textScale));
-      letter-spacing:1px;
-      font-weight: 900;
+      font-family: var(--font-retro);
+      font-size: 30px;
+      letter-spacing: 1px;
+      color: var(--lemon);
+      text-shadow: 0 2px 0 #0007;
       line-height: 1;
-      text-shadow:0 2px 0 #0007;
     }
-    .card .v.lemon{ color:var(--lemon); }
-    .card .v.mint{ color:var(--mint); }
-    .card .v.danger{ color:var(--danger); }
-
-    .modeRow{
-      display:grid;
-      grid-template-columns: 1fr auto;
-      gap: 12px;
-      align-items: center;
-    }
-    .modeBadge{
-      border-radius: 999px;
-      border:1px solid #ffffff1f;
-      background:#0002;
-      padding: 10px 12px;
-      font-family: var(--font-retro);
-      font-size: calc(22px * var(--textScale));
-      letter-spacing:1px;
-      display:flex;
-      align-items:center;
-      gap: 10px;
-      overflow:hidden;
-      white-space:nowrap;
-      text-overflow:ellipsis;
-    }
-    .modeBadge .spark{
-      width:10px; height:10px; border-radius:50%;
-      background: var(--teal);
-      box-shadow: 0 0 14px #2bd9ff77;
-    }
-
-    .btnRow{
-      display:flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items:center;
-      justify-content:flex-end;
-    }
-    .btn{
-      cursor:pointer;
-      user-select:none;
-      border-radius: 14px;
-      border:1px solid #ffffff26;
-      background: linear-gradient(180deg, #ffffff14, #00000010);
-      color: var(--ink);
-      padding: 10px 12px;
-      font-family: var(--font-retro);
-      font-size: calc(20px * var(--textScale));
-      letter-spacing:1px;
-      box-shadow: inset 0 0 0 1px #0003;
-      transition: transform .08s ease, background .2s ease;
-    }
-    .btn:active{ transform: translateY(1px); }
-    .btn.on{
-      border-color: #ffffff44;
-      background: linear-gradient(90deg, #89f0d133, #86b7ff22, #ff8fd122);
-      box-shadow: 0 10px 22px #0005, inset 0 0 0 1px #ffffff14;
-    }
-
-    .infoBox{
-      border-radius: var(--radius2);
-      border:1px solid #ffffff1f;
-      background:#0002;
-      padding: 12px;
-      min-height:0;
-      overflow:auto;
-      font-size: calc(13px * var(--textScale));
-      line-height: 1.25;
+    .card .s{
+      font-size: 12px;
+      opacity: .85;
       color: var(--muted);
+      margin-top: 2px;
     }
-    .infoBox b{ color: var(--ink); }
+
+    .focusBox{
+      border-radius: var(--radius2);
+      border: 1px solid #ffffff1f;
+      background:#0002;
+      padding: 12px 12px;
+      flex: 1;
+      min-height: 0;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      overflow:hidden;
+    }
+    .focusBox .headline{
+      font-family: var(--font-retro);
+      font-size: 26px;
+      letter-spacing: 1px;
+      color: var(--mint);
+      text-shadow: 0 2px 0 #0007;
+    }
+    .focusBox .plain{
+      font-size: 13px;
+      line-height: 1.35;
+      opacity: .95;
+      overflow:auto;
+      padding-right: 4px;
+    }
+    .focusBox .plain b{ color: var(--lemon); }
 
     /* Camera panel */
     .camWrap{
-      padding:12px;
+      padding:10px 12px 12px;
       height: calc(100% - 52px);
       display:grid;
       grid-template-rows: auto 1fr;
-      gap:12px;
+      gap:10px;
       min-height: 0;
     }
     .camMeta{
       display:grid;
       grid-template-columns: 1fr auto;
-      gap:12px;
+      gap:10px;
       align-items:center;
     }
     .camMeta .left{
       display:flex; align-items:center; gap:10px;
       font-family:var(--font-retro);
-      font-size: calc(22px * var(--textScale));
+      font-size:20px;
       letter-spacing:1px;
       background:#0004;
       border:1px solid #fff2;
-      border-radius:14px;
-      padding:10px 12px;
+      border-radius:12px;
+      padding:6px 10px;
       overflow:hidden;
       white-space:nowrap;
       text-overflow:ellipsis;
     }
-    .livePip{ display:inline-flex; align-items:center; gap:8px; }
+    .livePip{ display:inline-flex; align-items:center; gap:6px; }
     .livePip .dot{
-      width:10px; height:10px; border-radius:50%;
+      width:8px; height:8px;
       background:var(--danger);
-      box-shadow:0 0 16px #ff5b6ecc;
+      box-shadow:0 0 14px #ff5b6ecc;
     }
     .camMeta .right{
       font-family:var(--font-retro);
-      font-size: calc(22px * var(--textScale));
+      font-size:20px;
       letter-spacing:1px;
       background:#0004;
       border:1px solid #fff2;
-      border-radius:14px;
-      padding:10px 12px;
+      border-radius:12px;
+      padding:6px 10px;
       white-space:nowrap;
     }
 
@@ -402,35 +400,33 @@
       min-height: 0;
     }
 
-    /* IMPORTANT: keep camera "un-zoomed" (contain) */
-    .camFrame{
+    /* Camera scaling variable:
+       We scale ONLY the iframe content, keeping the box size stable. */
+    .camInner{
+      position:absolute;
+      inset:0;
+      transform: scale(var(--camSize));
+      transform-origin: center center;
+      width: calc(100% / var(--camSize));
+      height: calc(100% / var(--camSize));
+      left: 50%;
+      top: 50%;
+      translate: -50% -50%;
+    }
+
+    .camFrame, .camFallback{
       position:absolute; inset:0;
       width:100%; height:100%;
       border:0;
-      background:#000;
     }
-
-    /* If iframe content is "too zoomed" because the camera page itself is big,
-       we can scale JUST the iframe contents by wrapping via CSS transform.
-       This DOES NOT affect text elsewhere. */
-    .camInner{
-      position:absolute; inset:0;
-      transform: scale(var(--camScale));
-      transform-origin: top left;
-      width: calc(100% / var(--camScale));
-      height: calc(100% / var(--camScale));
-    }
-    :root{ --camScale: 1; } /* set to 0.9, 0.8, etc if you ever want camera smaller */
-
     .camFallback{
-      position:absolute; inset:0;
       display:none;
       place-items:center;
-      padding:22px;
+      padding:16px;
       text-align:center;
       color: var(--muted);
       font-family: var(--font-retro);
-      font-size: calc(28px * var(--textScale));
+      font-size: 26px;
       letter-spacing: 1px;
       background:
         radial-gradient(900px 260px at 60% 70%, #ffb48a22, transparent 55%),
@@ -439,9 +435,9 @@
     }
     .camFallback small{
       display:block;
-      font-size: calc(18px * var(--textScale));
+      font-size:18px;
       opacity:.85;
-      margin-top:12px;
+      margin-top:10px;
       font-family: var(--font-ui);
       letter-spacing:0;
     }
@@ -459,18 +455,17 @@
         linear-gradient(90deg, #86b7ff2a, #ff8fd124 45%, #89f0d124),
         linear-gradient(180deg, #0000, #0002);
       position:relative;
-      z-index:5;
+      z-index: 10;
     }
     .tickerBrand{
       font-family:var(--font-retro);
-      font-size: calc(34px * var(--textScale));
+      font-size:34px;
       letter-spacing:2px;
       padding:6px 10px;
       border-radius:14px;
       border:1px solid #ffffff24;
       background:#0002;
       text-shadow:0 2px 0 #0007;
-      white-space:nowrap;
     }
     .tickerLine{
       overflow:hidden;
@@ -487,21 +482,18 @@
       display:inline-block;
       padding-left: 100%;
       font-family:var(--font-retro);
-      font-size: calc(var(--f-ticker) * var(--textScale));
+      font-size:24px;
       letter-spacing:1px;
       animation: scroll var(--tickerSeconds) linear infinite;
       text-shadow:0 2px 0 #0007;
     }
-    :root{ --tickerSeconds: 52s; } /* SLOWER ticker (was too fast) */
-
     @keyframes scroll{
       0%{ transform: translateX(0); }
       100%{ transform: translateX(-100%); }
     }
-
     .clockBox{
       font-family:var(--font-retro);
-      font-size: calc(var(--f-clock) * var(--textScale));
+      font-size:34px;
       letter-spacing:2px;
       padding:6px 12px;
       border-radius:14px;
@@ -512,42 +504,39 @@
       white-space:nowrap;
     }
 
-    /* BREAKING overlay */
-    .breaking{
-      position:absolute; inset:0;
-      display:none;
-      z-index: 20;
-      background: linear-gradient(180deg, #000000aa, #00000055);
-      backdrop-filter: blur(4px);
-    }
-    .breaking .box{
+    /* Simple “new accident” toast */
+    .toast{
       position:absolute;
-      left: 18px;
-      right: 18px;
-      top: 84px;
-      border-radius: 18px;
+      right: 16px;
+      bottom: calc(var(--tickerH) + 14px);
+      z-index: 40;
+      display:none;
+      border-radius: 16px;
       border: 1px solid #ffffff26;
-      background:
-        linear-gradient(90deg, #ff5b6e88, #ffbf4a55 40%, #86b7ff55),
-        linear-gradient(180deg, #00000022, #00000066);
+      background: linear-gradient(90deg, #ff5b6e88, #ffbf4a55 40%, #86b7ff55);
       box-shadow: 0 20px 50px #0008;
-      padding: 16px 16px 14px;
-      overflow:hidden;
+      padding: 12px 14px;
+      color:#0b0f2a;
+      max-width: 520px;
     }
-    .breaking .label{
+    .toast .t1{
       font-family: var(--font-retro);
-      font-size: calc(34px * var(--textScale));
+      font-size: 28px;
       letter-spacing: 2px;
       display:flex;
       align-items:center;
       gap:10px;
-      color:#0b0f2a;
-      text-shadow:none;
+      line-height: 1;
     }
-    .breaking .label .pulse{
-      width: 12px; height: 12px;
-      border-radius: 50%;
-      background: #0b0f2a;
+    .toast .t2{
+      margin-top: 6px;
+      font-weight: 900;
+      font-size: 14px;
+      line-height: 1.25;
+    }
+    .pulseDot{
+      width: 12px; height: 12px; border-radius: 50%;
+      background:#0b0f2a;
       animation: pulse 0.8s ease-in-out infinite;
     }
     @keyframes pulse{
@@ -555,150 +544,125 @@
       50%{ transform: scale(1.45); opacity: 1; }
       100%{ transform: scale(1); opacity: 0.9; }
     }
-    .breaking .msg{
-      margin-top: 8px;
-      color: #0b0f2a;
-      font-weight: 900;
-      font-size: calc(20px * var(--textScale));
-    }
-    .breaking .submsg{
-      margin-top: 4px;
-      color: #0b0f2a;
-      opacity: .9;
-      font-size: calc(14px * var(--textScale));
-    }
   </style>
 </head>
 
 <body>
-  <div class="stage">
-    <div class="bar" role="img" aria-label="AZ NOW live traffic and cams dashboard">
+  <div class="bar" role="img" aria-label="AZ NOW live traffic and cams dashboard">
+    <div class="header">
+      <div class="brand">
+        <div class="logo">AZ NOW</div>
+        <div class="sub">LIVE TRAFFIC + CAMS</div>
+      </div>
 
-      <!-- HEADER (retro badge removed per request) -->
-      <div class="header">
-        <div class="brand">
-          <div class="logo">AZ NOW</div>
-          <div class="sub">LIVE TRAFFIC + CAMS</div>
+      <div class="meta">
+        <div class="pill"><span class="dot"></span><span>LIVE</span></div>
+        <div class="pill" id="datePill">—</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn danger" id="btnAccident">Accident view</button>
+      <button class="btn" id="btnRandom">Random</button>
+      <button class="btn primary" id="btnHome">Home</button>
+      <button class="btn" id="btnWork">Work</button>
+      <button class="btn" id="btnMegan">Megan</button>
+      <button class="btn" id="btnDowntown">Downtown</button>
+
+      <div class="modePill" title="Current camera selection mode">
+        MODE: <b id="modeLabel">RANDOM</b>
+      </div>
+    </div>
+
+    <div class="main">
+      <!-- Incidents -->
+      <section class="panel">
+        <div class="panelTitle">
+          <h3>TOP INCIDENTS</h3>
+          <small>UPDATED: <span id="incUpdated">—</span></small>
         </div>
-        <div class="meta">
-          <div class="pill"><span class="dot"></span><span>LIVE</span></div>
-          <div class="pill" id="datePill">—</div>
+        <div class="incidents" id="incidentsList">
+          <div class="incident sev-low">
+            <div class="ic">…</div>
+            <div>
+              <div class="itop">Loading</div>
+              <div class="isub">Waiting for AZ511 events…</div>
+            </div>
+            <div class="itag">LIVE</div>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div class="main">
-        <!-- INCIDENTS -->
-        <section class="panel">
-          <div class="panelTitle">
-            <h3>TOP INCIDENTS</h3>
-            <small id="alertsCount">—</small>
-          </div>
-          <div class="alerts" id="alertsList">
-            <div class="alert a-ok">
-              <div class="icon">…</div>
-              <div class="text">
-                <div class="top">LOADING</div>
-                <div class="sub">Waiting for AZ511 events…</div>
-              </div>
-              <div class="tag">LIVE</div>
-            </div>
-          </div>
-        </section>
-
-        <!-- SNAPSHOT (simple + readable) -->
-        <section class="panel">
-          <div class="panelTitle">
-            <h3>CITY SNAPSHOT</h3>
-            <small>UPDATED: <span id="snapUpdated">—</span></small>
-          </div>
-
-          <div class="snap">
-            <div class="bigStats">
-              <div class="card">
-                <div class="k">ACTIVE EVENTS</div>
-                <div class="v danger" id="statEvents">—</div>
-              </div>
-              <div class="card">
-                <div class="k">CAMERAS ONLINE</div>
-                <div class="v mint" id="statCams">—</div>
-              </div>
-              <div class="card">
-                <div class="k">CURRENT MODE</div>
-                <div class="v lemon" id="statMode">RANDOM</div>
-              </div>
-              <div class="card">
-                <div class="k">NEXT CAM IN</div>
-                <div class="v lemon"><span id="statNext">—</span>s</div>
-              </div>
-            </div>
-
-            <div class="modeRow">
-              <div class="modeBadge" id="modeBadge" title="What the dashboard is doing right now">
-                <span class="spark"></span>
-                <span id="modeExplain">Rotating through random cams.</span>
-              </div>
-
-              <div class="btnRow">
-                <button class="btn on" id="btnRandom">RANDOM</button>
-                <button class="btn" id="btnHouse">HOUSE</button>
-                <button class="btn" id="btnAccident">ACCIDENT</button>
-              </div>
-            </div>
-
-            <div class="infoBox" id="helpBox">
-              <b>RANDOM</b> = rotates through all cams.<br>
-              <b>HOUSE</b> = rotates cams near your home (within a radius).<br>
-              <b>ACCIDENT</b> = jumps to the nearest camera to a newly-reported event (when coordinates are available).<br><br>
-              Tip: If the camera page ever refuses to embed, we can swap to a snapshot/proxy approach.
-            </div>
-          </div>
-        </section>
-
-        <!-- LIVE CAM -->
-        <section class="panel">
-          <div class="panelTitle">
-            <h3>LIVE CAMERA</h3>
-            <small>FEED: <span id="camIndex">—</span></small>
-          </div>
-
-          <div class="camWrap">
-            <div class="camMeta">
-              <div class="left" title="Camera location">
-                <span class="livePip"><span class="dot"></span>LIVE</span>
-                <span id="camLabel">Loading cameras…</span>
-              </div>
-              <div class="right">ROTATE: <span id="camCountdown">—</span>s</div>
-            </div>
-
-            <div class="camBox">
-              <!-- camInner lets you scale JUST the embedded page if you ever need it -->
-              <div class="camInner">
-                <iframe class="camFrame" id="camFrame" title="AZ511 camera view"
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
-              </div>
-
-              <div class="camFallback" id="camFallback">
-                CAMERA EMBED BLOCKED
-                <small>If AZ511 disallows iframe embedding, we can switch to still images (if provided) or proxy a snapshot endpoint.</small>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <div class="ticker">
-        <div class="tickerBrand">AZ NOW</div>
-        <div class="tickerLine"><span id="tickerText">CONNECTING TO AZ511…</span></div>
-        <div class="clockBox" id="clock">—:— —</div>
-      </div>
-
-      <div class="breaking" id="breaking">
-        <div class="box">
-          <div class="label"><span class="pulse"></span>BREAKING</div>
-          <div class="msg" id="breakingMsg">New traffic event detected</div>
-          <div class="submsg" id="breakingSub">Switching to nearest camera…</div>
+      <!-- Simple summary (layman speak) -->
+      <section class="panel">
+        <div class="panelTitle">
+          <h3>CITY SNAPSHOT</h3>
+          <small>STATUS: <span id="statusLabel">—</span></small>
         </div>
-      </div>
+
+        <div class="summary">
+          <div class="bigNums">
+            <div class="card">
+              <div class="k">ACTIVE EVENTS</div>
+              <div class="v" id="statEvents">—</div>
+              <div class="s">Things impacting traffic right now</div>
+            </div>
+            <div class="card">
+              <div class="k">CAMERAS LIVE</div>
+              <div class="v" id="statCams">—</div>
+              <div class="s">Available camera feeds</div>
+            </div>
+          </div>
+
+          <div class="focusBox">
+            <div class="headline" id="focusTitle">What you’re looking at</div>
+            <div class="plain" id="focusBody">
+              Loading…<br><br>
+              Tip: Use <b>Accident view</b> to jump to cams near crashes, or <b>Home</b> to surf cameras around your house.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Camera -->
+      <section class="panel">
+        <div class="panelTitle">
+          <h3>LIVE CAMERA</h3>
+          <small>FEED: <span id="camIndex">—</span></small>
+        </div>
+
+        <div class="camWrap">
+          <div class="camMeta">
+            <div class="left" title="Camera location">
+              <span class="livePip"><span class="dot"></span>LIVE</span>
+              <span id="camLabel">Loading cameras…</span>
+            </div>
+            <div class="right">NEXT: <span id="camCountdown">—</span>s</div>
+          </div>
+
+          <div class="camBox">
+            <div class="camInner" id="camInner">
+              <iframe class="camFrame" id="camFrame" title="AZ511 camera view"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+            </div>
+            <div class="camFallback" id="camFallback">
+              CAMERA EMBED BLOCKED
+              <small>If AZ511 disallows iframe embedding, we can switch to still images (if available) or proxy a snapshot endpoint.</small>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="ticker">
+      <div class="tickerBrand">AZ NOW</div>
+      <div class="tickerLine"><span id="tickerText">CONNECTING TO AZ511…</span></div>
+      <div class="clockBox" id="clock">—:— —</div>
+    </div>
+
+    <div class="toast" id="toast">
+      <div class="t1"><span class="pulseDot"></span>NEW ACCIDENT</div>
+      <div class="t2" id="toastMsg">—</div>
     </div>
   </div>
 
@@ -708,33 +672,23 @@
   // =========================
   const WORKER_BASE = "https://az-now-511-proxy.zachary-1-marshall.workers.dev";
 
-  // Rotation + polling
   const CAMERA_ROTATE_SECONDS = 20;
-  const EVENTS_POLL_SECONDS = 45;
-  const CAMS_REFRESH_SECONDS  = 10 * 60;
+  const EVENTS_POLL_SECONDS = 45;        // refresh incidents
+  const CAMS_REFRESH_SECONDS = 10 * 60;  // refresh camera list
 
-  // HOUSE mode: set your home location + radius
-  const HOUSE_LAT = 33.295147;    // <-- replace with your home lat (Phoenix default placeholder)
-  const HOUSE_LON = -112.117982;  // <-- replace with your home lon
-  const HOUSE_RADIUS_MILES = 10; // cams within this distance are considered "near home"
-
-  // Severity threshold for “ACCIDENT” feel (still shows other things, but prioritizes bigger ones)
-  const SEV_MAJOR_AT_OR_ABOVE = 3;
+  // Button coords (same as you requested)
+  const LOCATIONS = {
+    HOME:     { name: "HOME",     lat: 33.295147, lon: -112.117982 },
+    WORK:     { name: "WORK",     lat: 33.440492, lon: -111.953428 },
+    MEGAN:    { name: "MEGAN",    lat: 33.419155, lon: -111.703516 },
+    DOWNTOWN: { name: "DOWNTOWN", lat: 33.448231, lon: -112.074975 }
+  };
 
   // =========================
   // Helpers
   // =========================
   const $ = (id) => document.getElementById(id);
   const pad2 = (n) => String(n).padStart(2, "0");
-
-  function escapeHTML(s){
-    return String(s)
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#39;");
-  }
 
   function setDatePill(){
     const d = new Date();
@@ -757,6 +711,15 @@
     return `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
   }
 
+  function escapeHTML(s){
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#39;");
+  }
+
   // Haversine distance (miles)
   function distMiles(lat1, lon1, lat2, lon2){
     const toRad = (x) => x * Math.PI / 180;
@@ -768,65 +731,32 @@
     return R * c;
   }
 
-  function sevNumber(ev){
-    const raw = ev?.Severity ?? ev?.SeverityId ?? ev?.SeverityID ?? ev?.severity;
-    const n = Number(raw);
-    return Number.isFinite(n) ? n : 0;
-  }
-
-  function pickEventLatLon(e){
-    const lat = Number(e.Latitude ?? e.Lat ?? e.Y ?? e.LocationLatitude);
-    const lon = Number(e.Longitude ?? e.Lon ?? e.Long ?? e.X ?? e.LocationLongitude);
+  function pickLatLon(obj){
+    const lat = Number(obj?.Latitude ?? obj?.Lat ?? obj?.Y ?? obj?.LocationLatitude);
+    const lon = Number(obj?.Longitude ?? obj?.Lon ?? obj?.Long ?? obj?.X ?? obj?.LocationLongitude);
     if(Number.isFinite(lat) && Number.isFinite(lon)) return { lat, lon };
     return null;
   }
 
-  // =========================
-  // Mode State
-  // =========================
-  const MODE = {
-    RANDOM: "RANDOM",
-    HOUSE: "HOUSE",
-    ACCIDENT: "ACCIDENT"
-  };
-  let mode = MODE.RANDOM;
-
-  function setMode(next){
-    mode = next;
-    $("statMode").textContent = next;
-
-    // button styling
-    $("btnRandom").classList.toggle("on", next === MODE.RANDOM);
-    $("btnHouse").classList.toggle("on", next === MODE.HOUSE);
-    $("btnAccident").classList.toggle("on", next === MODE.ACCIDENT);
-
-    if(next === MODE.RANDOM){
-      $("modeExplain").textContent = "Rotating through random cams.";
-    } else if(next === MODE.HOUSE){
-      $("modeExplain").textContent = `Showing cams near your house (~${HOUSE_RADIUS_MILES} mi).`;
-    } else {
-      $("modeExplain").textContent = "Prioritizing new incidents → nearest cam.";
-    }
-
-    // force immediate camera refresh in current mode
-    camCountdown = 2;
+  function looksLikeAccident(ev){
+    const t = (ev?.EventType || ev?.Type || ev?.EventCategory || "").toString().toLowerCase();
+    const d = (ev?.Description || ev?.ShortDescription || ev?.EventDescription || "").toString().toLowerCase();
+    return t.includes("accident") || t.includes("crash") || d.includes("accident") || d.includes("crash") || d.includes("collision");
   }
 
-  // =========================
-  // Data State
-  // =========================
-  let camerasAll = [];
-  let camerasNearHouse = [];
-  let camPlaylist = []; // the current list we rotate through (depends on mode)
-  let camIdx = 0;
-  let camCountdown = CAMERA_ROTATE_SECONDS;
+  function summarizeForHumans(ev){
+    const type = (ev?.EventType || ev?.Type || "Traffic issue").toString();
+    const road = (ev?.RoadwayName || ev?.Roadway || ev?.Road || "").toString();
+    const desc = (ev?.Description || ev?.ShortDescription || ev?.EventDescription || "").toString();
+    const loc  = (ev?.Location || ev?.LocationDescription || "").toString();
 
-  let lastEventIds = new Set();
-  let lastEvents = [];
+    // Keep it short and readable
+    const main = [type, road].filter(Boolean).join(" • ").trim() || "Traffic issue";
+    const detail = (desc || loc || "Details unavailable").replace(/\s+/g," ").trim();
 
-  // =========================
-  // Fetchers
-  // =========================
+    return { main: main.slice(0, 40), detail: detail.slice(0, 80) };
+  }
+
   async function getJSON(path){
     const url = `${WORKER_BASE}/${path.replace(/^\/+/,"")}`;
     const res = await fetch(url, { cache: "no-store" });
@@ -834,6 +764,75 @@
     return await res.json();
   }
 
+  // =========================
+  // State
+  // =========================
+  let cameras = [];
+  let camIdx = 0;
+  let camCountdown = CAMERA_ROTATE_SECONDS;
+
+  let lastEventIds = new Set();
+  let lastEvents = [];
+
+  // Modes:
+  // "ACCIDENT" => nearest cam to newest accident (if coords exist), else random
+  // "RANDOM"   => random cams
+  // "NEAR"     => cams near a target location (HOME/WORK/MEGAN/DOWNTOWN)
+  let mode = { type: "RANDOM", target: null };
+
+  // =========================
+  // UI setters
+  // =========================
+  function setModeLabel(){
+    if(mode.type === "ACCIDENT") $("modeLabel").textContent = "ACCIDENT";
+    else if(mode.type === "RANDOM") $("modeLabel").textContent = "RANDOM";
+    else if(mode.type === "NEAR") $("modeLabel").textContent = mode.target?.name || "NEAR";
+  }
+
+  function setTicker(text){
+    $("tickerText").textContent = text;
+  }
+
+  function setStatus(){
+    // Simple layman status message based on how many events
+    const n = lastEvents.length;
+    let label = "CALM";
+    if(n >= 80) label = "BUSY";
+    else if(n >= 30) label = "ACTIVE";
+    else if(n >= 10) label = "NORMAL";
+    $("statusLabel").textContent = label;
+
+    // Simple helper text
+    $("focusTitle").textContent = (mode.type === "ACCIDENT")
+      ? "Accident mode"
+      : (mode.type === "NEAR" ? `Near ${mode.target?.name || "target"}` : "Random mode");
+
+    if(mode.type === "ACCIDENT"){
+      $("focusBody").innerHTML =
+        `We’ll prioritize cameras near new <b>accidents</b>.<br>
+         When something new pops up, you’ll see an alert and we’ll try to jump to a nearby cam.`;
+    } else if(mode.type === "NEAR"){
+      $("focusBody").innerHTML =
+        `Showing cameras within ~<b>10 miles</b> of <b>${escapeHTML(mode.target?.name || "your spot")}</b>.<br>
+         Use Random anytime for a city-wide scan.`;
+    } else {
+      $("focusBody").innerHTML =
+        `A city-wide shuffle of cameras.<br>
+         Want something specific? Tap <b>Home</b> or <b>Downtown</b>.`;
+    }
+  }
+
+  function showToast(msg){
+    $("toastMsg").textContent = msg;
+    const el = $("toast");
+    el.style.display = "block";
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => el.style.display = "none", 5200);
+  }
+
+  // =========================
+  // Data loading
+  // =========================
   async function loadCameras(){
     const data = await getJSON("cameras");
 
@@ -843,69 +842,41 @@
       const enabled = views.filter(v => (v.Status || "").toLowerCase() === "enabled" && v.Url);
       if(!enabled.length) continue;
 
-      const lat = Number(cam.Latitude);
-      const lon = Number(cam.Longitude);
-
       cleaned.push({
         id: cam.Id ?? cam.id,
         roadway: cam.Roadway || "",
         location: cam.Location || cam.Description || "",
-        lat, lon,
+        lat: Number(cam.Latitude),
+        lon: Number(cam.Longitude),
         viewUrl: enabled[0].Url,
         viewDesc: enabled[0].Description || cam.Location || "Camera"
       });
     }
 
-    camerasAll = cleaned;
-    $("statCams").textContent = camerasAll.length ? String(camerasAll.length) : "0";
+    cameras = cleaned;
+    $("statCams").textContent = cameras.length ? String(cameras.length) : "0";
 
-    // Precompute near-house list
-    camerasNearHouse = camerasAll
-      .filter(c => Number.isFinite(c.lat) && Number.isFinite(c.lon))
-      .map(c => ({...c, d: distMiles(HOUSE_LAT, HOUSE_LON, c.lat, c.lon)}))
-      .filter(c => c.d <= HOUSE_RADIUS_MILES)
-      .sort((a,b) => a.d - b.d);
+    if(camIdx >= cameras.length) camIdx = 0;
 
-    // Build playlist based on current mode
-    rebuildPlaylist();
-
-    // paint first camera if needed
-    if(camPlaylist.length){
-      camIdx = Math.min(camIdx, camPlaylist.length - 1);
+    // First paint
+    if(cameras.length){
       showCamera(camIdx);
-      setTicker(`AZ NOW LIVE • CAMERAS ONLINE ${camerasAll.length} • UPDATED ${nowStamp()} •`);
+      setTicker(`CAMERAS LIVE • ${cameras.length} FEEDS • ${nowStamp()} •`);
     } else {
-      setTicker(`AZ NOW LIVE • NO CAMERAS FOUND • CHECK WORKER /cameras • ${nowStamp()} •`);
+      setTicker(`NO CAMERAS FOUND • CHECK WORKER /cameras • ${nowStamp()} •`);
     }
-  }
-
-  function rebuildPlaylist(){
-    if(mode === MODE.HOUSE){
-      camPlaylist = camerasNearHouse.length ? camerasNearHouse : camerasAll;
-    } else {
-      camPlaylist = camerasAll;
-    }
-
-    // If playlist changed, keep index valid
-    if(camIdx >= camPlaylist.length) camIdx = 0;
   }
 
   async function loadEvents(){
-    // Try endpoints; your worker supports one of these
     let data;
     try { data = await getJSON("event"); }
     catch { data = await getJSON("alerts"); }
 
     lastEvents = Array.isArray(data) ? data : (data?.Events || data?.events || []);
+    $("incUpdated").textContent = nowStamp();
     $("statEvents").textContent = String(lastEvents.length);
-    $("snapUpdated").textContent = nowStamp();
 
-    // sort for display: severity desc then newest-ish
-    const sortedForList = [...lastEvents].sort((a,b) => sevNumber(b) - sevNumber(a));
-
-    renderAlerts(sortedForList);
-
-    // Detect new events by id-ish field
+    // New event detection
     const ids = new Set();
     const newOnes = [];
     for(const ev of lastEvents){
@@ -915,104 +886,92 @@
       if(!lastEventIds.has(sid)) newOnes.push(ev);
     }
 
-    // Breaking + jump cam (only in ACCIDENT mode)
-    if(lastEventIds.size && newOnes.length){
-      const picked = newOnes.sort((a,b) => sevNumber(b) - sevNumber(a))[0];
-      triggerBreaking(picked);
-
-      if(mode === MODE.ACCIDENT){
-        jumpToNearestCamera(picked);
+    // If a new accident appears => toast + try jump (only if in accident mode)
+    const newAcc = newOnes.find(looksLikeAccident);
+    if(lastEventIds.size && newAcc){
+      const s = summarizeForHumans(newAcc);
+      showToast(`${s.main} — ${s.detail}`);
+      if(mode.type === "ACCIDENT"){
+        jumpToNearestCamera(newAcc);
       }
     }
 
     lastEventIds = ids;
 
-    // ticker
-    setTicker(buildTicker(sortedForList));
-  }
-
-  function setTicker(text){
-    $("tickerText").textContent = text;
+    renderIncidents(lastEvents);
+    setStatus();
+    setTicker(buildTicker(lastEvents));
   }
 
   function buildTicker(events){
-    const base = `AZ NOW LIVE • ${events.length} ACTIVE EVENTS • MODE ${mode} • NEXT CAM ${camCountdown}s • ${nowStamp()} • `;
-    if(!events.length) return base + "NO MAJOR INCIDENTS REPORTED • DRIVE SMART!";
+    const base = `AZ NOW LIVE • ${events.length} ACTIVE EVENTS • MODE ${$("modeLabel").textContent} • ${nowStamp()} • `;
+    if(!events.length) return base + "NO MAJOR ISSUES REPORTED • DRIVE SMART!";
     const blurbs = [];
-    for(const e of events.slice(0,3)){
-      const t = (e.EventType || e.Type || "EVENT");
-      const r = (e.RoadwayName || e.Roadway || "");
-      const d = (e.Description || e.ShortDescription || "");
-      const b = `${t}${r ? " " + r : ""}${d ? " — " + d : ""}`.replace(/\s+/g," ").trim();
-      if(b) blurbs.push(b);
+    for(const ev of events.slice(0,3)){
+      const s = summarizeForHumans(ev);
+      blurbs.push(`${s.main} — ${s.detail}`);
     }
     return base + blurbs.join(" • ") + " • STAY SAFE — DRIVE SMART!";
   }
 
-  function renderAlerts(events){
-    const list = $("alertsList");
+  function renderIncidents(events){
+    const list = $("incidentsList");
     list.innerHTML = "";
 
-    $("alertsCount").textContent = `${events.length} ITEMS`;
+    const maxInc = Number(getComputedStyle(document.documentElement).getPropertyValue("--maxIncidents")) || 7;
+    const show = events.slice(0, maxInc);
 
-    if(!events.length){
+    if(!show.length){
       list.innerHTML = `
-        <div class="alert a-ok">
-          <div class="icon">✓</div>
-          <div class="text">
-            <div class="top">NO ACTIVE EVENTS</div>
-            <div class="sub">Smooth sailing (or the API is quiet).</div>
+        <div class="incident sev-low">
+          <div class="ic">✓</div>
+          <div>
+            <div class="itop">All clear</div>
+            <div class="isub">No active events reported.</div>
           </div>
-          <div class="tag">OK</div>
+          <div class="itag">OK</div>
         </div>`;
       return;
     }
 
-    const max = Math.min(events.length, 8);
-    for(let i=0;i<max;i++){
-      const e = events[i];
-      const sev = sevNumber(e);
-      const type = (e.EventType || e.Type || e.EventCategory || "EVENT").toString();
-      const road = (e.RoadwayName || e.Roadway || e.Road || "").toString();
-      const desc = (e.Description || e.ShortDescription || e.EventDescription || "").toString();
-      const loc  = (e.Location || e.LocationDescription || "").toString();
+    for(const ev of show){
+      const s = summarizeForHumans(ev);
+      const sevN = Number(ev?.Severity || ev?.SeverityId || 1);
+      const cls = sevN >= 3 ? "sev-high" : (sevN === 2 ? "sev-med" : "sev-low");
 
-      let cls = "a-ok";
       let icon = "•";
-      let tag = sev ? `SEV ${sev}` : "LIVE";
+      if(looksLikeAccident(ev)) icon = "!";
+      else if((ev?.EventType || "").toString().toLowerCase().includes("construction")) icon = "⛏";
+      else if((ev?.EventType || "").toString().toLowerCase().includes("weather")) icon = "☁";
 
-      if(sev >= 3){ cls="a-danger"; icon="!"; }
-      else if(sev === 2){ cls="a-warn"; icon="⛏"; }
-
-      const top = (type || "EVENT").slice(0,28);
-      const subRaw = (desc || loc || road || "Traffic event");
-      const sub = subRaw.length > 90 ? subRaw.slice(0,88) + "…" : subRaw;
+      const tag = looksLikeAccident(ev) ? "ACC" : (sevN ? `SEV ${sevN}` : "LIVE");
 
       const el = document.createElement("div");
-      el.className = `alert ${cls}`;
+      el.className = `incident ${cls}`;
       el.innerHTML = `
-        <div class="icon">${escapeHTML(icon)}</div>
-        <div class="text">
-          <div class="top">${escapeHTML(top)}</div>
-          <div class="sub">${escapeHTML(sub)}</div>
+        <div class="ic">${escapeHTML(icon)}</div>
+        <div>
+          <div class="itop">${escapeHTML(s.main)}</div>
+          <div class="isub">${escapeHTML(s.detail)}</div>
         </div>
-        <div class="tag">${escapeHTML(tag)}</div>
+        <div class="itag">${escapeHTML(tag)}</div>
       `;
+      el.addEventListener("click", () => jumpToNearestCamera(ev));
       list.appendChild(el);
     }
   }
 
   // =========================
-  // Camera rotation
+  // Camera selection logic
   // =========================
   function showCamera(index){
-    if(!camPlaylist.length) return;
+    if(!cameras.length) return;
 
-    camIdx = (index + camPlaylist.length) % camPlaylist.length;
-    const cam = camPlaylist[camIdx];
+    camIdx = (index + cameras.length) % cameras.length;
+    const cam = cameras[camIdx];
 
-    $("camIndex").textContent = `${camIdx+1}/${camPlaylist.length}`;
-    $("camLabel").textContent = (cam.viewDesc || cam.location || cam.roadway || `CAM ${cam.id}`).slice(0,80);
+    $("camIndex").textContent = `${camIdx+1}/${cameras.length}`;
+    $("camLabel").textContent = (cam.viewDesc || cam.location || cam.roadway || `CAM ${cam.id}`).slice(0,60);
 
     const frame = $("camFrame");
     const fallback = $("camFallback");
@@ -1025,29 +984,64 @@
       if(!loaded){
         fallback.style.display = "grid";
       }
-    }, 1200);
+    }, 1400);
+  }
+
+  function pickRandomCameraIndex(){
+    return Math.floor(Math.random() * cameras.length);
+  }
+
+  function getCamerasNear(lat, lon, miles=10){
+    if(!cameras.length) return [];
+    const picks = [];
+    for(let i=0;i<cameras.length;i++){
+      const c = cameras[i];
+      if(!Number.isFinite(c.lat) || !Number.isFinite(c.lon)) continue;
+      const d = distMiles(lat, lon, c.lat, c.lon);
+      if(d <= miles) picks.push({ i, d });
+    }
+    picks.sort((a,b) => a.d - b.d);
+    return picks;
   }
 
   function nextCamera(){
-    // In ACCIDENT mode we still rotate, but through current playlist (random)
-    showCamera(camIdx + 1);
+    if(!cameras.length) return;
+
+    if(mode.type === "RANDOM"){
+      showCamera(pickRandomCameraIndex());
+    } else if(mode.type === "NEAR" && mode.target){
+      const near = getCamerasNear(mode.target.lat, mode.target.lon, 10);
+      if(near.length){
+        // cycle through nearest list
+        const currentPos = near.findIndex(x => x.i === camIdx);
+        const nextPos = (currentPos >= 0 ? currentPos + 1 : 0) % near.length;
+        showCamera(near[nextPos].i);
+      } else {
+        showCamera(pickRandomCameraIndex());
+      }
+    } else if(mode.type === "ACCIDENT"){
+      // In accident mode, keep rotating but bias toward random unless we have a recent accident to jump to
+      showCamera(pickRandomCameraIndex());
+    }
+
     camCountdown = CAMERA_ROTATE_SECONDS;
   }
 
-  // Jump to nearest camera for an event (if coords exist)
   function jumpToNearestCamera(eventObj){
-    if(!camerasAll.length) return;
-    const p = pickEventLatLon(eventObj);
-    if(!p) return;
+    if(!cameras.length) return;
+
+    const p = pickLatLon(eventObj);
+    if(!p){
+      // No coordinates -> just rotate
+      showCamera(pickRandomCameraIndex());
+      camCountdown = CAMERA_ROTATE_SECONDS;
+      return;
+    }
 
     let bestI = 0;
     let bestD = Infinity;
-
-    // In HOUSE mode, prefer near-house cams if available, otherwise all
-    const pool = (mode === MODE.HOUSE && camerasNearHouse.length) ? camerasNearHouse : camerasAll;
-
-    for(let i=0;i<pool.length;i++){
-      const c = pool[i];
+    for(let i=0;i<cameras.length;i++){
+      const c = cameras[i];
       if(!Number.isFinite(c.lat) || !Number.isFinite(c.lon)) continue;
       const d = distMiles(p.lat, p.lon, c.lat, c.lon);
       if(d < bestD){
@@ -1056,57 +1050,69 @@
       }
     }
 
-    // If we jumped within a pool that's not the current playlist, swap playlist to pool for a clean index
-    if(mode === MODE.HOUSE && camerasNearHouse.length){
-      camPlaylist = camerasNearHouse;
-    } else {
-      camPlaylist = camerasAll;
-    }
-
-    camIdx = bestI;
-    showCamera(camIdx);
+    showCamera(bestI);
     camCountdown = CAMERA_ROTATE_SECONDS;
 
-    $("breakingSub").textContent = `Nearest cam selected (~${bestD.toFixed(1)} mi)`;
+    // Explain in layman speak
+    $("focusTitle").textContent = "Jumped to nearby camera";
+    $("focusBody").innerHTML =
+      `Found the closest camera to the selected event (~<b>${bestD.toFixed(1)} miles</b>).<br>
+       Tap <b>Random</b> to go back to city shuffle, or <b>Home</b> to stay near your place.`;
+  }
+
+  // Accident mode: jump to newest accident (if any) on activation
+  function jumpToNewestAccident(){
+    const newest = lastEvents.find(looksLikeAccident);
+    if(newest) jumpToNearestCamera(newest);
+    else showCamera(pickRandomCameraIndex());
   }
 
   // =========================
-  // Breaking overlay
+  // Button wiring
   // =========================
-  let breakingTimer = null;
-  function triggerBreaking(eventObj){
-    const type = (eventObj.EventType || eventObj.Type || "TRAFFIC EVENT").toString();
-    const desc = (eventObj.Description || eventObj.ShortDescription || "New incident reported").toString();
-    const road = (eventObj.RoadwayName || eventObj.Roadway || "").toString();
+  function setModeAccident(){
+    mode = { type: "ACCIDENT", target: null };
+    setModeLabel();
+    setStatus();
+    jumpToNewestAccident();
+    setTicker(`ACCIDENT VIEW • Watching for new crashes • ${nowStamp()} •`);
+  }
 
-    $("breakingMsg").textContent = `${type}${road ? " • " + road : ""}`;
-    $("breakingSub").textContent = desc.slice(0,110);
+  function setModeRandom(){
+    mode = { type: "RANDOM", target: null };
+    setModeLabel();
+    setStatus();
+    showCamera(pickRandomCameraIndex());
+    setTicker(`RANDOM VIEW • City camera shuffle • ${nowStamp()} •`);
+  }
 
-    const el = $("breaking");
-    el.style.display = "block";
-
-    clearTimeout(breakingTimer);
-    breakingTimer = setTimeout(() => {
-      el.style.display = "none";
-    }, 5200);
+  function setModeNear(loc){
+    mode = { type: "NEAR", target: loc };
+    setModeLabel();
+    setStatus();
+    const near = getCamerasNear(loc.lat, loc.lon, 10);
+    if(near.length) showCamera(near[0].i);
+    else showCamera(pickRandomCameraIndex());
+    setTicker(`NEAR ${loc.name} • Cameras within ~10 miles • ${nowStamp()} •`);
   }
 
   // =========================
-  // Buttons
-  // =========================
-  $("btnRandom").addEventListener("click", () => { setMode(MODE.RANDOM); rebuildPlaylist(); });
-  $("btnHouse").addEventListener("click", () => { setMode(MODE.HOUSE); rebuildPlaylist(); });
-  $("btnAccident").addEventListener("click", () => { setMode(MODE.ACCIDENT); rebuildPlaylist(); });
-
-  // =========================
-  // Boot / loops
+  // Boot
   // =========================
   async function boot(){
     setDatePill();
     updateClock();
     setInterval(updateClock, 1000);
 
-    // initial loads
+    // Hook up buttons
+    $("btnAccident").addEventListener("click", setModeAccident);
+    $("btnRandom").addEventListener("click", setModeRandom);
+    $("btnHome").addEventListener("click", () => setModeNear(LOCATIONS.HOME));
+    $("btnWork").addEventListener("click", () => setModeNear(LOCATIONS.WORK));
+    $("btnMegan").addEventListener("click", () => setModeNear(LOCATIONS.MEGAN));
+    $("btnDowntown").addEventListener("click", () => setModeNear(LOCATIONS.DOWNTOWN));
+
+    // Initial data load
     try{
       await loadCameras();
     }catch(e){
@@ -1122,35 +1128,22 @@
       console.error(e);
     }
 
-    // refresh cameras occasionally
-    setInterval(() => {
-      loadCameras().catch(console.error);
-    }, CAMS_REFRESH_SECONDS * 1000);
+    // Default mode: Random
+    setModeRandom();
 
-    // poll events
-    setInterval(() => {
-      loadEvents().catch(console.error);
-    }, EVENTS_POLL_SECONDS * 1000);
+    // Refresh loops
+    setInterval(() => loadCameras().catch(console.error), CAMS_REFRESH_SECONDS * 1000);
+    setInterval(() => loadEvents().catch(console.error), EVENTS_POLL_SECONDS * 1000);
 
-    // camera rotation timer
+    // Camera rotation loop
     setInterval(() => {
-      if(!camPlaylist.length) return;
-
+      if(!cameras.length) return;
       camCountdown--;
       if(camCountdown <= 0) nextCamera();
-
       $("camCountdown").textContent = String(camCountdown);
-      $("statNext").textContent = String(camCountdown);
     }, 1000);
-
-    // Prime countdown UI
-    $("camCountdown").textContent = String(camCountdown);
-    $("statNext").textContent = String(camCountdown);
-    $("statMode").textContent = mode;
   }
 
-  // Start in RANDOM
-  setMode(MODE.RANDOM);
   boot();
 </script>
 </body>
