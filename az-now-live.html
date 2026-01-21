@@ -14,6 +14,8 @@
     :root{
       /* ========= YOU TUNE THESE ========= */
       --camSize: 0.30;     /* camera zoom (smaller = zoom OUT / show more). you liked ~0.30 */
+--camSizeFull: 0.78; /* fullscreen camera zoom (try 0.70–0.95) */
+
       --tickerSeconds: 55; /* ticker speed (higher = slower) */
       --maxIncidents: 7;   /* incidents to list */
 
@@ -462,6 +464,18 @@
       left: 50%;
       top: 50%;
       translate: -50% -50%;
+
+/* Fullscreen camera uses its own zoom so the video actually fills the screen */
+#camInnerFull{
+  transform: scale(var(--camSizeFull));
+  transform-origin: center center;
+  width: calc(100% / var(--camSizeFull));
+  height: calc(100% / var(--camSizeFull));
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+}
+
     }
 
     .camFrame, .camFallback{
