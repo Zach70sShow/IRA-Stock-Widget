@@ -820,7 +820,7 @@
         .map((c, i) => ({
           i,
           d: (Number.isFinite(c.lat) && Number.isFinite(c.lon))
-            ? distMiles(HOME.lat, HOME.lon, c.lat, c.lon)
+            ? distMiles(33.295147, -112.117982, c.lat, c.lon)
             : 1e9
         }))
         .sort((a,b)=>a.d-b.d)
