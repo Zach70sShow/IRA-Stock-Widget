@@ -104,9 +104,9 @@ async function fetchCameras() {
   fetchStatusEl.textContent = "📡 Fetching camera data…";
 
   try {
-    const res = await fetch(
-      `https://az511.com/api/v2/get/cameras?key=${AZ511_API_KEY}&format=json`
-    );
+   const res = await fetch(
+  "https://az-now-511-proxy.zachary-1-marshall.workers.dev/cameras"
+);
 
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}`);
