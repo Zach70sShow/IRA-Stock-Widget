@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AZ NOW — Live Traffic + Cams</title>
+  <title>AZ NOW — Live Traffic + Cams (Xeneon Edge)</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,6 +11,13 @@
 
   <style>
     :root{
+      /* ====== YOU TWEAK THESE ====== */
+      --scale: 0.31;          /* overall fit on Xeneon Edge (you said ~0.31 is right) */
+      --textScale: 1.55;      /* bump text up WITHOUT zooming the camera */
+      --designW: 2560;
+      --designH: 720;
+
+      /* Colors */
       --bg0:#0d1230; --bg1:#171a3b;
       --ink:#f7f3ff; --muted:#d7d2ff;
       --line:#ffffff22;
@@ -21,17 +28,26 @@
       --radius: 18px; --radius2: 14px;
       --hdrH: 60px; --tickerH: 56px;
       --pad: 14px;
---scale: 0.31;          /* <<< change this */
---origin: top left;     /* keeps it anchored */
 
       --font-ui: "IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
       --font-retro: "VT323", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+      /* Font bases (we multiply by --textScale below) */
+      --f-logo: 42px;
+      --f-sub: 22px;
+      --f-meta: 22px;
+      --f-title: 26px;
+      --f-small: 18px;
+      --f-alertTop: 14px;
+      --f-alertSub: 12px;
+      --f-tag: 18px;
+      --f-ticker: 24px;
+      --f-clock: 34px;
     }
 
     *{ box-sizing:border-box; }
-    html,body{ width:100%; height:100%; }
+    html,body{ width:100%; height:100%; margin:0; }
     body{
-      margin:0;
       overflow:hidden;
       background:
         radial-gradient(1200px 500px at 20% 30%, #7b6cff30, transparent 55%),
@@ -42,18 +58,25 @@
       font-family:var(--font-ui);
     }
 
+    /* Stage + scaled canvas */
+    .stage{
+      position:fixed; inset:0;
+      overflow:hidden;
+    }
     .bar{
-  width:100vw;
-  height:100vh;
-
-  transform: scale(var(--scale));
-  transform-origin: var(--origin);
-
-  /* IMPORTANT: expand the “virtual canvas” so scaled content fills screen */
-  width: calc(100vw / var(--scale));
-  height: calc(100vh / var(--scale));
-}
-
+      width: calc(var(--designW) * 1px);
+      height: calc(var(--designH) * 1px);
+      transform: scale(var(--scale));
+      transform-origin: top left;
+      position:relative;
+      overflow:hidden;
+      background:
+        linear-gradient(90deg, #ffffff14, #ffffff08 40%, #ffffff12),
+        radial-gradient(700px 280px at 20% 30%, #ffb48a18, transparent 60%),
+        radial-gradient(600px 260px at 75% 35%, #89f0d118, transparent 60%),
+        radial-gradient(700px 300px at 50% 120%, #c3a1ff14, transparent 55%),
+        linear-gradient(180deg, #13163a, #0f1232);
+    }
 
     /* CRT scanlines */
     .bar::before{
@@ -66,10 +89,10 @@
         rgba(0,0,0,0.0) 2px,
         rgba(0,0,0,0.0) 4px
       );
-      opacity:.40;
+      opacity:.35;
       pointer-events:none;
       mix-blend-mode: overlay;
-      z-index: 4;
+      z-index: 9;
     }
 
     /* Header */
@@ -86,24 +109,26 @@
       z-index: 5;
       position:relative;
     }
+
     .brand{ display:flex; align-items:baseline; gap:12px; }
     .logo{
       font-family:var(--font-retro);
-      font-size:42px;
+      font-size: calc(var(--f-logo) * var(--textScale));
       letter-spacing:2px;
       text-shadow:0 2px 0 #0007;
       line-height:1;
     }
     .sub{
       font-family:var(--font-retro);
-      font-size:22px;
+      font-size: calc(var(--f-sub) * var(--textScale));
       letter-spacing:1px;
       opacity:.9;
     }
+
     .meta{
       display:flex; align-items:center; gap:14px;
       font-family:var(--font-retro);
-      font-size:22px;
+      font-size: calc(var(--f-meta) * var(--textScale));
       letter-spacing:1px;
       text-shadow:0 2px 0 #0007;
       white-space:nowrap;
@@ -119,16 +144,15 @@
       box-shadow:0 0 0 3px #fff2, 0 0 16px var(--ok);
     }
 
-    /* Main grid (3 columns) */
+    /* Main grid (bigger, simpler center) */
     .main{
       height: calc(100% - var(--hdrH) - var(--tickerH));
       padding: var(--pad);
       display:grid;
-      grid-template-columns: 1.1fr 1.25fr 1.65fr; /* incidents | snapshot | camera */
+      grid-template-columns: 1.25fr 1.05fr 1.7fr; /* incidents | snapshot | camera */
       gap: 12px;
       position:relative;
       z-index: 2;
-      min-height: 0;
     }
 
     .panel{
@@ -151,222 +175,223 @@
     .panelTitle h3{
       margin:0;
       font-family:var(--font-retro);
-      font-size:26px;
+      font-size: calc(var(--f-title) * var(--textScale));
       letter-spacing:1px;
     }
     .panelTitle small{
       font-family:var(--font-retro);
-      font-size:18px;
+      font-size: calc(var(--f-small) * var(--textScale));
       opacity:.85;
       letter-spacing:.5px;
       white-space:nowrap;
     }
 
-    /* Top incidents list */
-    .incWrap{
+    /* Incidents list */
+    .alerts{
       padding: 10px 12px 12px;
+      display:flex; flex-direction:column; gap:10px;
       height: calc(100% - 52px);
-      display:flex;
-      flex-direction:column;
-      gap:10px;
       overflow:auto;
     }
-    .story{
+    .alert{
+      display:grid;
+      grid-template-columns: 40px 1fr auto;
+      gap:12px;
+      align-items:center;
+      padding: 12px 12px;
       border-radius: var(--radius2);
-      border:1px solid #ffffff1f;
       background:#0002;
-      padding: 10px 10px;
-      display:flex;
-      flex-direction:column;
-      gap:6px;
+      border:1px solid #ffffff1e;
     }
-    .storyTop{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      font-family: var(--font-retro);
-      letter-spacing: 1px;
+    .icon{
+      width:40px; height:40px; border-radius:14px;
+      display:grid; place-items:center;
+      font-family:var(--font-retro);
+      font-size: calc(22px * var(--textScale));
+      color:#0b0f2a;
+      box-shadow: inset 0 0 0 1px #0002;
     }
-    .badge{
-      display:inline-flex; align-items:center; gap:8px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid #ffffff26;
-      background: #0002;
-      font-size: 20px;
+    .text .top{
+      font-weight:900;
+      font-size: calc(var(--f-alertTop) * var(--textScale));
+      line-height:1.1;
+      letter-spacing:.2px;
+    }
+    .text .sub{
+      opacity:.9;
+      font-size: calc(var(--f-alertSub) * var(--textScale));
+      margin-top:4px;
+      line-height:1.15;
+    }
+    .tag{
+      font-family:var(--font-retro);
+      font-size: calc(var(--f-tag) * var(--textScale));
+      padding: 8px 10px;
+      border-radius:12px;
+      border:1px solid #ffffff26;
+      background:#0002;
+      letter-spacing:1px;
       white-space:nowrap;
     }
-    .badge .bDot{
-      width:10px; height:10px; border-radius:50%;
-      background: var(--warn);
-      box-shadow: 0 0 14px #ffbf4a55;
-    }
-    .badge.danger .bDot{ background: var(--danger); box-shadow: 0 0 14px #ff5b6e55; }
-    .badge.ok .bDot{ background: var(--ok); box-shadow: 0 0 14px #60ffb055; }
+    .a-danger .icon{ background:var(--danger); }
+    .a-warn .icon{ background:var(--warn); }
+    .a-ok .icon{ background:var(--mint); }
 
-    .storyTitle{
-      font-weight: 900;
-      font-size: 16px;
-      line-height: 1.15;
-    }
-    .storySub{
-      opacity:.9;
-      font-size: 13px;
-      line-height: 1.25;
-      color: var(--muted);
-    }
-
-    /* Snapshot panel */
-    .snapWrap{
-      padding: 10px 12px 12px;
+    /* Snapshot (replaces fake map) */
+    .snap{
+      padding: 12px;
       height: calc(100% - 52px);
       display:grid;
       grid-template-rows: auto auto 1fr;
-      gap:10px;
-      min-height: 0;
-    }
-    .snapRow{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px;
-    }
-    .tile{
-      border-radius: var(--radius2);
-      border:1px solid #ffffff1f;
-      background:#0002;
-      padding: 10px 10px;
-      min-height: 74px;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      gap:4px;
-    }
-    .tile .k{
-      font-family: var(--font-retro);
-      font-size: 18px;
-      letter-spacing: 1px;
-      opacity:.9;
-    }
-    .tile .v{
-      font-family: var(--font-retro);
-      font-size: 34px;
-      letter-spacing: 1px;
-      color: var(--lemon);
-      text-shadow: 0 2px 0 #0007;
-      line-height: 1;
-    }
-    .tile .s{
-      font-size: 12px;
-      color: var(--muted);
-      opacity:.9;
+      gap: 12px;
+      min-height:0;
     }
 
-    .explain{
+    .bigStats{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .card{
       border-radius: var(--radius2);
       border:1px solid #ffffff1f;
       background:#0002;
       padding: 12px 12px;
-      overflow:hidden;
-      min-height: 0;
       display:flex;
       flex-direction:column;
-      gap:8px;
+      gap: 6px;
+      min-height: 92px;
     }
-    .explain h4{
-      margin:0;
-      font-family: var(--font-retro);
-      font-size: 24px;
-      letter-spacing: 1px;
+    .card .k{
+      font-family:var(--font-retro);
+      font-size: calc(18px * var(--textScale));
+      letter-spacing:1px;
+      opacity:.9;
     }
-    .explain p{
-      margin:0;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.35;
-      overflow:hidden;
-      display:-webkit-box;
-      -webkit-line-clamp: 5;
-      -webkit-box-orient: vertical;
+    .card .v{
+      font-family:var(--font-retro);
+      font-size: calc(34px * var(--textScale));
+      letter-spacing:1px;
+      font-weight: 900;
+      line-height: 1;
+      text-shadow:0 2px 0 #0007;
     }
+    .card .v.lemon{ color:var(--lemon); }
+    .card .v.mint{ color:var(--mint); }
+    .card .v.danger{ color:var(--danger); }
 
-    /* Camera panel */
-    .camWrap{
-      padding:10px 12px 12px;
-      height: calc(100% - 52px);
+    .modeRow{
       display:grid;
-      grid-template-rows: auto auto 1fr;
-      gap:10px;
-      min-height: 0;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
     }
-    .camHeaderRow{
+    .modeBadge{
+      border-radius: 999px;
+      border:1px solid #ffffff1f;
+      background:#0002;
+      padding: 10px 12px;
+      font-family: var(--font-retro);
+      font-size: calc(22px * var(--textScale));
+      letter-spacing:1px;
       display:flex;
       align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      font-family: var(--font-retro);
-      letter-spacing:1px;
-    }
-    .camHeaderRow .left{
-      display:flex; align-items:center; gap:10px;
-      background:#0004;
-      border:1px solid #fff2;
-      border-radius:12px;
-      padding:6px 10px;
+      gap: 10px;
       overflow:hidden;
       white-space:nowrap;
       text-overflow:ellipsis;
-      max-width: 70%;
-      font-size: 20px;
     }
-    .livePip{ display:inline-flex; align-items:center; gap:6px; }
-    .livePip .dot{
-      width:8px; height:8px;
-      background:var(--danger);
-      box-shadow:0 0 14px #ff5b6ecc;
-    }
-    .camHeaderRow .right{
-      background:#0004;
-      border:1px solid #fff2;
-      border-radius:12px;
-      padding:6px 10px;
-      font-size: 20px;
-      white-space:nowrap;
-    }
-
-    .modeRow{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-    .btn{
-      appearance:none;
-      border:1px solid #ffffff26;
-      background:#0002;
-      color: var(--ink);
-      border-radius: 999px;
-      padding: 8px 12px;
-      font-family: var(--font-retro);
-      font-size: 20px;
-      letter-spacing: 1px;
-      cursor:pointer;
-      user-select:none;
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      transition: transform .08s ease, background .12s ease, border-color .12s ease;
-    }
-    .btn:active{ transform: translateY(1px); }
-    .btn b{ color: var(--lemon); }
-    .btn.active{
-      border-color:#ffffff55;
-      background: linear-gradient(90deg, #86b7ff22, #ff8fd11f, #89f0d11f);
-      box-shadow: inset 0 0 0 1px #0003;
-    }
-    .btn .miniDot{
+    .modeBadge .spark{
       width:10px; height:10px; border-radius:50%;
       background: var(--teal);
-      box-shadow: 0 0 14px #2bd9ff55;
+      box-shadow: 0 0 14px #2bd9ff77;
     }
-    .btn.acc .miniDot{ background: var(--danger); box-shadow: 0 0 14px #ff5b6e55; }
-    .btn.rand .miniDot{ background: var(--lav); box-shadow: 0 0 14px #c3a1ff55; }
+
+    .btnRow{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items:center;
+      justify-content:flex-end;
+    }
+    .btn{
+      cursor:pointer;
+      user-select:none;
+      border-radius: 14px;
+      border:1px solid #ffffff26;
+      background: linear-gradient(180deg, #ffffff14, #00000010);
+      color: var(--ink);
+      padding: 10px 12px;
+      font-family: var(--font-retro);
+      font-size: calc(20px * var(--textScale));
+      letter-spacing:1px;
+      box-shadow: inset 0 0 0 1px #0003;
+      transition: transform .08s ease, background .2s ease;
+    }
+    .btn:active{ transform: translateY(1px); }
+    .btn.on{
+      border-color: #ffffff44;
+      background: linear-gradient(90deg, #89f0d133, #86b7ff22, #ff8fd122);
+      box-shadow: 0 10px 22px #0005, inset 0 0 0 1px #ffffff14;
+    }
+
+    .infoBox{
+      border-radius: var(--radius2);
+      border:1px solid #ffffff1f;
+      background:#0002;
+      padding: 12px;
+      min-height:0;
+      overflow:auto;
+      font-size: calc(13px * var(--textScale));
+      line-height: 1.25;
+      color: var(--muted);
+    }
+    .infoBox b{ color: var(--ink); }
+
+    /* Camera panel */
+    .camWrap{
+      padding:12px;
+      height: calc(100% - 52px);
+      display:grid;
+      grid-template-rows: auto 1fr;
+      gap:12px;
+      min-height: 0;
+    }
+    .camMeta{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap:12px;
+      align-items:center;
+    }
+    .camMeta .left{
+      display:flex; align-items:center; gap:10px;
+      font-family:var(--font-retro);
+      font-size: calc(22px * var(--textScale));
+      letter-spacing:1px;
+      background:#0004;
+      border:1px solid #fff2;
+      border-radius:14px;
+      padding:10px 12px;
+      overflow:hidden;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+    }
+    .livePip{ display:inline-flex; align-items:center; gap:8px; }
+    .livePip .dot{
+      width:10px; height:10px; border-radius:50%;
+      background:var(--danger);
+      box-shadow:0 0 16px #ff5b6ecc;
+    }
+    .camMeta .right{
+      font-family:var(--font-retro);
+      font-size: calc(22px * var(--textScale));
+      letter-spacing:1px;
+      background:#0004;
+      border:1px solid #fff2;
+      border-radius:14px;
+      padding:10px 12px;
+      white-space:nowrap;
+    }
 
     .camBox{
       border-radius: var(--radius2);
@@ -376,19 +401,36 @@
       position:relative;
       min-height: 0;
     }
-    .camFrame, .camFallback{
+
+    /* IMPORTANT: keep camera "un-zoomed" (contain) */
+    .camFrame{
       position:absolute; inset:0;
       width:100%; height:100%;
       border:0;
+      background:#000;
     }
+
+    /* If iframe content is "too zoomed" because the camera page itself is big,
+       we can scale JUST the iframe contents by wrapping via CSS transform.
+       This DOES NOT affect text elsewhere. */
+    .camInner{
+      position:absolute; inset:0;
+      transform: scale(var(--camScale));
+      transform-origin: top left;
+      width: calc(100% / var(--camScale));
+      height: calc(100% / var(--camScale));
+    }
+    :root{ --camScale: 1; } /* set to 0.9, 0.8, etc if you ever want camera smaller */
+
     .camFallback{
+      position:absolute; inset:0;
       display:none;
       place-items:center;
-      padding:16px;
+      padding:22px;
       text-align:center;
       color: var(--muted);
       font-family: var(--font-retro);
-      font-size: 26px;
+      font-size: calc(28px * var(--textScale));
       letter-spacing: 1px;
       background:
         radial-gradient(900px 260px at 60% 70%, #ffb48a22, transparent 55%),
@@ -397,14 +439,14 @@
     }
     .camFallback small{
       display:block;
-      font-size:18px;
+      font-size: calc(18px * var(--textScale));
       opacity:.85;
-      margin-top:10px;
+      margin-top:12px;
       font-family: var(--font-ui);
       letter-spacing:0;
     }
 
-    /* Ticker (slower + more readable) */
+    /* Ticker */
     .ticker{
       height:var(--tickerH);
       border-top:1px solid var(--line);
@@ -421,13 +463,14 @@
     }
     .tickerBrand{
       font-family:var(--font-retro);
-      font-size:34px;
+      font-size: calc(34px * var(--textScale));
       letter-spacing:2px;
       padding:6px 10px;
       border-radius:14px;
       border:1px solid #ffffff24;
       background:#0002;
       text-shadow:0 2px 0 #0007;
+      white-space:nowrap;
     }
     .tickerLine{
       overflow:hidden;
@@ -444,18 +487,21 @@
       display:inline-block;
       padding-left: 100%;
       font-family:var(--font-retro);
-      font-size:24px;
+      font-size: calc(var(--f-ticker) * var(--textScale));
       letter-spacing:1px;
-      animation: scroll 44s linear infinite; /* MUCH slower */
+      animation: scroll var(--tickerSeconds) linear infinite;
       text-shadow:0 2px 0 #0007;
     }
+    :root{ --tickerSeconds: 52s; } /* SLOWER ticker (was too fast) */
+
     @keyframes scroll{
       0%{ transform: translateX(0); }
       100%{ transform: translateX(-100%); }
     }
+
     .clockBox{
       font-family:var(--font-retro);
-      font-size:34px;
+      font-size: calc(var(--f-clock) * var(--textScale));
       letter-spacing:2px;
       padding:6px 12px;
       border-radius:14px;
@@ -466,7 +512,7 @@
       white-space:nowrap;
     }
 
-    /* Breaking overlay */
+    /* BREAKING overlay */
     .breaking{
       position:absolute; inset:0;
       display:none;
@@ -478,7 +524,7 @@
       position:absolute;
       left: 18px;
       right: 18px;
-      top: 80px;
+      top: 84px;
       border-radius: 18px;
       border: 1px solid #ffffff26;
       background:
@@ -490,12 +536,13 @@
     }
     .breaking .label{
       font-family: var(--font-retro);
-      font-size: 34px;
+      font-size: calc(34px * var(--textScale));
       letter-spacing: 2px;
       display:flex;
       align-items:center;
       gap:10px;
       color:#0b0f2a;
+      text-shadow:none;
     }
     .breaking .label .pulse{
       width: 12px; height: 12px;
@@ -512,140 +559,145 @@
       margin-top: 8px;
       color: #0b0f2a;
       font-weight: 900;
-      font-size: 18px;
+      font-size: calc(20px * var(--textScale));
     }
     .breaking .submsg{
       margin-top: 4px;
       color: #0b0f2a;
       opacity: .9;
-      font-size: 14px;
+      font-size: calc(14px * var(--textScale));
     }
   </style>
 </head>
 
 <body>
-  <div class="bar" role="img" aria-label="AZ NOW live traffic and cams dashboard">
-    <div class="header">
-      <div class="brand">
-        <div class="logo">AZ NOW</div>
-        <div class="sub">LIVE TRAFFIC + CAMS</div>
+  <div class="stage">
+    <div class="bar" role="img" aria-label="AZ NOW live traffic and cams dashboard">
+
+      <!-- HEADER (retro badge removed per request) -->
+      <div class="header">
+        <div class="brand">
+          <div class="logo">AZ NOW</div>
+          <div class="sub">LIVE TRAFFIC + CAMS</div>
+        </div>
+        <div class="meta">
+          <div class="pill"><span class="dot"></span><span>LIVE</span></div>
+          <div class="pill" id="datePill">—</div>
+        </div>
       </div>
 
-      <div class="meta">
-        <div class="pill"><span class="dot"></span><span>LIVE</span></div>
-        <div class="pill" id="datePill">—</div>
+      <div class="main">
+        <!-- INCIDENTS -->
+        <section class="panel">
+          <div class="panelTitle">
+            <h3>TOP INCIDENTS</h3>
+            <small id="alertsCount">—</small>
+          </div>
+          <div class="alerts" id="alertsList">
+            <div class="alert a-ok">
+              <div class="icon">…</div>
+              <div class="text">
+                <div class="top">LOADING</div>
+                <div class="sub">Waiting for AZ511 events…</div>
+              </div>
+              <div class="tag">LIVE</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SNAPSHOT (simple + readable) -->
+        <section class="panel">
+          <div class="panelTitle">
+            <h3>CITY SNAPSHOT</h3>
+            <small>UPDATED: <span id="snapUpdated">—</span></small>
+          </div>
+
+          <div class="snap">
+            <div class="bigStats">
+              <div class="card">
+                <div class="k">ACTIVE EVENTS</div>
+                <div class="v danger" id="statEvents">—</div>
+              </div>
+              <div class="card">
+                <div class="k">CAMERAS ONLINE</div>
+                <div class="v mint" id="statCams">—</div>
+              </div>
+              <div class="card">
+                <div class="k">CURRENT MODE</div>
+                <div class="v lemon" id="statMode">RANDOM</div>
+              </div>
+              <div class="card">
+                <div class="k">NEXT CAM IN</div>
+                <div class="v lemon"><span id="statNext">—</span>s</div>
+              </div>
+            </div>
+
+            <div class="modeRow">
+              <div class="modeBadge" id="modeBadge" title="What the dashboard is doing right now">
+                <span class="spark"></span>
+                <span id="modeExplain">Rotating through random cams.</span>
+              </div>
+
+              <div class="btnRow">
+                <button class="btn on" id="btnRandom">RANDOM</button>
+                <button class="btn" id="btnHouse">HOUSE</button>
+                <button class="btn" id="btnAccident">ACCIDENT</button>
+              </div>
+            </div>
+
+            <div class="infoBox" id="helpBox">
+              <b>RANDOM</b> = rotates through all cams.<br>
+              <b>HOUSE</b> = rotates cams near your home (within a radius).<br>
+              <b>ACCIDENT</b> = jumps to the nearest camera to a newly-reported event (when coordinates are available).<br><br>
+              Tip: If the camera page ever refuses to embed, we can swap to a snapshot/proxy approach.
+            </div>
+          </div>
+        </section>
+
+        <!-- LIVE CAM -->
+        <section class="panel">
+          <div class="panelTitle">
+            <h3>LIVE CAMERA</h3>
+            <small>FEED: <span id="camIndex">—</span></small>
+          </div>
+
+          <div class="camWrap">
+            <div class="camMeta">
+              <div class="left" title="Camera location">
+                <span class="livePip"><span class="dot"></span>LIVE</span>
+                <span id="camLabel">Loading cameras…</span>
+              </div>
+              <div class="right">ROTATE: <span id="camCountdown">—</span>s</div>
+            </div>
+
+            <div class="camBox">
+              <!-- camInner lets you scale JUST the embedded page if you ever need it -->
+              <div class="camInner">
+                <iframe class="camFrame" id="camFrame" title="AZ511 camera view"
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+              </div>
+
+              <div class="camFallback" id="camFallback">
+                CAMERA EMBED BLOCKED
+                <small>If AZ511 disallows iframe embedding, we can switch to still images (if provided) or proxy a snapshot endpoint.</small>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
-    </div>
 
-    <div class="main">
-      <!-- TOP INCIDENTS -->
-      <section class="panel">
-        <div class="panelTitle">
-          <h3>TOP INCIDENTS</h3>
-          <small><span id="eventsCount">—</span> ACTIVE</small>
+      <div class="ticker">
+        <div class="tickerBrand">AZ NOW</div>
+        <div class="tickerLine"><span id="tickerText">CONNECTING TO AZ511…</span></div>
+        <div class="clockBox" id="clock">—:— —</div>
+      </div>
+
+      <div class="breaking" id="breaking">
+        <div class="box">
+          <div class="label"><span class="pulse"></span>BREAKING</div>
+          <div class="msg" id="breakingMsg">New traffic event detected</div>
+          <div class="submsg" id="breakingSub">Switching to nearest camera…</div>
         </div>
-
-        <div class="incWrap" id="topIncidents">
-          <div class="story">
-            <div class="storyTop">
-              <div class="badge ok"><span class="bDot"></span>LOADING</div>
-              <div style="font-family:var(--font-retro);font-size:20px;opacity:.85;">—</div>
-            </div>
-            <div class="storyTitle">Connecting to AZ511…</div>
-            <div class="storySub">Waiting for your Worker proxy to return events.</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- SNAPSHOT -->
-      <section class="panel">
-        <div class="panelTitle">
-          <h3>CITY SNAPSHOT</h3>
-          <small>UPDATED: <span id="updatedAt">—</span></small>
-        </div>
-
-        <div class="snapWrap">
-          <div class="snapRow">
-            <div class="tile">
-              <div class="k">ACTIVE INCIDENTS</div>
-              <div class="v" id="snapInc">—</div>
-              <div class="s" id="snapDelta">—</div>
-            </div>
-            <div class="tile">
-              <div class="k">CAMERAS ONLINE</div>
-              <div class="v" id="snapCams">—</div>
-              <div class="s">feeds available</div>
-            </div>
-          </div>
-
-          <div class="snapRow">
-            <div class="tile">
-              <div class="k">MODE</div>
-              <div class="v" id="snapMode">—</div>
-              <div class="s" id="snapModeHint">—</div>
-            </div>
-            <div class="tile">
-              <div class="k">NEXT CAM</div>
-              <div class="v"><span id="snapNext">—</span>s</div>
-              <div class="s">rotation timer</div>
-            </div>
-          </div>
-
-          <div class="explain">
-            <h4 id="explainTitle">WHAT YOU’RE SEEING</h4>
-            <p id="explainBody">
-              The “ACCIDENT” mode will jump to the nearest camera when a new incident appears, like a mini news director in your room.
-              “HOUSE” mode rotates the closest cameras to your home pin. “RANDOM” is the chaos channel.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <!-- LIVE CAM -->
-      <section class="panel">
-        <div class="panelTitle">
-          <h3>LIVE CAMERA</h3>
-          <small><span id="camIndex">—</span></small>
-        </div>
-
-        <div class="camWrap">
-          <div class="camHeaderRow">
-            <div class="left" title="Camera location">
-              <span class="livePip"><span class="dot"></span>LIVE</span>
-              <span id="camLabel">Loading cameras…</span>
-            </div>
-            <div class="right">NEXT: <span id="camCountdown">—</span>s</div>
-          </div>
-
-          <div class="modeRow">
-            <button class="btn home active" id="btnHome" type="button"><span class="miniDot"></span>HOUSE</button>
-            <button class="btn acc" id="btnAcc" type="button"><span class="miniDot"></span>ACCIDENT</button>
-            <button class="btn rand" id="btnRand" type="button"><span class="miniDot"></span>RANDOM</button>
-          </div>
-
-          <div class="camBox">
-            <iframe class="camFrame" id="camFrame" title="AZ511 camera view"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
-            <div class="camFallback" id="camFallback">
-              CAMERA EMBED BLOCKED
-              <small>If AZ511 disallows iframe embedding, we can swap to stills/snapshots (if provided) or proxy a snapshot endpoint.</small>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
-
-    <div class="ticker">
-      <div class="tickerBrand">AZ NOW</div>
-      <div class="tickerLine"><span id="tickerText">CONNECTING TO AZ511…</span></div>
-      <div class="clockBox" id="clock">—:— —</div>
-    </div>
-
-    <div class="breaking" id="breaking">
-      <div class="box">
-        <div class="label"><span class="pulse"></span>BREAKING</div>
-        <div class="msg" id="breakingMsg">New traffic event detected</div>
-        <div class="submsg" id="breakingSub">Switching to nearest camera…</div>
       </div>
     </div>
   </div>
@@ -656,24 +708,33 @@
   // =========================
   const WORKER_BASE = "https://az-now-511-proxy.zachary-1-marshall.workers.dev";
 
-  // Put YOUR HOUSE pin here (approx is fine)
-  const HOME = { lat: 33.4484, lon: -112.0740 }; // <-- CHANGE ME
-
+  // Rotation + polling
   const CAMERA_ROTATE_SECONDS = 20;
   const EVENTS_POLL_SECONDS = 45;
   const CAMS_REFRESH_SECONDS  = 10 * 60;
 
-  // How many "near home" cameras to cycle
-  const HOME_CAM_COUNT = 18;
+  // HOUSE mode: set your home location + radius
+  const HOUSE_LAT = 33.4484;    // <-- replace with your home lat (Phoenix default placeholder)
+  const HOUSE_LON = -112.0740;  // <-- replace with your home lon
+  const HOUSE_RADIUS_MILES = 8; // cams within this distance are considered "near home"
 
-  // When ACCIDENT mode triggers, keep cycling near that incident for X rotations
-  const ACCIDENT_STICKY_ROTATIONS = 10;
+  // Severity threshold for “ACCIDENT” feel (still shows other things, but prioritizes bigger ones)
+  const SEV_MAJOR_AT_OR_ABOVE = 3;
 
   // =========================
   // Helpers
   // =========================
   const $ = (id) => document.getElementById(id);
   const pad2 = (n) => String(n).padStart(2, "0");
+
+  function escapeHTML(s){
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#39;");
+  }
 
   function setDatePill(){
     const d = new Date();
@@ -696,15 +757,6 @@
     return `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
   }
 
-  function escapeHTML(s){
-    return String(s)
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#39;");
-  }
-
   // Haversine distance (miles)
   function distMiles(lat1, lon1, lat2, lon2){
     const toRad = (x) => x * Math.PI / 180;
@@ -716,60 +768,64 @@
     return R * c;
   }
 
-  // =========================
-  // Mode state
-  // =========================
-  const MODE = {
-    HOME: "HOUSE",
-    ACC: "ACCIDENT",
-    RAND: "RANDOM"
-  };
-  let mode = MODE.HOME;
+  function sevNumber(ev){
+    const raw = ev?.Severity ?? ev?.SeverityId ?? ev?.SeverityID ?? ev?.severity;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : 0;
+  }
 
-  function setMode(newMode){
-    mode = newMode;
-
-    $("btnHome").classList.toggle("active", mode === MODE.HOME);
-    $("btnAcc").classList.toggle("active", mode === MODE.ACC);
-    $("btnRand").classList.toggle("active", mode === MODE.RAND);
-
-    $("snapMode").textContent = mode;
-    $("snapModeHint").textContent =
-      mode === MODE.HOME ? `nearest ${HOME_CAM_COUNT} cams` :
-      mode === MODE.ACC  ? `auto-jump on new crash` :
-      `pure chaos`;
-
-    // reset rotation
-    camCountdown = CAMERA_ROTATE_SECONDS;
-
-    // rebuild the active playlist for this mode
-    rebuildPlaylist();
-    // show something immediately
-    showNextFromPlaylist(true);
+  function pickEventLatLon(e){
+    const lat = Number(e.Latitude ?? e.Lat ?? e.Y ?? e.LocationLatitude);
+    const lon = Number(e.Longitude ?? e.Lon ?? e.Long ?? e.X ?? e.LocationLongitude);
+    if(Number.isFinite(lat) && Number.isFinite(lon)) return { lat, lon };
+    return null;
   }
 
   // =========================
-  // State
+  // Mode State
   // =========================
-  let cameras = [];
-  let lastEvents = [];
-  let lastEventIds = new Set();
-
-  // playlist = the ordered list of camera indices we rotate through
-  let playlist = [];
-  let playlistPtr = 0;
-
-  // accident sticky behavior
-  let accidentSticky = {
-    rotationsLeft: 0,
-    centerLat: null,
-    centerLon: null
+  const MODE = {
+    RANDOM: "RANDOM",
+    HOUSE: "HOUSE",
+    ACCIDENT: "ACCIDENT"
   };
+  let mode = MODE.RANDOM;
 
+  function setMode(next){
+    mode = next;
+    $("statMode").textContent = next;
+
+    // button styling
+    $("btnRandom").classList.toggle("on", next === MODE.RANDOM);
+    $("btnHouse").classList.toggle("on", next === MODE.HOUSE);
+    $("btnAccident").classList.toggle("on", next === MODE.ACCIDENT);
+
+    if(next === MODE.RANDOM){
+      $("modeExplain").textContent = "Rotating through random cams.";
+    } else if(next === MODE.HOUSE){
+      $("modeExplain").textContent = `Showing cams near your house (~${HOUSE_RADIUS_MILES} mi).`;
+    } else {
+      $("modeExplain").textContent = "Prioritizing new incidents → nearest cam.";
+    }
+
+    // force immediate camera refresh in current mode
+    camCountdown = 2;
+  }
+
+  // =========================
+  // Data State
+  // =========================
+  let camerasAll = [];
+  let camerasNearHouse = [];
+  let camPlaylist = []; // the current list we rotate through (depends on mode)
+  let camIdx = 0;
   let camCountdown = CAMERA_ROTATE_SECONDS;
 
+  let lastEventIds = new Set();
+  let lastEvents = [];
+
   // =========================
-  // Fetcher
+  // Fetchers
   // =========================
   async function getJSON(path){
     const url = `${WORKER_BASE}/${path.replace(/^\/+/,"")}`;
@@ -778,9 +834,6 @@
     return await res.json();
   }
 
-  // =========================
-  // Cameras
-  // =========================
   async function loadCameras(){
     const data = await getJSON("cameras");
 
@@ -790,165 +843,69 @@
       const enabled = views.filter(v => (v.Status || "").toLowerCase() === "enabled" && v.Url);
       if(!enabled.length) continue;
 
+      const lat = Number(cam.Latitude);
+      const lon = Number(cam.Longitude);
+
       cleaned.push({
         id: cam.Id ?? cam.id,
         roadway: cam.Roadway || "",
         location: cam.Location || cam.Description || "",
-        lat: Number(cam.Latitude),
-        lon: Number(cam.Longitude),
+        lat, lon,
         viewUrl: enabled[0].Url,
         viewDesc: enabled[0].Description || cam.Location || "Camera"
       });
     }
 
-    cameras = cleaned;
-    $("snapCams").textContent = cameras.length ? String(cameras.length) : "0";
-    setTicker(`AZ NOW LIVE • ${cameras.length} CAMERAS ONLINE • ${nowStamp()} •`);
+    camerasAll = cleaned;
+    $("statCams").textContent = camerasAll.length ? String(camerasAll.length) : "0";
 
+    // Precompute near-house list
+    camerasNearHouse = camerasAll
+      .filter(c => Number.isFinite(c.lat) && Number.isFinite(c.lon))
+      .map(c => ({...c, d: distMiles(HOUSE_LAT, HOUSE_LON, c.lat, c.lon)}))
+      .filter(c => c.d <= HOUSE_RADIUS_MILES)
+      .sort((a,b) => a.d - b.d);
+
+    // Build playlist based on current mode
     rebuildPlaylist();
-    if(cameras.length) showNextFromPlaylist(true);
+
+    // paint first camera if needed
+    if(camPlaylist.length){
+      camIdx = Math.min(camIdx, camPlaylist.length - 1);
+      showCamera(camIdx);
+      setTicker(`AZ NOW LIVE • CAMERAS ONLINE ${camerasAll.length} • UPDATED ${nowStamp()} •`);
+    } else {
+      setTicker(`AZ NOW LIVE • NO CAMERAS FOUND • CHECK WORKER /cameras • ${nowStamp()} •`);
+    }
   }
 
   function rebuildPlaylist(){
-    if(!cameras.length){
-      playlist = [];
-      playlistPtr = 0;
-      return;
+    if(mode === MODE.HOUSE){
+      camPlaylist = camerasNearHouse.length ? camerasNearHouse : camerasAll;
+    } else {
+      camPlaylist = camerasAll;
     }
 
-    if(mode === MODE.HOME){
-      // nearest N cameras to HOME
-      const ranked = cameras
-        .map((c, i) => ({
-          i,
-          d: (Number.isFinite(c.lat) && Number.isFinite(c.lon))
-            ? distMiles(33.295147, -112.117982, c.lat, c.lon)
-            : 1e9
-        }))
-        .sort((a,b)=>a.d-b.d)
-        .slice(0, Math.min(HOME_CAM_COUNT, cameras.length))
-        .map(x=>x.i);
-
-      playlist = ranked;
-      playlistPtr = 0;
-      $("explainTitle").textContent = "HOUSE MODE";
-      $("explainBody").textContent =
-        "Rotating through the nearest cameras to your home pin. Great for ‘what’s my area look like?’ vibes.";
-      return;
-    }
-
-    if(mode === MODE.RAND){
-      playlist = [...Array(cameras.length).keys()];
-      shuffleInPlace(playlist);
-      playlistPtr = 0;
-      $("explainTitle").textContent = "RANDOM MODE";
-      $("explainBody").textContent =
-        "A never-ending tour of the city. Hit RANDOM again if you want a new shuffle.";
-      return;
-    }
-
-    // ACCIDENT mode:
-    // If we’re sticky to a crash area, rotate closest cams to that crash
-    if(mode === MODE.ACC){
-      if(accidentSticky.centerLat != null && accidentSticky.rotationsLeft > 0){
-        const ranked = cameras
-          .map((c, i) => ({
-            i,
-            d: (Number.isFinite(c.lat) && Number.isFinite(c.lon))
-              ? distMiles(accidentSticky.centerLat, accidentSticky.centerLon, c.lat, c.lon)
-              : 1e9
-          }))
-          .sort((a,b)=>a.d-b.d)
-          .slice(0, Math.min(HOME_CAM_COUNT, cameras.length))
-          .map(x=>x.i);
-
-        playlist = ranked;
-        playlistPtr = 0;
-        $("explainTitle").textContent = "ACCIDENT MODE (LOCKED)";
-        $("explainBody").textContent =
-          "A new incident was detected. We’re cycling the closest cameras near it like a mini newsroom.";
-        return;
-      }
-
-      // Otherwise: behave like a “wide city watch”
-      playlist = [...Array(cameras.length).keys()];
-      shuffleInPlace(playlist);
-      playlistPtr = 0;
-      $("explainTitle").textContent = "ACCIDENT MODE";
-      $("explainBody").textContent =
-        "When a new incident appears, we’ll jump to the nearest camera automatically.";
-      return;
-    }
-  }
-
-  function shuffleInPlace(arr){
-    for(let i=arr.length-1;i>0;i--){
-      const j = Math.floor(Math.random()*(i+1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-  }
-
-  function showNextFromPlaylist(force=false){
-    if(!playlist.length) return;
-
-    // In RANDOM mode, if we run out, reshuffle
-    if(mode === MODE.RAND && playlistPtr >= playlist.length){
-      playlistPtr = 0;
-      shuffleInPlace(playlist);
-    }
-
-    if(playlistPtr >= playlist.length) playlistPtr = 0;
-    const camIndex = playlist[playlistPtr++];
-    showCamera(camIndex);
-
-    if(force) camCountdown = CAMERA_ROTATE_SECONDS;
-  }
-
-  function showCamera(index){
-    if(!cameras.length) return;
-
-    const cam = cameras[index];
-    $("camIndex").textContent = `${index+1}/${cameras.length}`;
-
-    // shorter + more readable label
-    const label = (cam.viewDesc || cam.location || cam.roadway || `CAM ${cam.id}`).replace(/\s+/g," ").trim();
-    $("camLabel").textContent = label.length > 64 ? label.slice(0,61) + "…" : label;
-
-    // iframe embed
-    const frame = $("camFrame");
-    const fallback = $("camFallback");
-
-    let loaded = false;
-    frame.onload = () => { loaded = true; fallback.style.display = "none"; };
-    frame.src = cam.viewUrl;
-
-    // if blocked
-    setTimeout(() => {
-      if(!loaded){
-        fallback.style.display = "grid";
-      }
-    }, 1200);
-  }
-
-  // =========================
-  // Events
-  // =========================
-  function pickEventLatLon(e){
-    const lat = Number(e.Latitude ?? e.Lat ?? e.Y ?? e.LocationLatitude);
-    const lon = Number(e.Longitude ?? e.Lon ?? e.Long ?? e.X ?? e.LocationLongitude);
-    if(Number.isFinite(lat) && Number.isFinite(lon)) return { lat, lon };
-    return null;
+    // If playlist changed, keep index valid
+    if(camIdx >= camPlaylist.length) camIdx = 0;
   }
 
   async function loadEvents(){
+    // Try endpoints; your worker supports one of these
     let data;
     try { data = await getJSON("event"); }
     catch { data = await getJSON("alerts"); }
 
     lastEvents = Array.isArray(data) ? data : (data?.Events || data?.events || []);
-    $("updatedAt").textContent = nowStamp();
+    $("statEvents").textContent = String(lastEvents.length);
+    $("snapUpdated").textContent = nowStamp();
 
-    // detect new events
+    // sort for display: severity desc then newest-ish
+    const sortedForList = [...lastEvents].sort((a,b) => sevNumber(b) - sevNumber(a));
+
+    renderAlerts(sortedForList);
+
+    // Detect new events by id-ish field
     const ids = new Set();
     const newOnes = [];
     for(const ev of lastEvents){
@@ -958,126 +915,159 @@
       if(!lastEventIds.has(sid)) newOnes.push(ev);
     }
 
-    // snapshot
-    $("eventsCount").textContent = String(lastEvents.length);
-    $("snapInc").textContent = String(lastEvents.length);
-
-    // delta vs last poll
-    const delta = (lastEventIds.size ? (lastEvents.length - lastEventIds.size) : 0);
-    $("snapDelta").textContent = lastEventIds.size ? (delta === 0 ? "no change since last check" : (delta>0 ? `+${delta} since last check` : `${delta} since last check`)) : "warming up…";
-
-    // render top incidents
-    renderTopIncidents(lastEvents);
-
-    // ticker
-    setTicker(buildTicker(lastEvents));
-
-    // breaking behavior
+    // Breaking + jump cam (only in ACCIDENT mode)
     if(lastEventIds.size && newOnes.length){
-      const picked = newOnes[0];
+      const picked = newOnes.sort((a,b) => sevNumber(b) - sevNumber(a))[0];
       triggerBreaking(picked);
 
-      // In ACCIDENT mode, lock to that incident area
-      const p = pickEventLatLon(picked);
-      if(p){
-        accidentSticky.centerLat = p.lat;
-        accidentSticky.centerLon = p.lon;
-        accidentSticky.rotationsLeft = ACCIDENT_STICKY_ROTATIONS;
-
-        if(mode === MODE.ACC){
-          rebuildPlaylist();
-          showNextFromPlaylist(true);
-        }
-      } else {
-        // no coords — still show breaking but can’t geo-jump
-        if(mode === MODE.ACC){
-          showNextFromPlaylist(true);
-        }
+      if(mode === MODE.ACCIDENT){
+        jumpToNearestCamera(picked);
       }
     }
 
     lastEventIds = ids;
-  }
 
-  function simplifyType(ev){
-    const t = String(ev.EventType || ev.Type || ev.EventCategory || "EVENT").toLowerCase();
-    if(t.includes("crash") || t.includes("accident") || t.includes("collision")) return "CRASH";
-    if(t.includes("closure") || t.includes("closed")) return "CLOSURE";
-    if(t.includes("construction") || t.includes("roadwork") || t.includes("work")) return "ROADWORK";
-    if(t.includes("weather") || t.includes("dust") || t.includes("fog") || t.includes("snow")) return "WEATHER";
-    return "INCIDENT";
-  }
-
-  function simplifySeverity(ev){
-    const s = Number(ev.Severity ?? ev.SeverityId ?? ev.SeverityID);
-    if(!Number.isFinite(s)) return { label: "UPDATE", cls: "ok" };
-    if(s >= 3) return { label: "MAJOR", cls: "danger" };
-    if(s === 2) return { label: "MODERATE", cls: "" };
-    return { label: "MINOR", cls: "ok" };
-  }
-
-  function oneLine(ev){
-    const road = String(ev.RoadwayName || ev.Roadway || ev.Road || "").trim();
-    const desc = String(ev.Description || ev.ShortDescription || ev.EventDescription || ev.Location || "").trim();
-    const s = (road ? `${road} — ` : "") + (desc || "Traffic update");
-    return s.replace(/\s+/g," ").trim();
-  }
-
-  function renderTopIncidents(events){
-    const wrap = $("topIncidents");
-    wrap.innerHTML = "";
-
-    if(!events.length){
-      wrap.innerHTML = `
-        <div class="story">
-          <div class="storyTop">
-            <div class="badge ok"><span class="bDot"></span>CLEAR</div>
-            <div style="font-family:var(--font-retro);font-size:20px;opacity:.85;">${nowStamp()}</div>
-          </div>
-          <div class="storyTitle">No active incidents reported</div>
-          <div class="storySub">Either it’s calm… or the feed is quiet. Enjoy the peace.</div>
-        </div>`;
-      return;
-    }
-
-    const top = events.slice(0, 6);
-    for(let i=0;i<top.length;i++){
-      const ev = top[i];
-      const type = simplifyType(ev);
-      const sev = simplifySeverity(ev);
-      const line = oneLine(ev);
-
-      const title = `${type}: ${line}`;
-      const sub = "Tap ACCIDENT mode to auto-jump when a new one appears.";
-
-      const story = document.createElement("div");
-      story.className = "story";
-      story.innerHTML = `
-        <div class="storyTop">
-          <div class="badge ${sev.cls}"><span class="bDot"></span>${sev.label}</div>
-          <div style="font-family:var(--font-retro);font-size:20px;opacity:.85;">#${i+1}</div>
-        </div>
-        <div class="storyTitle">${escapeHTML(title.slice(0, 120))}</div>
-        <div class="storySub">${escapeHTML(sub)}</div>
-      `;
-      wrap.appendChild(story);
-    }
-  }
-
-  function buildTicker(events){
-    const base = `AZ NOW LIVE • ${events.length} ACTIVE INCIDENTS • MODE: ${mode} • NEXT CAM ${camCountdown}s • `;
-    if(!events.length) return base + "NO MAJOR INCIDENTS • DRIVE SMART • STAY SAFE •";
-    const blurbs = [];
-    for(const e of events.slice(0,3)){
-      const t = simplifyType(e);
-      const l = oneLine(e);
-      blurbs.push(`${t} — ${l}`.slice(0,120));
-    }
-    return base + blurbs.join(" • ") + " • STAY SAFE — DRIVE SMART •";
+    // ticker
+    setTicker(buildTicker(sortedForList));
   }
 
   function setTicker(text){
     $("tickerText").textContent = text;
+  }
+
+  function buildTicker(events){
+    const base = `AZ NOW LIVE • ${events.length} ACTIVE EVENTS • MODE ${mode} • NEXT CAM ${camCountdown}s • ${nowStamp()} • `;
+    if(!events.length) return base + "NO MAJOR INCIDENTS REPORTED • DRIVE SMART!";
+    const blurbs = [];
+    for(const e of events.slice(0,3)){
+      const t = (e.EventType || e.Type || "EVENT");
+      const r = (e.RoadwayName || e.Roadway || "");
+      const d = (e.Description || e.ShortDescription || "");
+      const b = `${t}${r ? " " + r : ""}${d ? " — " + d : ""}`.replace(/\s+/g," ").trim();
+      if(b) blurbs.push(b);
+    }
+    return base + blurbs.join(" • ") + " • STAY SAFE — DRIVE SMART!";
+  }
+
+  function renderAlerts(events){
+    const list = $("alertsList");
+    list.innerHTML = "";
+
+    $("alertsCount").textContent = `${events.length} ITEMS`;
+
+    if(!events.length){
+      list.innerHTML = `
+        <div class="alert a-ok">
+          <div class="icon">✓</div>
+          <div class="text">
+            <div class="top">NO ACTIVE EVENTS</div>
+            <div class="sub">Smooth sailing (or the API is quiet).</div>
+          </div>
+          <div class="tag">OK</div>
+        </div>`;
+      return;
+    }
+
+    const max = Math.min(events.length, 8);
+    for(let i=0;i<max;i++){
+      const e = events[i];
+      const sev = sevNumber(e);
+      const type = (e.EventType || e.Type || e.EventCategory || "EVENT").toString();
+      const road = (e.RoadwayName || e.Roadway || e.Road || "").toString();
+      const desc = (e.Description || e.ShortDescription || e.EventDescription || "").toString();
+      const loc  = (e.Location || e.LocationDescription || "").toString();
+
+      let cls = "a-ok";
+      let icon = "•";
+      let tag = sev ? `SEV ${sev}` : "LIVE";
+
+      if(sev >= 3){ cls="a-danger"; icon="!"; }
+      else if(sev === 2){ cls="a-warn"; icon="⛏"; }
+
+      const top = (type || "EVENT").slice(0,28);
+      const subRaw = (desc || loc || road || "Traffic event");
+      const sub = subRaw.length > 90 ? subRaw.slice(0,88) + "…" : subRaw;
+
+      const el = document.createElement("div");
+      el.className = `alert ${cls}`;
+      el.innerHTML = `
+        <div class="icon">${escapeHTML(icon)}</div>
+        <div class="text">
+          <div class="top">${escapeHTML(top)}</div>
+          <div class="sub">${escapeHTML(sub)}</div>
+        </div>
+        <div class="tag">${escapeHTML(tag)}</div>
+      `;
+      list.appendChild(el);
+    }
+  }
+
+  // =========================
+  // Camera rotation
+  // =========================
+  function showCamera(index){
+    if(!camPlaylist.length) return;
+
+    camIdx = (index + camPlaylist.length) % camPlaylist.length;
+    const cam = camPlaylist[camIdx];
+
+    $("camIndex").textContent = `${camIdx+1}/${camPlaylist.length}`;
+    $("camLabel").textContent = (cam.viewDesc || cam.location || cam.roadway || `CAM ${cam.id}`).slice(0,80);
+
+    const frame = $("camFrame");
+    const fallback = $("camFallback");
+
+    let loaded = false;
+    frame.onload = () => { loaded = true; fallback.style.display = "none"; };
+    frame.src = cam.viewUrl;
+
+    setTimeout(() => {
+      if(!loaded){
+        fallback.style.display = "grid";
+      }
+    }, 1200);
+  }
+
+  function nextCamera(){
+    // In ACCIDENT mode we still rotate, but through current playlist (random)
+    showCamera(camIdx + 1);
+    camCountdown = CAMERA_ROTATE_SECONDS;
+  }
+
+  // Jump to nearest camera for an event (if coords exist)
+  function jumpToNearestCamera(eventObj){
+    if(!camerasAll.length) return;
+    const p = pickEventLatLon(eventObj);
+    if(!p) return;
+
+    let bestI = 0;
+    let bestD = Infinity;
+
+    // In HOUSE mode, prefer near-house cams if available, otherwise all
+    const pool = (mode === MODE.HOUSE && camerasNearHouse.length) ? camerasNearHouse : camerasAll;
+
+    for(let i=0;i<pool.length;i++){
+      const c = pool[i];
+      if(!Number.isFinite(c.lat) || !Number.isFinite(c.lon)) continue;
+      const d = distMiles(p.lat, p.lon, c.lat, c.lon);
+      if(d < bestD){
+        bestD = d;
+        bestI = i;
+      }
+    }
+
+    // If we jumped within a pool that's not the current playlist, swap playlist to pool for a clean index
+    if(mode === MODE.HOUSE && camerasNearHouse.length){
+      camPlaylist = camerasNearHouse;
+    } else {
+      camPlaylist = camerasAll;
+    }
+
+    camIdx = bestI;
+    showCamera(camIdx);
+    camCountdown = CAMERA_ROTATE_SECONDS;
+
+    $("breakingSub").textContent = `Nearest cam selected (~${bestD.toFixed(1)} mi)`;
   }
 
   // =========================
@@ -1085,11 +1075,12 @@
   // =========================
   let breakingTimer = null;
   function triggerBreaking(eventObj){
-    const type = simplifyType(eventObj);
-    const msg = oneLine(eventObj);
+    const type = (eventObj.EventType || eventObj.Type || "TRAFFIC EVENT").toString();
+    const desc = (eventObj.Description || eventObj.ShortDescription || "New incident reported").toString();
+    const road = (eventObj.RoadwayName || eventObj.Roadway || "").toString();
 
-    $("breakingMsg").textContent = `${type}`;
-    $("breakingSub").textContent = msg.slice(0, 110);
+    $("breakingMsg").textContent = `${type}${road ? " • " + road : ""}`;
+    $("breakingSub").textContent = desc.slice(0,110);
 
     const el = $("breaking");
     el.style.display = "block";
@@ -1101,67 +1092,65 @@
   }
 
   // =========================
-  // Rotation loop
+  // Buttons
   // =========================
-  function tick(){
-    if(!cameras.length) return;
-
-    camCountdown--;
-    if(camCountdown <= 0){
-      // decrement sticky counter if we’re locked near a crash
-      if(mode === MODE.ACC && accidentSticky.rotationsLeft > 0){
-        accidentSticky.rotationsLeft--;
-        if(accidentSticky.rotationsLeft === 0){
-          // unlock -> rebuild playlist
-          rebuildPlaylist();
-        }
-      }
-
-      showNextFromPlaylist(true);
-      camCountdown = CAMERA_ROTATE_SECONDS;
-    }
-
-    $("camCountdown").textContent = String(camCountdown);
-    $("snapNext").textContent = String(camCountdown);
-
-    // Keep ticker base fresh-ish without restarting the animation
-    // (We only update ticker on event polls for smooth scrolling)
-  }
+  $("btnRandom").addEventListener("click", () => { setMode(MODE.RANDOM); rebuildPlaylist(); });
+  $("btnHouse").addEventListener("click", () => { setMode(MODE.HOUSE); rebuildPlaylist(); });
+  $("btnAccident").addEventListener("click", () => { setMode(MODE.ACCIDENT); rebuildPlaylist(); });
 
   // =========================
-  // Boot
+  // Boot / loops
   // =========================
   async function boot(){
     setDatePill();
     updateClock();
     setInterval(updateClock, 1000);
 
-    // buttons
-    $("btnHome").addEventListener("click", () => setMode(MODE.HOME));
-    $("btnAcc").addEventListener("click", () => setMode(MODE.ACC));
-    $("btnRand").addEventListener("click", () => {
-      // re-shuffle each time you hit it (fun)
-      setMode(MODE.RAND);
-      rebuildPlaylist();
-      showNextFromPlaylist(true);
-    });
-
-    // default mode snapshot
-    $("snapMode").textContent = mode;
-
     // initial loads
-    try{ await loadCameras(); } catch(e){ console.error(e); setTicker(`CAMERA LOAD FAILED • CHECK WORKER /cameras • ${nowStamp()} •`); }
-    try{ await loadEvents(); } catch(e){ console.error(e); setTicker(`EVENT LOAD FAILED • CHECK WORKER /event • ${nowStamp()} •`); }
+    try{
+      await loadCameras();
+    }catch(e){
+      $("statCams").textContent = "0";
+      setTicker(`CAMERA LOAD FAILED • CHECK WORKER /cameras • ${nowStamp()} •`);
+      console.error(e);
+    }
 
-    // refresh loops
-    setInterval(() => loadCameras().catch(console.error), CAMS_REFRESH_SECONDS * 1000);
-    setInterval(() => loadEvents().catch(console.error), EVENTS_POLL_SECONDS * 1000);
-    setInterval(tick, 1000);
+    try{
+      await loadEvents();
+    }catch(e){
+      setTicker(`EVENT LOAD FAILED • CHECK WORKER /event • ${nowStamp()} •`);
+      console.error(e);
+    }
 
-    // ensure UI buttons reflect default
-    setMode(MODE.HOME);
+    // refresh cameras occasionally
+    setInterval(() => {
+      loadCameras().catch(console.error);
+    }, CAMS_REFRESH_SECONDS * 1000);
+
+    // poll events
+    setInterval(() => {
+      loadEvents().catch(console.error);
+    }, EVENTS_POLL_SECONDS * 1000);
+
+    // camera rotation timer
+    setInterval(() => {
+      if(!camPlaylist.length) return;
+
+      camCountdown--;
+      if(camCountdown <= 0) nextCamera();
+
+      $("camCountdown").textContent = String(camCountdown);
+      $("statNext").textContent = String(camCountdown);
+    }, 1000);
+
+    // Prime countdown UI
+    $("camCountdown").textContent = String(camCountdown);
+    $("statNext").textContent = String(camCountdown);
+    $("statMode").textContent = mode;
   }
 
+  // Start in RANDOM
+  setMode(MODE.RANDOM);
   boot();
 </script>
 </body>
