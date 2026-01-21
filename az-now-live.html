@@ -2,138 +2,1000 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>AZ NOW — API Sanity Test</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AZ NOW — Live Traffic + Cams</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Sans:wght@400;600;800&display=swap" rel="stylesheet">
 
   <style>
-    html, body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      background: #050814;
-      color: #eaeaff;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      overflow: hidden;
+    :root{
+      --bg0:#0d1230; --bg1:#171a3b;
+      --ink:#f7f3ff; --muted:#d7d2ff;
+      --line:#ffffff22; --shadow: 0 10px 30px #00000066;
+
+      --peach:#ffb48a; --mint:#89f0d1; --sky:#86b7ff; --lav:#c3a1ff; --pink:#ff8fd1; --lemon:#ffe27a; --teal:#2bd9ff;
+      --danger:#ff5b6e; --warn:#ffbf4a; --ok:#60ffb0;
+
+      --radius: 18px; --radius2: 14px;
+      --hdrH: 60px; --tickerH: 56px;
+      --pad: 14px;
+
+      --font-ui: "IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      --font-retro: "VT323", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
 
-    body {
-      display: grid;
-      place-items: center;
+    *{ box-sizing:border-box; }
+    html,body{ width:100%; height:100%; }
+    body{
+      margin:0;
+      overflow:hidden;
+      background:
+        radial-gradient(1200px 500px at 20% 30%, #7b6cff30, transparent 55%),
+        radial-gradient(900px 420px at 75% 20%, #2bd9ff24, transparent 60%),
+        radial-gradient(900px 500px at 60% 80%, #ff8fd124, transparent 60%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      color:var(--ink);
+      font-family:var(--font-ui);
     }
 
-    .panel {
-      background: #0c1133;
-      border: 1px solid #ffffff22;
-      border-radius: 16px;
-      padding: 24px 28px;
-      width: min(900px, 92vw);
-      box-shadow: 0 20px 40px #00000088;
+    /* Fullscreen bar */
+    .bar{
+      width:100vw;
+      height:100vh;
+      border-radius:0;
+      position:relative;
+      overflow:hidden;
+      box-shadow:none;
+      border:0;
+      background:
+        linear-gradient(90deg, #ffffff14, #ffffff08 40%, #ffffff12),
+        radial-gradient(700px 280px at 20% 30%, #ffb48a18, transparent 60%),
+        radial-gradient(600px 260px at 75% 35%, #89f0d118, transparent 60%),
+        radial-gradient(700px 300px at 50% 120%, #c3a1ff14, transparent 55%),
+        linear-gradient(180deg, #13163a, #0f1232);
     }
 
-    h1 {
-      margin: 0 0 12px;
-      font-size: 28px;
-      letter-spacing: 0.5px;
+    /* CRT scanlines */
+    .bar::before{
+      content:"";
+      position:absolute; inset:0;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.04),
+        rgba(255,255,255,0.04) 1px,
+        rgba(0,0,0,0.0) 2px,
+        rgba(0,0,0,0.0) 4px
+      );
+      opacity:.40;
+      pointer-events:none;
+      mix-blend-mode: overlay;
+      z-index: 4;
     }
 
-    .status {
-      font-size: 22px;
-      margin-bottom: 16px;
+    /* Header */
+    .header{
+      height:var(--hdrH);
+      display:grid;
+      grid-template-columns: 1fr auto;
+      align-items:center;
+      padding: 10px 14px;
+      border-bottom:1px solid var(--line);
+      background:
+        linear-gradient(90deg, #ffb48a66, #c3a1ff55 35%, #86b7ff55 60%, #89f0d155),
+        linear-gradient(180deg, #ffffff12, #0000);
+      z-index: 5;
+      position:relative;
+    }
+    .brand{ display:flex; align-items:baseline; gap:12px; }
+    .logo{
+      font-family:var(--font-retro);
+      font-size:42px;
+      letter-spacing:2px;
+      text-shadow:0 2px 0 #0007;
+      line-height:1;
+    }
+    .sub{
+      font-family:var(--font-retro);
+      font-size:22px;
+      letter-spacing:1px;
+      opacity:.9;
+    }
+    .meta{
+      display:flex; align-items:center; gap:14px;
+      font-family:var(--font-retro);
+      font-size:22px;
+      letter-spacing:1px;
+      text-shadow:0 2px 0 #0007;
+      white-space:nowrap;
+    }
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding: 6px 10px; border-radius:999px;
+      background:#0003; border:1px solid #fff3;
+    }
+    .dot{
+      width:10px; height:10px; border-radius:50%;
+      background:var(--ok);
+      box-shadow:0 0 0 3px #fff2, 0 0 16px var(--ok);
+    }
+    .retroBadge{
+      border-radius:10px; padding:6px 10px;
+      background:#0a0d24aa; border:1px solid #fff2;
+      box-shadow: inset 0 0 0 1px #fff1;
+    }
+    .retroBadge b{ color:var(--lemon); }
+
+    /* Main grid */
+    .main{
+      height: calc(100% - var(--hdrH) - var(--tickerH));
+      padding: var(--pad);
+      display:grid;
+      grid-template-columns: 1.05fr 1.35fr 1.6fr; /* Alerts | Map | Live Cam */
+      gap: 12px;
+      position:relative;
+      z-index: 2;
     }
 
-    .ok { color: #60ffb0; }
-    .bad { color: #ff5b6e; }
+    .panel{
+      background: linear-gradient(180deg, #ffffff14, #ffffff08);
+      border: 1px solid #ffffff20;
+      border-radius: var(--radius);
+      overflow:hidden;
+      box-shadow: inset 0 0 0 1px #0003;
+      position:relative;
+      min-height: 0;
+    }
+    .panelTitle{
+      display:flex; justify-content:space-between; align-items:center;
+      padding: 10px 12px;
+      border-bottom: 1px solid #ffffff22;
+      background:
+        linear-gradient(90deg, #86b7ff30, #c3a1ff24, #ff8fd120),
+        linear-gradient(180deg, #ffffff14, #0000);
+    }
+    .panelTitle h3{
+      margin:0;
+      font-family:var(--font-retro);
+      font-size:26px;
+      letter-spacing:1px;
+    }
+    .panelTitle small{
+      font-family:var(--font-retro);
+      font-size:18px;
+      opacity:.85;
+      letter-spacing:.5px;
+      white-space:nowrap;
+    }
 
-    pre {
-      background: #00000055;
-      border: 1px solid #ffffff22;
-      border-radius: 12px;
-      padding: 14px;
-      max-height: 300px;
-      overflow: auto;
+    /* Alerts */
+    .alerts{
+      padding: 10px 12px 12px;
+      display:flex; flex-direction:column; gap:10px;
+      height: calc(100% - 52px);
+      overflow:auto;
+    }
+    .alert{
+      display:grid;
+      grid-template-columns: 34px 1fr auto;
+      gap:10px;
+      align-items:center;
+      padding: 10px 10px;
+      border-radius: var(--radius2);
+      background:#0002;
+      border:1px solid #ffffff1e;
+    }
+    .icon{
+      width:34px; height:34px; border-radius:12px;
+      display:grid; place-items:center;
+      font-family:var(--font-retro);
+      font-size:22px;
+      color:#0b0f2a;
+      box-shadow: inset 0 0 0 1px #0002;
+    }
+    .text .top{ font-weight:900; font-size:14px; line-height:1.1; }
+    .text .sub{ opacity:.85; font-size:12px; margin-top:2px; }
+    .tag{
+      font-family:var(--font-retro);
+      font-size:18px;
+      padding: 6px 8px;
+      border-radius:12px;
+      border:1px solid #ffffff26;
+      background:#0002;
+      letter-spacing:1px;
+      white-space:nowrap;
+    }
+    .a-danger .icon{ background:var(--danger); }
+    .a-warn .icon{ background:var(--warn); }
+    .a-ok .icon{ background:var(--mint); }
+
+    /* Map */
+    .mapWrap{
+      padding: 10px 12px 12px;
+      height: calc(100% - 52px);
+      display:grid;
+      grid-template-rows: 1fr auto;
+      gap:10px;
+      min-height: 0;
+    }
+    .mapCanvas{
+      border-radius: var(--radius2);
+      background:
+        radial-gradient(600px 220px at 60% 30%, #89f0d11a, transparent 55%),
+        radial-gradient(520px 240px at 30% 70%, #ffb48a18, transparent 60%),
+        linear-gradient(180deg, #0c1030, #0a0d24);
+      border: 1px solid #ffffff1f;
+      overflow:hidden;
+      position:relative;
+    }
+    .incidentBadge{
+      position:absolute; top:10px; left:10px;
+      display:inline-flex; align-items:center; gap:10px;
+      padding:8px 10px;
+      border-radius:999px;
+      background:#ff5b6e22;
+      border:1px solid #ff5b6e55;
+      font-family:var(--font-retro);
+      font-size:20px;
+      letter-spacing:1px;
+      box-shadow: 0 8px 18px #0006;
+      z-index: 3;
+    }
+    .tri{
+      width:18px; height:18px;
+      background:var(--danger);
+      clip-path: polygon(50% 0%, 100% 85%, 0% 85%);
+      box-shadow:0 0 12px #ff5b6e88;
+    }
+    svg{ width:100%; height:100%; display:block; }
+    .grid{ opacity:.18; }
+    .road{ fill:none; stroke-linecap:round; stroke-linejoin:round; }
+    .r-main{ stroke-width:9; }
+    .r-mid { stroke-width:7; }
+    .r-min { stroke-width:4; opacity:.85; }
+    .r-green{ stroke:var(--ok); filter: drop-shadow(0 0 8px #60ffb033); }
+    .r-yellow{ stroke:var(--warn); filter: drop-shadow(0 0 10px #ffbf4a2a); }
+    .r-red{ stroke:var(--danger); filter: drop-shadow(0 0 10px #ff5b6e2a); }
+
+    .pin circle{ fill: var(--lemon); stroke:#0006; stroke-width:2; }
+    .pin text{ font-family:var(--font-retro); font-size:18px; fill:#0b0f2a; }
+
+    .mapLegend{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:10px;
+    }
+    .stat{
+      border-radius: var(--radius2);
+      border:1px solid #ffffff1f;
+      background:#0002;
+      padding:10px 10px;
+      display:flex; flex-direction:column; gap:4px;
+    }
+    .k{ font-family:var(--font-retro); font-size:18px; letter-spacing:1px; opacity:.9; }
+    .v{ font-weight:900; font-size:16px; }
+    .v b{
+      font-family:var(--font-retro);
+      font-size:26px;
+      letter-spacing:1px;
+      color:var(--lemon);
+      text-shadow:0 2px 0 #0007;
+    }
+
+    /* Live cam panel */
+    .camWrap{
+      padding:10px 12px 12px;
+      height: calc(100% - 52px);
+      display:grid;
+      grid-template-rows: auto 1fr;
+      gap:10px;
+      min-height: 0;
+    }
+    .camMeta{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap:10px;
+      align-items:center;
+    }
+    .camMeta .left{
+      display:flex; align-items:center; gap:10px;
+      font-family:var(--font-retro);
+      font-size:20px;
+      letter-spacing:1px;
+      background:#0004;
+      border:1px solid #fff2;
+      border-radius:12px;
+      padding:6px 10px;
+      overflow:hidden;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+    }
+    .livePip{ display:inline-flex; align-items:center; gap:6px; }
+    .livePip .dot{
+      width:8px; height:8px;
+      background:var(--danger);
+      box-shadow:0 0 14px #ff5b6ecc;
+    }
+    .camMeta .right{
+      font-family:var(--font-retro);
+      font-size:20px;
+      letter-spacing:1px;
+      background:#0004;
+      border:1px solid #fff2;
+      border-radius:12px;
+      padding:6px 10px;
+      white-space:nowrap;
+    }
+
+    .camBox{
+      border-radius: var(--radius2);
+      border:1px solid #ffffff1f;
+      overflow:hidden;
+      background:#0002;
+      position:relative;
+      min-height: 0;
+    }
+    .camFrame, .camFallback{
+      position:absolute; inset:0;
+      width:100%; height:100%;
+      border:0;
+    }
+    .camFallback{
+      display:grid;
+      place-items:center;
+      padding:16px;
+      text-align:center;
+      color: var(--muted);
+      font-family: var(--font-retro);
+      font-size: 26px;
+      letter-spacing: 1px;
+      background:
+        radial-gradient(900px 260px at 60% 70%, #ffb48a22, transparent 55%),
+        radial-gradient(700px 240px at 30% 50%, #86b7ff1f, transparent 60%),
+        linear-gradient(180deg, #0b0f2b, #070a1d);
+    }
+    .camFallback small{
+      display:block;
+      font-size:18px;
+      opacity:.85;
+      margin-top:10px;
+      font-family: var(--font-ui);
+      letter-spacing:0;
+    }
+
+    /* Ticker */
+    .ticker{
+      height:var(--tickerH);
+      border-top:1px solid var(--line);
+      display:grid;
+      grid-template-columns: auto 1fr auto;
+      align-items:center;
+      gap:10px;
+      padding: 8px 12px;
+      background:
+        linear-gradient(90deg, #86b7ff2a, #ff8fd124 45%, #89f0d124),
+        linear-gradient(180deg, #0000, #0002);
+      position:relative;
+      z-index:5;
+    }
+    .tickerBrand{
+      font-family:var(--font-retro);
+      font-size:34px;
+      letter-spacing:2px;
+      padding:6px 10px;
+      border-radius:14px;
+      border:1px solid #ffffff24;
+      background:#0002;
+      text-shadow:0 2px 0 #0007;
+    }
+    .tickerLine{
+      overflow:hidden;
+      white-space:nowrap;
+      border-radius:14px;
+      border:1px solid #ffffff24;
+      background:#0002;
+      height:100%;
+      display:flex;
+      align-items:center;
+      position:relative;
+    }
+    .tickerLine span{
+      display:inline-block;
+      padding-left: 100%;
+      font-family:var(--font-retro);
+      font-size:24px;
+      letter-spacing:1px;
+      animation: scroll 18s linear infinite;
+      text-shadow:0 2px 0 #0007;
+    }
+    @keyframes scroll{
+      0%{ transform: translateX(0); }
+      100%{ transform: translateX(-100%); }
+    }
+    .clockBox{
+      font-family:var(--font-retro);
+      font-size:34px;
+      letter-spacing:2px;
+      padding:6px 12px;
+      border-radius:14px;
+      border:1px solid #ffffff24;
+      background:#0002;
+      text-shadow:0 2px 0 #0007;
+      color:var(--lemon);
+      white-space:nowrap;
+    }
+
+    /* BREAKING overlay */
+    .breaking{
+      position:absolute; inset:0;
+      display:none;
+      z-index: 20;
+      background: linear-gradient(180deg, #000000aa, #00000055);
+      backdrop-filter: blur(4px);
+    }
+    .breaking .box{
+      position:absolute;
+      left: 18px;
+      right: 18px;
+      top: 80px;
+      border-radius: 18px;
+      border: 1px solid #ffffff26;
+      background:
+        linear-gradient(90deg, #ff5b6e88, #ffbf4a55 40%, #86b7ff55),
+        linear-gradient(180deg, #00000022, #00000066);
+      box-shadow: 0 20px 50px #0008;
+      padding: 16px 16px 14px;
+      overflow:hidden;
+    }
+    .breaking .label{
+      font-family: var(--font-retro);
+      font-size: 34px;
+      letter-spacing: 2px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      color:#0b0f2a;
+      text-shadow:none;
+    }
+    .breaking .label .pulse{
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: #0b0f2a;
+      box-shadow: 0 0 0 0 rgba(11,15,42,0.0);
+      animation: pulse 0.8s ease-in-out infinite;
+    }
+    @keyframes pulse{
+      0%{ transform: scale(1); opacity: 0.9; }
+      50%{ transform: scale(1.45); opacity: 1; }
+      100%{ transform: scale(1); opacity: 0.9; }
+    }
+    .breaking .msg{
+      margin-top: 8px;
+      color: #0b0f2a;
+      font-weight: 900;
+      font-size: 18px;
+    }
+    .breaking .submsg{
+      margin-top: 4px;
+      color: #0b0f2a;
+      opacity: .9;
       font-size: 14px;
     }
   </style>
 </head>
 
 <body>
+  <div class="bar" role="img" aria-label="AZ NOW live traffic and cams dashboard">
+    <div class="header">
+      <div class="brand">
+        <div class="logo">AZ NOW</div>
+        <div class="sub">LIVE TRAFFIC + CAMS</div>
+      </div>
 
-<div class="panel">
-  <h1>AZ NOW — API Sanity Check</h1>
+      <div class="meta">
+        <div class="pill"><span class="dot"></span><span>LIVE</span></div>
+        <div class="pill" id="datePill">THUR JAN 8, 2026</div>
+        <div class="retroBadge">RETRO <b>8s</b> LIVE</div>
+      </div>
+    </div>
 
-  <div id="keyStatus" class="status bad">
-    ❌ API KEY NOT DETECTED
+    <div class="main">
+      <!-- ALERTS -->
+      <section class="panel">
+        <div class="panelTitle">
+          <h3>TRAFFIC INCIDENTS</h3>
+          <small id="alertsCount">—</small>
+        </div>
+        <div class="alerts" id="alertsList">
+          <div class="alert a-ok">
+            <div class="icon">…</div>
+            <div class="text">
+              <div class="top">LOADING</div>
+              <div class="sub">Waiting for AZ511 events…</div>
+            </div>
+            <div class="tag">LIVE</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- MAP -->
+      <section class="panel">
+        <div class="panelTitle">
+          <h3>PHOENIX MAP</h3>
+          <small>LAST UPDATE: <span id="mapUpdated">—</span></small>
+        </div>
+
+        <div class="mapWrap">
+          <div class="mapCanvas" id="mapCanvas">
+            <div class="incidentBadge"><span class="tri"></span><span id="incidentCount">—</span></div>
+
+            <svg viewBox="0 0 900 320" preserveAspectRatio="none" aria-hidden="true">
+              <g class="grid">
+                <path d="M0 40 H900 M0 80 H900 M0 120 H900 M0 160 H900 M0 200 H900 M0 240 H900 M0 280 H900" stroke="#ffffff" stroke-width="1"/>
+                <path d="M60 0 V320 M120 0 V320 M180 0 V320 M240 0 V320 M300 0 V320 M360 0 V320 M420 0 V320 M480 0 V320 M540 0 V320 M600 0 V320 M660 0 V320 M720 0 V320 M780 0 V320 M840 0 V320" stroke="#ffffff" stroke-width="1"/>
+              </g>
+
+              <!-- "roads" -->
+              <path class="road r-main r-green" d="M40 210 C 190 190, 330 190, 500 205 S 760 235, 860 220" />
+              <path class="road r-mid r-yellow" d="M90 80 C 180 120, 260 150, 360 160 S 560 160, 720 120 S 820 90, 880 100" />
+              <path class="road r-mid r-red" d="M120 300 C 250 250, 320 235, 420 230 S 600 230, 720 260 S 830 300, 890 290" />
+              <path class="road r-min r-green" d="M260 40 C 280 110, 290 170, 300 320" />
+              <path class="road r-min r-yellow" d="M560 20 C 540 80, 520 160, 520 320" />
+              <path class="road r-min r-green" d="M740 40 C 700 120, 690 190, 680 320" />
+
+              <!-- Incident pins injected here -->
+              <g id="pins"></g>
+            </svg>
+          </div>
+
+          <div class="mapLegend">
+            <div class="stat"><div class="k">ACTIVE EVENTS</div><div class="v"><b id="statEvents">—</b></div></div>
+            <div class="stat"><div class="k">CAMERAS ONLINE</div><div class="v"><b id="statCams">—</b></div></div>
+            <div class="stat"><div class="k">NEXT CAM IN</div><div class="v"><b id="statNext">—</b>s</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- LIVE CAM -->
+      <section class="panel">
+        <div class="panelTitle">
+          <h3>LIVE CAMERA</h3>
+          <small>FEED: <span id="camIndex">—</span></small>
+        </div>
+
+        <div class="camWrap">
+          <div class="camMeta">
+            <div class="left" title="Camera location">
+              <span class="livePip"><span class="dot"></span>LIVE</span>
+              <span id="camLabel">Loading cameras…</span>
+            </div>
+            <div class="right">ROTATE: <span id="camCountdown">—</span>s</div>
+          </div>
+
+          <div class="camBox">
+            <iframe class="camFrame" id="camFrame" title="AZ511 camera view" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+            <div class="camFallback" id="camFallback">
+              CAMERA EMBED BLOCKED
+              <small>If AZ511 disallows iframe embedding, we can switch to still images (if provided) or proxy a snapshot endpoint.</small>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="ticker">
+      <div class="tickerBrand">AZ NOW</div>
+      <div class="tickerLine"><span id="tickerText">CONNECTING TO AZ511…</span></div>
+      <div class="clockBox" id="clock">—:— —</div>
+    </div>
+
+    <div class="breaking" id="breaking">
+      <div class="box">
+        <div class="label"><span class="pulse"></span>BREAKING</div>
+        <div class="msg" id="breakingMsg">New traffic event detected</div>
+        <div class="submsg" id="breakingSub">Switching to nearest camera…</div>
+      </div>
+    </div>
   </div>
-
-  <div id="fetchStatus" class="status">
-    Waiting to fetch cameras…
-  </div>
-
-  <pre id="output">(no data yet)</pre>
-</div>
 
 <script>
-/* =====================================================
-   STEP 1 — PUT YOUR API KEY HERE (ONLY HERE)
-   ===================================================== */
+  // =========================
+  // CONFIG (edit these only)
+  // =========================
+  const WORKER_BASE = "https://az-now-511-proxy.zachary-1-marshall.workers.dev";
+  const CAMERA_ROTATE_SECONDS = 20;
+  const EVENTS_POLL_SECONDS = 45;   // incidents refresh
+  const CAMS_REFRESH_SECONDS  = 10 * 60; // refresh camera list every 10 min
 
-const AZ511_API_KEY = "03228dfc7c4d4980a28a69c30fb9b8bf";
+  // =========================
+  // Helpers
+  // =========================
+  const $ = (id) => document.getElementById(id);
+  const pad2 = (n) => String(n).padStart(2, "0");
 
-/* =====================================================
-   DO NOT EDIT BELOW THIS LINE (for now)
-   ===================================================== */
+  function setDatePill(){
+    const d = new Date();
+    const days = ["SUN","MON","TUES","WED","THUR","FRI","SAT"];
+    const months = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+    $("datePill").textContent = `${days[d.getDay()]} ${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  }
 
-const keyStatusEl = document.getElementById("keyStatus");
-const fetchStatusEl = document.getElementById("fetchStatus");
-const outputEl = document.getElementById("output");
+  function updateClock(){
+    const d = new Date();
+    const h24 = d.getHours();
+    const m = d.getMinutes();
+    const ampm = h24 >= 12 ? "PM" : "AM";
+    const h = ((h24 + 11) % 12) + 1;
+    $("clock").textContent = `${h}:${pad2(m)} ${ampm}`;
+  }
 
-// --- Check if key exists ---
-if (
-  !AZ511_API_KEY ||
-  AZ511_API_KEY.includes("PASTE_YOUR")
-) {
-  keyStatusEl.textContent = "❌ API KEY MISSING OR PLACEHOLDER";
-  keyStatusEl.className = "status bad";
-} else {
-  keyStatusEl.textContent = `✅ API KEY LOADED (…${AZ511_API_KEY.slice(-4)})`;
-  keyStatusEl.className = "status ok";
-}
+  function nowStamp(){
+    const d = new Date();
+    return `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+  }
 
-// --- Fetch cameras ---
-async function fetchCameras() {
-  fetchStatusEl.textContent = "📡 Fetching camera data…";
+  // Haversine distance (miles)
+  function distMiles(lat1, lon1, lat2, lon2){
+    const toRad = (x) => x * Math.PI / 180;
+    const R = 3958.8;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }
 
-  try {
-   const res = await fetch(
-  "https://az-now-511-proxy.zachary-1-marshall.workers.dev/cameras"
-);
+  // =========================
+  // State
+  // =========================
+  let cameras = [];
+  let camIdx = 0;
+  let camCountdown = CAMERA_ROTATE_SECONDS;
 
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
+  let lastEventIds = new Set();
+  let lastEvents = [];
+  let eventsOk = false;
+
+  // =========================
+  // Fetchers
+  // =========================
+  async function getJSON(path){
+    const url = `${WORKER_BASE}/${path.replace(/^\/+/,"")}`;
+    const res = await fetch(url, { cache: "no-store" });
+    if(!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+    return await res.json();
+  }
+
+  async function loadCameras(){
+    const data = await getJSON("cameras");
+
+    // normalize + keep only enabled views
+    const cleaned = [];
+    for(const cam of data){
+      const views = Array.isArray(cam.Views) ? cam.Views : [];
+      const enabled = views.filter(v => (v.Status || "").toLowerCase() === "enabled" && v.Url);
+      if(!enabled.length) continue;
+
+      cleaned.push({
+        id: cam.Id ?? cam.id,
+        roadway: cam.Roadway || "",
+        location: cam.Location || cam.Description || "",
+        lat: Number(cam.Latitude),
+        lon: Number(cam.Longitude),
+        viewUrl: enabled[0].Url,
+        viewDesc: enabled[0].Description || cam.Location || "Camera"
+      });
     }
 
-    const data = await res.json();
+    cameras = cleaned;
+    $("statCams").textContent = cameras.length ? String(cameras.length) : "0";
 
-    fetchStatusEl.textContent = "✅ Camera fetch successful";
-    fetchStatusEl.className = "status ok";
+    // If current index is out of bounds after refresh
+    if(camIdx >= cameras.length) camIdx = 0;
 
-    // Show first few cameras so we KNOW it works
-    outputEl.textContent = JSON.stringify(
-      data.slice(0, 3),
-      null,
-      2
-    );
-
-  } catch (err) {
-    fetchStatusEl.textContent = "❌ Fetch failed — check console";
-    fetchStatusEl.className = "status bad";
-    outputEl.textContent = String(err);
-    console.error(err);
+    // First paint
+    if(cameras.length){
+      showCamera(camIdx);
+      setTicker(`CAMERAS ONLINE • ${cameras.length} FEEDS • LAST UPDATE ${nowStamp()} •`);
+    } else {
+      setTicker(`NO CAMERAS FOUND • CHECK WORKER / AZ511 RESPONSE • LAST UPDATE ${nowStamp()} •`);
+    }
   }
-}
 
-fetchCameras();
+  function setTicker(text){
+    $("tickerText").textContent = text;
+  }
+
+  function renderAlerts(events){
+    const list = $("alertsList");
+    list.innerHTML = "";
+
+    const max = Math.min(events.length, 10);
+    $("alertsCount").textContent = `${events.length} ITEMS`;
+    $("statEvents").textContent = String(events.length);
+    $("incidentCount").textContent = `${events.length} reminder`;
+
+    if(!events.length){
+      list.innerHTML = `
+        <div class="alert a-ok">
+          <div class="icon">✓</div>
+          <div class="text">
+            <div class="top">NO ACTIVE EVENTS</div>
+            <div class="sub">Smooth sailing (or the API is quiet).</div>
+          </div>
+          <div class="tag">OK</div>
+        </div>`;
+      return;
+    }
+
+    for(let i=0;i<max;i++){
+      const e = events[i];
+      const sev = (e.Severity || e.SeverityId || "").toString();
+      const type = (e.EventType || e.Type || e.EventCategory || "EVENT").toString();
+      const road = (e.RoadwayName || e.Roadway || e.Road || "").toString();
+      const desc = (e.Description || e.ShortDescription || e.EventDescription || "").toString();
+      const loc  = (e.Location || e.LocationDescription || "").toString();
+
+      // crude severity color
+      let cls = "a-ok";
+      let icon = "i";
+      let tag = sev ? `SEV ${sev}` : "LIVE";
+      if(Number(sev) >= 3){ cls="a-danger"; icon="!"; }
+      else if(Number(sev) === 2){ cls="a-warn"; icon="⛏"; }
+      else { cls="a-ok"; icon="•"; }
+
+      const top = (type || "EVENT").slice(0,22);
+      const sub = (desc || loc || road || "Traffic event").slice(0,70);
+
+      const el = document.createElement("div");
+      el.className = `alert ${cls}`;
+      el.innerHTML = `
+        <div class="icon">${icon}</div>
+        <div class="text">
+          <div class="top">${escapeHTML(top)}</div>
+          <div class="sub">${escapeHTML(sub)}</div>
+        </div>
+        <div class="tag">${escapeHTML(tag)}</div>
+      `;
+      list.appendChild(el);
+    }
+  }
+
+  function escapeHTML(s){
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#39;");
+  }
+
+  function pickEventLatLon(e){
+    // try common fields
+    const lat = Number(e.Latitude ?? e.Lat ?? e.Y ?? e.LocationLatitude);
+    const lon = Number(e.Longitude ?? e.Lon ?? e.Long ?? e.X ?? e.LocationLongitude);
+    if(Number.isFinite(lat) && Number.isFinite(lon)) return { lat, lon };
+    return null;
+  }
+
+  async function loadEvents(){
+    // endpoint name depends on AZ511; your worker allows /event and /alerts.
+    // We’ll try /event first, then /alerts.
+    let data;
+    try {
+      data = await getJSON("event");
+    } catch (e) {
+      data = await getJSON("alerts");
+    }
+
+    eventsOk = true;
+    lastEvents = Array.isArray(data) ? data : (data?.Events || data?.events || []);
+
+    // Determine new events by id-ish field
+    const ids = new Set();
+    const newOnes = [];
+    for(const ev of lastEvents){
+      const id = (ev.Id ?? ev.EventId ?? ev.EventID ?? ev.IncidentId ?? ev.IncidentID ?? ev.Guid ?? ev.GUID ?? ev.SourceId ?? JSON.stringify(ev).slice(0,80));
+      const sid = String(id);
+      ids.add(sid);
+      if(!lastEventIds.has(sid)) newOnes.push(ev);
+    }
+
+    // update timestamp + UI
+    $("mapUpdated").textContent = nowStamp();
+    $("incidentCount").textContent = `${lastEvents.length} EVENTS`;
+
+    renderAlerts(lastEvents);
+
+    // Update map pins
+    renderPins(lastEvents);
+
+    // If new events appeared -> BREAKING + jump camera
+    if(lastEventIds.size && newOnes.length){
+      const picked = newOnes[0];
+      triggerBreaking(picked);
+      jumpToNearestCamera(picked);
+    }
+
+    lastEventIds = ids;
+
+    // ticker
+    setTicker(buildTicker(lastEvents));
+  }
+
+  function buildTicker(events){
+    const base = `AZ NOW LIVE • ${events.length} ACTIVE EVENTS • CAM ROTATION ${CAMERA_ROTATE_SECONDS}s • ${nowStamp()} • `;
+    if(!events.length) return base + "NO MAJOR INCIDENTS REPORTED • DRIVE SMART!";
+    // pick a few blurbs
+    const blurbs = [];
+    for(const e of events.slice(0,4)){
+      const t = (e.EventType || e.Type || "EVENT");
+      const r = (e.RoadwayName || e.Roadway || "");
+      const d = (e.Description || e.ShortDescription || "");
+      const b = `${t}${r ? " " + r : ""}${d ? " — " + d : ""}`.replace(/\s+/g," ").trim();
+      if(b) blurbs.push(b);
+    }
+    return base + blurbs.join(" • ") + " • STAY SAFE — DRIVE SMART!";
+  }
+
+  // =========================
+  // Map pin rendering (simple)
+  // =========================
+  function renderPins(events){
+    const g = $("pins");
+    g.innerHTML = "";
+
+    // We don’t have a true projection; we’ll scatter pins based on index
+    // This keeps it “TV map vibe” without needing a mapping library.
+    const maxPins = Math.min(events.length, 6);
+    for(let i=0;i<maxPins;i++){
+      const x = 180 + i*110;
+      const y = 95 + ((i%2)*55);
+      const group = document.createElementNS("http://www.w3.org/2000/svg","g");
+      group.setAttribute("class","pin");
+      group.setAttribute("transform", `translate(${x},${y})`);
+
+      const c = document.createElementNS("http://www.w3.org/2000/svg","circle");
+      c.setAttribute("r","16");
+      c.setAttribute("cx","0"); c.setAttribute("cy","0");
+      group.appendChild(c);
+
+      const t = document.createElementNS("http://www.w3.org/2000/svg","text");
+      t.setAttribute("text-anchor","middle");
+      t.setAttribute("x","0"); t.setAttribute("y","6");
+      t.textContent = String(i+1);
+      group.appendChild(t);
+
+      g.appendChild(group);
+    }
+  }
+
+  // =========================
+  // Camera rotation
+  // =========================
+  function showCamera(index){
+    if(!cameras.length) return;
+
+    camIdx = (index + cameras.length) % cameras.length;
+    const cam = cameras[camIdx];
+
+    $("camIndex").textContent = `${camIdx+1}/${cameras.length}`;
+    $("camLabel").textContent = (cam.viewDesc || cam.location || cam.roadway || `CAM ${cam.id}`).slice(0,60);
+
+    // Try to embed camera view
+    const frame = $("camFrame");
+    const fallback = $("camFallback");
+
+    // Some sites block iframes; we detect quickly by timeout + onload.
+    let loaded = false;
+    frame.onload = () => { loaded = true; fallback.style.display = "none"; };
+    frame.src = cam.viewUrl;
+
+    // If blocked, show fallback after a moment
+    setTimeout(() => {
+      if(!loaded){
+        fallback.style.display = "grid";
+      }
+    }, 1200);
+  }
+
+  function nextCamera(){
+    showCamera(camIdx + 1);
+    camCountdown = CAMERA_ROTATE_SECONDS;
+  }
+
+  // Jump to nearest camera based on event lat/lon (if present)
+  function jumpToNearestCamera(eventObj){
+    if(!cameras.length) return;
+
+    const p = pickEventLatLon(eventObj);
+    if(!p) return; // no coords, can’t geo-jump
+
+    let bestI = 0;
+    let bestD = Infinity;
+    for(let i=0;i<cameras.length;i++){
+      const c = cameras[i];
+      if(!Number.isFinite(c.lat) || !Number.isFinite(c.lon)) continue;
+      const d = distMiles(p.lat, p.lon, c.lat, c.lon);
+      if(d < bestD){
+        bestD = d;
+        bestI = i;
+      }
+    }
+
+    showCamera(bestI);
+    camCountdown = CAMERA_ROTATE_SECONDS;
+    $("breakingSub").textContent = `Nearest cam selected (~${bestD.toFixed(1)} mi)`;
+  }
+
+  // =========================
+  // Breaking overlay
+  // =========================
+  let breakingTimer = null;
+  function triggerBreaking(eventObj){
+    const type = (eventObj.EventType || eventObj.Type || "TRAFFIC EVENT").toString();
+    const desc = (eventObj.Description || eventObj.ShortDescription || "New incident reported").toString();
+    const road = (eventObj.RoadwayName || eventObj.Roadway || "").toString();
+
+    $("breakingMsg").textContent = `${type}${road ? " • " + road : ""}`;
+    $("breakingSub").textContent = desc.slice(0,90);
+
+    const el = $("breaking");
+    el.style.display = "block";
+
+    clearTimeout(breakingTimer);
+    breakingTimer = setTimeout(() => {
+      el.style.display = "none";
+    }, 5200);
+  }
+
+  // =========================
+  // Loops
+  // =========================
+  async function boot(){
+    setDatePill();
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // initial loads
+    try{
+      await loadCameras();
+    }catch(e){
+      $("statCams").textContent = "0";
+      setTicker(`CAMERA LOAD FAILED • CHECK WORKER /cameras • ${nowStamp()} •`);
+      console.error(e);
+    }
+
+    // initial events
+    try{
+      await loadEvents();
+    }catch(e){
+      setTicker(`EVENT LOAD FAILED • CHECK WORKER /event • ${nowStamp()} •`);
+      console.error(e);
+    }
+
+    // refresh cameras occasionally
+    setInterval(() => {
+      loadCameras().catch(console.error);
+    }, CAMS_REFRESH_SECONDS * 1000);
+
+    // poll events
+    setInterval(() => {
+      loadEvents().catch(console.error);
+    }, EVENTS_POLL_SECONDS * 1000);
+
+    // camera rotation timer
+    setInterval(() => {
+      if(!cameras.length) return;
+      camCountdown--;
+      if(camCountdown <= 0) nextCamera();
+      $("camCountdown").textContent = String(camCountdown);
+      $("statNext").textContent = String(camCountdown);
+    }, 1000);
+  }
+
+  boot();
 </script>
-
 </body>
 </html>
