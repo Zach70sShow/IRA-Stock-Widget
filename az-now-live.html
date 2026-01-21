@@ -38,6 +38,100 @@
       --font-retro:"VT323", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
       --shadow: 0 10px 30px #00000066;
+
+/* ====== CAMERA: FULL-BLEED HERO MODE ====== */
+.panel.camHero{
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.panel.camHero .panelTitle{
+  display:none; /* remove the big header bar */
+}
+
+.panel.camHero .camWrap{
+  padding: 0;               /* remove padding */
+  height: 100%;             /* use the full panel height */
+  display:block;            /* no internal grid needed */
+  position: relative;
+}
+
+.panel.camHero .camBox{
+  border-radius: var(--radius);
+  border: 1px solid #ffffff20; /* keep a subtle frame (optional) */
+  background: #0002;
+  position:absolute;
+  inset: 0;                 /* fill all space */
+  overflow:hidden;
+}
+
+/* Make the camera fill everything */
+.panel.camHero .camInner{
+  position:absolute;
+  inset: 0;
+  transform: scale(var(--camSize));
+  transform-origin: center center;
+  width: calc(100% / var(--camSize));
+  height: calc(100% / var(--camSize));
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+}
+
+/* Floating overlay controls on top of the video */
+.camOverlay{
+  position:absolute;
+  left: 12px;
+  right: 12px;
+  top: 12px;
+  z-index: 5;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:space-between;
+  pointer-events:none; /* lets you click the video if needed */
+}
+
+.camOverlay .left,
+.camOverlay .right{
+  pointer-events:none;
+  font-family:var(--font-retro);
+  font-size:20px;
+  letter-spacing:1px;
+  background:#0006;
+  border:1px solid #fff2;
+  border-radius:12px;
+  padding:6px 10px;
+  white-space:nowrap;
+  box-shadow: 0 10px 24px #0006;
+}
+
+.camOverlay .left{
+  max-width: 75%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.camOverlay .right{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.camOverlay .pillMini{
+  padding: 4px 8px;
+  border-radius:999px;
+  border:1px solid #ffffff26;
+  background:#0005;
+}
+
+.camOverlay .liveDot{
+  width:8px;height:8px;border-radius:50%;
+  background: var(--danger);
+  box-shadow: 0 0 14px #ff5b6ecc;
+  display:inline-block;
+  margin-right:6px;
     }
 
     *{ box-sizing:border-box; }
@@ -624,34 +718,36 @@
         </div>
       </section>
 
-      <!-- Camera -->
-      <section class="panel">
-        <div class="panelTitle">
-          <h3>LIVE CAMERA</h3>
-          <small>FEED: <span id="camIndex">—</span></small>
+     <!-- Camera (full-bleed hero) -->
+<section class="panel camHero">
+  <div class="camWrap">
+    <div class="camBox">
+      <!-- overlay text -->
+      <div class="camOverlay">
+        <div class="left" title="Camera location">
+          <span class="liveDot"></span><span id="camLabel">Loading cameras…</span>
         </div>
-
-        <div class="camWrap">
-          <div class="camMeta">
-            <div class="left" title="Camera location">
-              <span class="livePip"><span class="dot"></span>LIVE</span>
-              <span id="camLabel">Loading cameras…</span>
-            </div>
-            <div class="right">NEXT: <span id="camCountdown">—</span>s</div>
-          </div>
-
-          <div class="camBox">
-            <div class="camInner" id="camInner">
-              <iframe class="camFrame" id="camFrame" title="AZ511 camera view"
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
-            </div>
-            <div class="camFallback" id="camFallback">
-              CAMERA EMBED BLOCKED
-              <small>If AZ511 disallows iframe embedding, we can switch to still images (if available) or proxy a snapshot endpoint.</small>
-            </div>
-          </div>
+        <div class="right">
+          <span class="pillMini">FEED <span id="camIndex">—</span></span>
+          <span class="pillMini">NEXT <span id="camCountdown">—</span>s</span>
         </div>
-      </section>
+      </div>
+
+      <!-- actual camera -->
+      <div class="camInner" id="camInner">
+        <iframe class="camFrame" id="camFrame" title="AZ511 camera view"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+      </div>
+
+      <!-- fallback -->
+      <div class="camFallback" id="camFallback">
+        CAMERA EMBED BLOCKED
+        <small>If AZ511 disallows iframe embedding, we can switch to still images (if available) or proxy a snapshot endpoint.</small>
+      </div>
+    </div>
+  </div>
+</section>
+
     </div>
 
     <div class="ticker">
