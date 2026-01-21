@@ -13,11 +13,15 @@
   <style>
     :root{
       /* ========= YOU TUNE THESE ========= */
-      --camSize: 0.30;     /* <-- CAMERA VISUAL SIZE (0.85–1.25). 1.00 = default */
-      --tickerSeconds: 55; /* <-- TICKER SPEED (higher = slower) */
-      --maxIncidents: 7;   /* <-- how many incidents to list on the left */
+      --camSize: 0.30;     /* camera zoom (smaller = zoom OUT / show more). you liked ~0.30 */
+      --tickerSeconds: 55; /* ticker speed (higher = slower) */
+      --maxIncidents: 7;   /* incidents to list */
 
-      /* Location presets (used by buttons) */
+      /* Fullscreen camera mode */
+      --camFullscreen: 1;  /* 1 = FULLSCREEN CAMERA (requested), 0 = normal 3-panel layout */
+      --overlayWidth: 520px; /* left overlay width in fullscreen mode */
+
+      /* Location presets (buttons) */
       --homeLat: 33.295147; --homeLon: -112.117982;
       --workLat: 33.440492; --workLon: -111.953428;
       --meganLat: 33.419155; --meganLon: -111.703516;
@@ -38,100 +42,6 @@
       --font-retro:"VT323", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
       --shadow: 0 10px 30px #00000066;
-
-/* ====== CAMERA: FULL-BLEED HERO MODE ====== */
-.panel.camHero{
-  background: transparent;
-  border-color: transparent;
-  box-shadow: none;
-}
-
-.panel.camHero .panelTitle{
-  display:none; /* remove the big header bar */
-}
-
-.panel.camHero .camWrap{
-  padding: 0;               /* remove padding */
-  height: 100%;             /* use the full panel height */
-  display:block;            /* no internal grid needed */
-  position: relative;
-}
-
-.panel.camHero .camBox{
-  border-radius: var(--radius);
-  border: 1px solid #ffffff20; /* keep a subtle frame (optional) */
-  background: #0002;
-  position:absolute;
-  inset: 0;                 /* fill all space */
-  overflow:hidden;
-}
-
-/* Make the camera fill everything */
-.panel.camHero .camInner{
-  position:absolute;
-  inset: 0;
-  transform: scale(var(--camSize));
-  transform-origin: center center;
-  width: calc(100% / var(--camSize));
-  height: calc(100% / var(--camSize));
-  left: 50%;
-  top: 50%;
-  translate: -50% -50%;
-}
-
-/* Floating overlay controls on top of the video */
-.camOverlay{
-  position:absolute;
-  left: 12px;
-  right: 12px;
-  top: 12px;
-  z-index: 5;
-  display:flex;
-  gap:10px;
-  align-items:center;
-  justify-content:space-between;
-  pointer-events:none; /* lets you click the video if needed */
-}
-
-.camOverlay .left,
-.camOverlay .right{
-  pointer-events:none;
-  font-family:var(--font-retro);
-  font-size:20px;
-  letter-spacing:1px;
-  background:#0006;
-  border:1px solid #fff2;
-  border-radius:12px;
-  padding:6px 10px;
-  white-space:nowrap;
-  box-shadow: 0 10px 24px #0006;
-}
-
-.camOverlay .left{
-  max-width: 75%;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-
-.camOverlay .right{
-  display:flex;
-  gap:10px;
-  align-items:center;
-}
-
-.camOverlay .pillMini{
-  padding: 4px 8px;
-  border-radius:999px;
-  border:1px solid #ffffff26;
-  background:#0005;
-}
-
-.camOverlay .liveDot{
-  width:8px;height:8px;border-radius:50%;
-  background: var(--danger);
-  box-shadow: 0 0 14px #ff5b6ecc;
-  display:inline-block;
-  margin-right:6px;
     }
 
     *{ box-sizing:border-box; }
@@ -279,7 +189,7 @@
     }
     .modePill b{ color: var(--lemon); }
 
-    /* Main layout */
+    /* ========= NORMAL (3-panel) LAYOUT ========= */
     .main{
       height: calc(100% - var(--hdrH) - var(--tickerH) - 54px);
       padding: var(--pad);
@@ -289,6 +199,95 @@
       position:relative;
       z-index: 2;
       min-height: 0;
+    }
+
+    /* ========= FULLSCREEN CAMERA LAYOUT (requested) ========= */
+    .main.fullcam{
+      display:block;
+      padding: 0;
+      height: calc(100% - var(--hdrH) - var(--tickerH) - 54px);
+    }
+
+    .camStage{
+      position:relative;
+      width:100%;
+      height:100%;
+    }
+
+    /* Fullscreen camera takes the whole stage */
+    .camStage .camBoxFull{
+      position:absolute;
+      inset:0;
+      border:0;
+      border-radius:0;
+      overflow:hidden;
+      background:#000;
+    }
+
+    /* Overlay stack (incidents + snapshot) */
+    .overlay{
+      position:absolute;
+      left: 14px;
+      top: 14px;
+      bottom: 14px;
+      width: min(var(--overlayWidth), calc(100% - 28px));
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      z-index: 6;
+      pointer-events:none; /* allows clicks to go to the camera unless we re-enable on inner */
+    }
+    .overlay .panel{
+      pointer-events:auto;
+      backdrop-filter: blur(6px);
+      background: linear-gradient(180deg, #0a0d24cc, #00000055);
+      border: 1px solid #ffffff26;
+      box-shadow: 0 20px 50px #0007;
+    }
+
+    /* Small camera label strip (top-right) */
+    .camHUD{
+      position:absolute;
+      right: 14px;
+      top: 14px;
+      z-index: 7;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      width: 420px;
+      max-width: calc(100% - 28px);
+      pointer-events:none;
+    }
+    .hudRow{
+      pointer-events:auto;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      font-family: var(--font-retro);
+      font-size: 20px;
+      letter-spacing: 1px;
+      padding: 8px 10px;
+      border-radius: 14px;
+      border: 1px solid #ffffff26;
+      background: #0006;
+      box-shadow: inset 0 0 0 1px #0003;
+      backdrop-filter: blur(6px);
+    }
+    .hudLeft{
+      overflow:hidden;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+    }
+    .hudRight{
+      white-space:nowrap;
+      color: var(--lemon);
+    }
+    .livePip{ display:inline-flex; align-items:center; gap:6px; }
+    .livePip .dot{
+      width:8px; height:8px;
+      background:var(--danger);
+      box-shadow:0 0 14px #ff5b6ecc;
     }
 
     .panel{
@@ -340,6 +339,7 @@
       border-radius: var(--radius2);
       background:#0002;
       border:1px solid #ffffff1e;
+      cursor: pointer;
     }
     .ic{
       width:34px; height:34px;
@@ -440,51 +440,7 @@
     }
     .focusBox .plain b{ color: var(--lemon); }
 
-    /* Camera panel */
-    .camWrap{
-      padding:10px 12px 12px;
-      height: calc(100% - 52px);
-      display:grid;
-      grid-template-rows: auto 1fr;
-      gap:10px;
-      min-height: 0;
-    }
-    .camMeta{
-      display:grid;
-      grid-template-columns: 1fr auto;
-      gap:10px;
-      align-items:center;
-    }
-    .camMeta .left{
-      display:flex; align-items:center; gap:10px;
-      font-family:var(--font-retro);
-      font-size:20px;
-      letter-spacing:1px;
-      background:#0004;
-      border:1px solid #fff2;
-      border-radius:12px;
-      padding:6px 10px;
-      overflow:hidden;
-      white-space:nowrap;
-      text-overflow:ellipsis;
-    }
-    .livePip{ display:inline-flex; align-items:center; gap:6px; }
-    .livePip .dot{
-      width:8px; height:8px;
-      background:var(--danger);
-      box-shadow:0 0 14px #ff5b6ecc;
-    }
-    .camMeta .right{
-      font-family:var(--font-retro);
-      font-size:20px;
-      letter-spacing:1px;
-      background:#0004;
-      border:1px solid #fff2;
-      border-radius:12px;
-      padding:6px 10px;
-      white-space:nowrap;
-    }
-
+    /* Camera box (normal + fullscreen share) */
     .camBox{
       border-radius: var(--radius2);
       border:1px solid #ffffff1f;
@@ -495,7 +451,7 @@
     }
 
     /* Camera scaling variable:
-       We scale ONLY the iframe content, keeping the box size stable. */
+       Scale ONLY the iframe content, keeping the box size stable. */
     .camInner{
       position:absolute;
       inset:0;
@@ -638,6 +594,20 @@
       50%{ transform: scale(1.45); opacity: 1; }
       100%{ transform: scale(1); opacity: 0.9; }
     }
+
+    /* Hide normal panels when fullcam is on */
+    .fullcam .panelNormalOnly{ display:none !important; }
+
+    /* In fullcam mode, overlay panels get a max height so you see the camera */
+    .overlay .panel.incPanel{ flex: 1.2; min-height: 0; }
+    .overlay .panel.sumPanel{ flex: 1.0; min-height: 0; }
+    .overlay .incidents{ height: calc(100% - 52px); }
+
+    /* Optional: make overlay slightly smaller on short heights */
+    @media (max-height: 420px){
+      .overlay{ width: min(440px, calc(100% - 28px)); }
+      .panelTitle h3{ font-size:22px; }
+    }
   </style>
 </head>
 
@@ -668,9 +638,10 @@
       </div>
     </div>
 
-    <div class="main">
-      <!-- Incidents -->
-      <section class="panel">
+    <!-- MAIN: we will toggle fullcam class from JS if --camFullscreen=1 -->
+    <div class="main" id="main">
+      <!-- Normal panels (kept for when fullscreen is off) -->
+      <section class="panel panelNormalOnly">
         <div class="panelTitle">
           <h3>TOP INCIDENTS</h3>
           <small>UPDATED: <span id="incUpdated">—</span></small>
@@ -687,8 +658,7 @@
         </div>
       </section>
 
-      <!-- Simple summary (layman speak) -->
-      <section class="panel">
+      <section class="panel panelNormalOnly">
         <div class="panelTitle">
           <h3>CITY SNAPSHOT</h3>
           <small>STATUS: <span id="statusLabel">—</span></small>
@@ -718,36 +688,102 @@
         </div>
       </section>
 
-     <!-- Camera (full-bleed hero) -->
-<section class="panel camHero">
-  <div class="camWrap">
-    <div class="camBox">
-      <!-- overlay text -->
-      <div class="camOverlay">
-        <div class="left" title="Camera location">
-          <span class="liveDot"></span><span id="camLabel">Loading cameras…</span>
+      <section class="panel panelNormalOnly">
+        <div class="panelTitle">
+          <h3>LIVE CAMERA</h3>
+          <small>FEED: <span id="camIndex">—</span></small>
         </div>
-        <div class="right">
-          <span class="pillMini">FEED <span id="camIndex">—</span></span>
-          <span class="pillMini">NEXT <span id="camCountdown">—</span>s</span>
+
+        <div class="camWrap" style="padding:10px 12px 12px; height: calc(100% - 52px); display:grid; grid-template-rows:auto 1fr; gap:10px; min-height:0;">
+          <div class="camMeta" style="display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center;">
+            <div class="left" title="Camera location" style="display:flex; align-items:center; gap:10px; font-family:var(--font-retro); font-size:20px; letter-spacing:1px; background:#0004; border:1px solid #fff2; border-radius:12px; padding:6px 10px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">
+              <span class="livePip"><span class="dot"></span>LIVE</span>
+              <span id="camLabel">Loading cameras…</span>
+            </div>
+            <div class="right" style="font-family:var(--font-retro); font-size:20px; letter-spacing:1px; background:#0004; border:1px solid #fff2; border-radius:12px; padding:6px 10px; white-space:nowrap;">
+              NEXT: <span id="camCountdown">—</span>s
+            </div>
+          </div>
+
+          <div class="camBox">
+            <div class="camInner">
+              <iframe class="camFrame" id="camFrame" title="AZ511 camera view"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+            </div>
+            <div class="camFallback" id="camFallback">
+              CAMERA EMBED BLOCKED
+              <small>If AZ511 disallows iframe embedding, we can switch to still images (if available) or proxy a snapshot endpoint.</small>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Fullscreen camera stage (always present; used when fullcam is on) -->
+      <div class="camStage" id="camStage" style="display:none;">
+        <div class="camBoxFull">
+          <div class="camInner" id="camInnerFull">
+            <iframe class="camFrame" id="camFrameFull" title="AZ511 camera view (fullscreen)"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+          </div>
+          <div class="camFallback" id="camFallbackFull">
+            CAMERA EMBED BLOCKED
+            <small>If AZ511 disallows iframe embedding, we can switch to still images (if available) or proxy a snapshot endpoint.</small>
+          </div>
+        </div>
+
+        <!-- Left overlay panels -->
+        <div class="overlay" id="overlay">
+          <section class="panel incPanel">
+            <div class="panelTitle">
+              <h3>TOP INCIDENTS</h3>
+              <small>UPDATED: <span id="incUpdated2">—</span></small>
+            </div>
+            <div class="incidents" id="incidentsList2"></div>
+          </section>
+
+          <section class="panel sumPanel">
+            <div class="panelTitle">
+              <h3>CITY SNAPSHOT</h3>
+              <small>STATUS: <span id="statusLabel2">—</span></small>
+            </div>
+
+            <div class="summary">
+              <div class="bigNums">
+                <div class="card">
+                  <div class="k">ACTIVE EVENTS</div>
+                  <div class="v" id="statEvents2">—</div>
+                  <div class="s">Things impacting traffic right now</div>
+                </div>
+                <div class="card">
+                  <div class="k">CAMERAS LIVE</div>
+                  <div class="v" id="statCams2">—</div>
+                  <div class="s">Available camera feeds</div>
+                </div>
+              </div>
+
+              <div class="focusBox">
+                <div class="headline" id="focusTitle2">What you’re looking at</div>
+                <div class="plain" id="focusBody2">Loading…</div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Small HUD top-right -->
+        <div class="camHUD">
+          <div class="hudRow">
+            <div class="hudLeft" title="Camera location">
+              <span class="livePip"><span class="dot"></span>LIVE</span>
+              <span id="camLabel2">Loading cameras…</span>
+            </div>
+            <div class="hudRight">FEED <span id="camIndex2">—</span></div>
+          </div>
+          <div class="hudRow">
+            <div class="hudLeft">NEXT SWITCH</div>
+            <div class="hudRight"><span id="camCountdown2">—</span>s</div>
+          </div>
         </div>
       </div>
-
-      <!-- actual camera -->
-      <div class="camInner" id="camInner">
-        <iframe class="camFrame" id="camFrame" title="AZ511 camera view"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
-      </div>
-
-      <!-- fallback -->
-      <div class="camFallback" id="camFallback">
-        CAMERA EMBED BLOCKED
-        <small>If AZ511 disallows iframe embedding, we can switch to still images (if available) or proxy a snapshot endpoint.</small>
-      </div>
-    </div>
-  </div>
-</section>
-
     </div>
 
     <div class="ticker">
@@ -772,7 +808,7 @@
   const EVENTS_POLL_SECONDS = 45;        // refresh incidents
   const CAMS_REFRESH_SECONDS = 10 * 60;  // refresh camera list
 
-  // Button coords (same as you requested)
+  // Button coords
   const LOCATIONS = {
     HOME:     { name: "HOME",     lat: 33.295147, lon: -112.117982 },
     WORK:     { name: "WORK",     lat: 33.440492, lon: -111.953428 },
@@ -785,6 +821,12 @@
   // =========================
   const $ = (id) => document.getElementById(id);
   const pad2 = (n) => String(n).padStart(2, "0");
+
+  function cssNum(varName, fallback){
+    const raw = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : fallback;
+  }
 
   function setDatePill(){
     const d = new Date();
@@ -846,7 +888,6 @@
     const desc = (ev?.Description || ev?.ShortDescription || ev?.EventDescription || "").toString();
     const loc  = (ev?.Location || ev?.LocationDescription || "").toString();
 
-    // Keep it short and readable
     const main = [type, road].filter(Boolean).join(" • ").trim() || "Traffic issue";
     const detail = (desc || loc || "Details unavailable").replace(/\s+/g," ").trim();
 
@@ -876,46 +917,61 @@
   // "NEAR"     => cams near a target location (HOME/WORK/MEGAN/DOWNTOWN)
   let mode = { type: "RANDOM", target: null };
 
+  // Fullscreen toggle based on CSS var
+  const isFullcam = () => cssNum("--camFullscreen", 1) === 1;
+
   // =========================
-  // UI setters
+  // UI (dual targets: normal + fullscreen overlay)
   // =========================
   function setModeLabel(){
-    if(mode.type === "ACCIDENT") $("modeLabel").textContent = "ACCIDENT";
-    else if(mode.type === "RANDOM") $("modeLabel").textContent = "RANDOM";
-    else if(mode.type === "NEAR") $("modeLabel").textContent = mode.target?.name || "NEAR";
+    const txt =
+      (mode.type === "ACCIDENT") ? "ACCIDENT" :
+      (mode.type === "RANDOM") ? "RANDOM" :
+      (mode.type === "NEAR") ? (mode.target?.name || "NEAR") : "RANDOM";
+
+    $("modeLabel").textContent = txt;
   }
 
-  function setTicker(text){
-    $("tickerText").textContent = text;
-  }
+  function setTicker(text){ $("tickerText").textContent = text; }
 
   function setStatus(){
-    // Simple layman status message based on how many events
     const n = lastEvents.length;
     let label = "CALM";
     if(n >= 80) label = "BUSY";
     else if(n >= 30) label = "ACTIVE";
     else if(n >= 10) label = "NORMAL";
-    $("statusLabel").textContent = label;
 
-    // Simple helper text
-    $("focusTitle").textContent = (mode.type === "ACCIDENT")
-      ? "Accident mode"
-      : (mode.type === "NEAR" ? `Near ${mode.target?.name || "target"}` : "Random mode");
+    const title =
+      (mode.type === "ACCIDENT") ? "Accident mode" :
+      (mode.type === "NEAR") ? `Near ${mode.target?.name || "target"}` :
+      "Random mode";
 
+    let body = "";
     if(mode.type === "ACCIDENT"){
-      $("focusBody").innerHTML =
+      body =
         `We’ll prioritize cameras near new <b>accidents</b>.<br>
          When something new pops up, you’ll see an alert and we’ll try to jump to a nearby cam.`;
     } else if(mode.type === "NEAR"){
-      $("focusBody").innerHTML =
+      body =
         `Showing cameras within ~<b>10 miles</b> of <b>${escapeHTML(mode.target?.name || "your spot")}</b>.<br>
          Use Random anytime for a city-wide scan.`;
     } else {
-      $("focusBody").innerHTML =
+      body =
         `A city-wide shuffle of cameras.<br>
          Want something specific? Tap <b>Home</b> or <b>Downtown</b>.`;
     }
+
+    $("statusLabel").textContent = label;
+    $("focusTitle").textContent = title;
+    $("focusBody").innerHTML = body;
+
+    // fullscreen overlay mirrors
+    $("statusLabel2").textContent = label;
+    $("focusTitle2").textContent = title;
+    $("focusBody2").innerHTML = body;
+
+    $("statEvents2").textContent = $("statEvents").textContent;
+    $("statCams2").textContent = $("statCams").textContent;
   }
 
   function showToast(msg){
@@ -951,10 +1007,10 @@
 
     cameras = cleaned;
     $("statCams").textContent = cameras.length ? String(cameras.length) : "0";
+    $("statCams2").textContent = $("statCams").textContent;
 
     if(camIdx >= cameras.length) camIdx = 0;
 
-    // First paint
     if(cameras.length){
       showCamera(camIdx);
       setTicker(`CAMERAS LIVE • ${cameras.length} FEEDS • ${nowStamp()} •`);
@@ -969,8 +1025,12 @@
     catch { data = await getJSON("alerts"); }
 
     lastEvents = Array.isArray(data) ? data : (data?.Events || data?.events || []);
+
     $("incUpdated").textContent = nowStamp();
+    $("incUpdated2").textContent = $("incUpdated").textContent;
+
     $("statEvents").textContent = String(lastEvents.length);
+    $("statEvents2").textContent = $("statEvents").textContent;
 
     // New event detection
     const ids = new Set();
@@ -982,19 +1042,18 @@
       if(!lastEventIds.has(sid)) newOnes.push(ev);
     }
 
-    // If a new accident appears => toast + try jump (only if in accident mode)
     const newAcc = newOnes.find(looksLikeAccident);
     if(lastEventIds.size && newAcc){
       const s = summarizeForHumans(newAcc);
       showToast(`${s.main} — ${s.detail}`);
-      if(mode.type === "ACCIDENT"){
-        jumpToNearestCamera(newAcc);
-      }
+      if(mode.type === "ACCIDENT") jumpToNearestCamera(newAcc);
     }
 
     lastEventIds = ids;
 
-    renderIncidents(lastEvents);
+    renderIncidents(lastEvents, $("incidentsList"));
+    renderIncidents(lastEvents, $("incidentsList2"));
+
     setStatus();
     setTicker(buildTicker(lastEvents));
   }
@@ -1010,15 +1069,14 @@
     return base + blurbs.join(" • ") + " • STAY SAFE — DRIVE SMART!";
   }
 
-  function renderIncidents(events){
-    const list = $("incidentsList");
-    list.innerHTML = "";
+  function renderIncidents(events, listEl){
+    listEl.innerHTML = "";
 
-    const maxInc = Number(getComputedStyle(document.documentElement).getPropertyValue("--maxIncidents")) || 7;
+    const maxInc = cssNum("--maxIncidents", 7);
     const show = events.slice(0, maxInc);
 
     if(!show.length){
-      list.innerHTML = `
+      listEl.innerHTML = `
         <div class="incident sev-low">
           <div class="ic">✓</div>
           <div>
@@ -1053,34 +1111,51 @@
         <div class="itag">${escapeHTML(tag)}</div>
       `;
       el.addEventListener("click", () => jumpToNearestCamera(ev));
-      list.appendChild(el);
+      listEl.appendChild(el);
     }
   }
 
   // =========================
-  // Camera selection logic
+  // Camera selection + rendering (dual iframes)
   // =========================
+  function setCamUI(cam){
+    // normal (if present)
+    $("camIndex").textContent = `${camIdx+1}/${cameras.length}`;
+    $("camLabel").textContent = (cam.viewDesc || cam.location || cam.roadway || `CAM ${cam.id}`).slice(0,60);
+
+    // fullscreen HUD
+    $("camIndex2").textContent = `${camIdx+1}/${cameras.length}`;
+    $("camLabel2").textContent = (cam.viewDesc || cam.location || cam.roadway || `CAM ${cam.id}`).slice(0,60);
+  }
+
+  function setCountdownUI(){
+    $("camCountdown").textContent = String(camCountdown);
+    $("camCountdown2").textContent = String(camCountdown);
+  }
+
+  function loadIntoFrame(frame, fallback, url){
+    let loaded = false;
+    frame.onload = () => { loaded = true; fallback.style.display = "none"; };
+    frame.src = url;
+    setTimeout(() => { if(!loaded) fallback.style.display = "grid"; }, 1400);
+  }
+
   function showCamera(index){
     if(!cameras.length) return;
 
     camIdx = (index + cameras.length) % cameras.length;
     const cam = cameras[camIdx];
 
-    $("camIndex").textContent = `${camIdx+1}/${cameras.length}`;
-    $("camLabel").textContent = (cam.viewDesc || cam.location || cam.roadway || `CAM ${cam.id}`).slice(0,60);
+    setCamUI(cam);
 
-    const frame = $("camFrame");
-    const fallback = $("camFallback");
+    // Always load both iframes so toggling fullscreen doesn't blank
+    const f1 = $("camFrame");
+    const fb1 = $("camFallback");
+    const f2 = $("camFrameFull");
+    const fb2 = $("camFallbackFull");
 
-    let loaded = false;
-    frame.onload = () => { loaded = true; fallback.style.display = "none"; };
-    frame.src = cam.viewUrl;
-
-    setTimeout(() => {
-      if(!loaded){
-        fallback.style.display = "grid";
-      }
-    }, 1400);
+    loadIntoFrame(f1, fb1, cam.viewUrl);
+    loadIntoFrame(f2, fb2, cam.viewUrl);
   }
 
   function pickRandomCameraIndex(){
@@ -1108,7 +1183,6 @@
     } else if(mode.type === "NEAR" && mode.target){
       const near = getCamerasNear(mode.target.lat, mode.target.lon, 10);
       if(near.length){
-        // cycle through nearest list
         const currentPos = near.findIndex(x => x.i === camIdx);
         const nextPos = (currentPos >= 0 ? currentPos + 1 : 0) % near.length;
         showCamera(near[nextPos].i);
@@ -1116,11 +1190,11 @@
         showCamera(pickRandomCameraIndex());
       }
     } else if(mode.type === "ACCIDENT"){
-      // In accident mode, keep rotating but bias toward random unless we have a recent accident to jump to
       showCamera(pickRandomCameraIndex());
     }
 
     camCountdown = CAMERA_ROTATE_SECONDS;
+    setCountdownUI();
   }
 
   function jumpToNearestCamera(eventObj){
@@ -1128,9 +1202,9 @@
 
     const p = pickLatLon(eventObj);
     if(!p){
-      // No coordinates -> just rotate
       showCamera(pickRandomCameraIndex());
       camCountdown = CAMERA_ROTATE_SECONDS;
+      setCountdownUI();
       return;
     }
 
@@ -1148,15 +1222,17 @@
 
     showCamera(bestI);
     camCountdown = CAMERA_ROTATE_SECONDS;
+    setCountdownUI();
 
-    // Explain in layman speak
     $("focusTitle").textContent = "Jumped to nearby camera";
     $("focusBody").innerHTML =
       `Found the closest camera to the selected event (~<b>${bestD.toFixed(1)} miles</b>).<br>
        Tap <b>Random</b> to go back to city shuffle, or <b>Home</b> to stay near your place.`;
+
+    $("focusTitle2").textContent = $("focusTitle").textContent;
+    $("focusBody2").innerHTML = $("focusBody").innerHTML;
   }
 
-  // Accident mode: jump to newest accident (if any) on activation
   function jumpToNewestAccident(){
     const newest = lastEvents.find(looksLikeAccident);
     if(newest) jumpToNearestCamera(newest);
@@ -1164,7 +1240,7 @@
   }
 
   // =========================
-  // Button wiring
+  // Modes + buttons
   // =========================
   function setModeAccident(){
     mode = { type: "ACCIDENT", target: null };
@@ -1193,9 +1269,27 @@
   }
 
   // =========================
+  // Fullscreen layout toggle
+  // =========================
+  function applyLayout(){
+    const main = $("main");
+    const stage = $("camStage");
+
+    if(isFullcam()){
+      main.classList.add("fullcam");
+      stage.style.display = "block";
+    } else {
+      main.classList.remove("fullcam");
+      stage.style.display = "none";
+    }
+  }
+
+  // =========================
   // Boot
   // =========================
   async function boot(){
+    applyLayout();
+
     setDatePill();
     updateClock();
     setInterval(updateClock, 1000);
@@ -1213,6 +1307,7 @@
       await loadCameras();
     }catch(e){
       $("statCams").textContent = "0";
+      $("statCams2").textContent = "0";
       setTicker(`CAMERA LOAD FAILED • CHECK WORKER /cameras • ${nowStamp()} •`);
       console.error(e);
     }
@@ -1236,7 +1331,7 @@
       if(!cameras.length) return;
       camCountdown--;
       if(camCountdown <= 0) nextCamera();
-      $("camCountdown").textContent = String(camCountdown);
+      setCountdownUI();
     }, 1000);
   }
 
