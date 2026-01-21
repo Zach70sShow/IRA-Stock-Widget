@@ -13,17 +13,12 @@
   <style>
     :root{
       /* ========= YOU TUNE THESE ========= */
-      --camSize: 0.30;     /* camera zoom (smaller = zoom OUT / show more). you liked ~0.30 */
---camSizeFull: 0.78; /* fullscreen camera zoom (try 0.70–0.95) */
+      --camSize: 0.30;        /* panel cam zoom-out (0.25–0.60 typical) */
+      --camSizeFull: 0.82;    /* fullscreen cam zoom (0.70–0.95 typical) */
+      --tickerSeconds: 55;    /* TICKER SPEED (higher = slower) */
+      --maxIncidents: 7;      /* how many incidents to list */
 
-      --tickerSeconds: 55; /* ticker speed (higher = slower) */
-      --maxIncidents: 7;   /* incidents to list */
-
-      /* Fullscreen camera mode */
-      --camFullscreen: 1;  /* 1 = FULLSCREEN CAMERA (requested), 0 = normal 3-panel layout */
-      --overlayWidth: 520px; /* left overlay width in fullscreen mode */
-
-      /* Location presets (buttons) */
+      /* Location presets (used by buttons) */
       --homeLat: 33.295147; --homeLon: -112.117982;
       --workLat: 33.440492; --workLon: -111.953428;
       --meganLat: 33.419155; --meganLon: -111.703516;
@@ -191,7 +186,7 @@
     }
     .modePill b{ color: var(--lemon); }
 
-    /* ========= NORMAL (3-panel) LAYOUT ========= */
+    /* Main layout */
     .main{
       height: calc(100% - var(--hdrH) - var(--tickerH) - 54px);
       padding: var(--pad);
@@ -201,95 +196,6 @@
       position:relative;
       z-index: 2;
       min-height: 0;
-    }
-
-    /* ========= FULLSCREEN CAMERA LAYOUT (requested) ========= */
-    .main.fullcam{
-      display:block;
-      padding: 0;
-      height: calc(100% - var(--hdrH) - var(--tickerH) - 54px);
-    }
-
-    .camStage{
-      position:relative;
-      width:100%;
-      height:100%;
-    }
-
-    /* Fullscreen camera takes the whole stage */
-    .camStage .camBoxFull{
-      position:absolute;
-      inset:0;
-      border:0;
-      border-radius:0;
-      overflow:hidden;
-      background:#000;
-    }
-
-    /* Overlay stack (incidents + snapshot) */
-    .overlay{
-      position:absolute;
-      left: 14px;
-      top: 14px;
-      bottom: 14px;
-      width: min(var(--overlayWidth), calc(100% - 28px));
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-      z-index: 6;
-      pointer-events:none; /* allows clicks to go to the camera unless we re-enable on inner */
-    }
-    .overlay .panel{
-      pointer-events:auto;
-      backdrop-filter: blur(6px);
-      background: linear-gradient(180deg, #0a0d24cc, #00000055);
-      border: 1px solid #ffffff26;
-      box-shadow: 0 20px 50px #0007;
-    }
-
-    /* Small camera label strip (top-right) */
-    .camHUD{
-      position:absolute;
-      right: 14px;
-      top: 14px;
-      z-index: 7;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-      width: 420px;
-      max-width: calc(100% - 28px);
-      pointer-events:none;
-    }
-    .hudRow{
-      pointer-events:auto;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      font-family: var(--font-retro);
-      font-size: 20px;
-      letter-spacing: 1px;
-      padding: 8px 10px;
-      border-radius: 14px;
-      border: 1px solid #ffffff26;
-      background: #0006;
-      box-shadow: inset 0 0 0 1px #0003;
-      backdrop-filter: blur(6px);
-    }
-    .hudLeft{
-      overflow:hidden;
-      white-space:nowrap;
-      text-overflow:ellipsis;
-    }
-    .hudRight{
-      white-space:nowrap;
-      color: var(--lemon);
-    }
-    .livePip{ display:inline-flex; align-items:center; gap:6px; }
-    .livePip .dot{
-      width:8px; height:8px;
-      background:var(--danger);
-      box-shadow:0 0 14px #ff5b6ecc;
     }
 
     .panel{
@@ -341,7 +247,6 @@
       border-radius: var(--radius2);
       background:#0002;
       border:1px solid #ffffff1e;
-      cursor: pointer;
     }
     .ic{
       width:34px; height:34px;
@@ -369,7 +274,7 @@
     .sev-med  .ic{ background: var(--warn); }
     .sev-low  .ic{ background: var(--mint); }
 
-    /* Summary panel (simple, layman) */
+    /* Summary panel */
     .summary{
       padding:10px 12px 12px;
       height: calc(100% - 52px);
@@ -413,7 +318,6 @@
       color: var(--muted);
       margin-top: 2px;
     }
-
     .focusBox{
       border-radius: var(--radius2);
       border: 1px solid #ffffff1f;
@@ -442,7 +346,51 @@
     }
     .focusBox .plain b{ color: var(--lemon); }
 
-    /* Camera box (normal + fullscreen share) */
+    /* Camera panel */
+    .camWrap{
+      padding:10px 12px 12px;
+      height: calc(100% - 52px);
+      display:grid;
+      grid-template-rows: auto 1fr;
+      gap:10px;
+      min-height: 0;
+    }
+    .camMeta{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap:10px;
+      align-items:center;
+    }
+    .camMeta .left{
+      display:flex; align-items:center; gap:10px;
+      font-family:var(--font-retro);
+      font-size:20px;
+      letter-spacing:1px;
+      background:#0004;
+      border:1px solid #fff2;
+      border-radius:12px;
+      padding:6px 10px;
+      overflow:hidden;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+    }
+    .livePip{ display:inline-flex; align-items:center; gap:6px; }
+    .livePip .dot{
+      width:8px; height:8px;
+      background:var(--danger);
+      box-shadow:0 0 14px #ff5b6ecc;
+    }
+    .camMeta .right{
+      font-family:var(--font-retro);
+      font-size:20px;
+      letter-spacing:1px;
+      background:#0004;
+      border:1px solid #fff2;
+      border-radius:12px;
+      padding:6px 10px;
+      white-space:nowrap;
+    }
+
     .camBox{
       border-radius: var(--radius2);
       border:1px solid #ffffff1f;
@@ -452,30 +400,29 @@
       min-height: 0;
     }
 
-    /* Camera scaling variable:
-       Scale ONLY the iframe content, keeping the box size stable. */
-    .camInner{
+    /* IMPORTANT: center the video ALWAYS (panel mode) */
+    .camInner,
+    .camInnerFull{
       position:absolute;
       inset:0;
-      transform: scale(var(--camSize));
-      transform-origin: center center;
+      left:50%;
+      top:50%;
+      translate:-50% -50%;
+      transform-origin:center center;
+    }
+
+    /* Panel mode zoom (uses --camSize) */
+    .camInner{
+      transform: translate(-50%, -50%) scale(var(--camSize));
       width: calc(100% / var(--camSize));
       height: calc(100% / var(--camSize));
-      left: 50%;
-      top: 50%;
-      translate: -50% -50%;
+    }
 
-/* Fullscreen camera uses its own zoom so the video actually fills the screen */
-#camInnerFull{
-  transform: scale(var(--camSizeFull));
-  transform-origin: center center;
-  width: calc(100% / var(--camSizeFull));
-  height: calc(100% / var(--camSizeFull));
-  left: 50%;
-  top: 50%;
-  translate: -50% -50%;
-}
-
+    /* Fullscreen mode zoom (uses --camSizeFull) */
+    .camInnerFull{
+      transform: translate(-50%, -50%) scale(var(--camSizeFull));
+      width: calc(100% / var(--camSizeFull));
+      height: calc(100% / var(--camSizeFull));
     }
 
     .camFrame, .camFallback{
@@ -505,6 +452,38 @@
       font-family: var(--font-ui);
       letter-spacing:0;
     }
+
+    /* Fullscreen camera stage (behind overlays) */
+    .fullStage{
+      position:absolute;
+      inset: calc(var(--hdrH) + 54px) 0 var(--tickerH) 0; /* below header+buttons, above ticker */
+      z-index: 1;
+      background:#000;
+      display:none; /* turned on in fullscreen mode */
+    }
+
+    /* Overlay UI (in fullscreen mode) */
+    .overlay{
+      position:absolute;
+      inset: calc(var(--hdrH) + 54px) 0 var(--tickerH) 0;
+      z-index: 6;
+      display:none;
+      pointer-events:none;
+      padding: var(--pad);
+      gap: 12px;
+    }
+    .overlay.on{ display:grid; grid-template-columns: 520px 1fr; }
+    .overlay .stack{ display:flex; flex-direction:column; gap:12px; min-width:0; }
+    .overlay .panel{
+      pointer-events:auto;
+      backdrop-filter: blur(6px);
+      background: linear-gradient(180deg, #0a0d2499, #00000033);
+      border: 1px solid #ffffff26;
+      box-shadow: 0 20px 50px #0007;
+    }
+
+    /* Hide normal main when fullscreen */
+    .main.hidden{ display:none; }
 
     /* Ticker */
     .ticker{
@@ -608,20 +587,6 @@
       50%{ transform: scale(1.45); opacity: 1; }
       100%{ transform: scale(1); opacity: 0.9; }
     }
-
-    /* Hide normal panels when fullcam is on */
-    .fullcam .panelNormalOnly{ display:none !important; }
-
-    /* In fullcam mode, overlay panels get a max height so you see the camera */
-    .overlay .panel.incPanel{ flex: 1.2; min-height: 0; }
-    .overlay .panel.sumPanel{ flex: 1.0; min-height: 0; }
-    .overlay .incidents{ height: calc(100% - 52px); }
-
-    /* Optional: make overlay slightly smaller on short heights */
-    @media (max-height: 420px){
-      .overlay{ width: min(440px, calc(100% - 28px)); }
-      .panelTitle h3{ font-size:22px; }
-    }
   </style>
 </head>
 
@@ -636,6 +601,7 @@
       <div class="meta">
         <div class="pill"><span class="dot"></span><span>LIVE</span></div>
         <div class="pill" id="datePill">—</div>
+        <div class="pill" id="fsPill" style="display:none;">FULLSCREEN</div>
       </div>
     </div>
 
@@ -646,16 +612,80 @@
       <button class="btn" id="btnWork">Work</button>
       <button class="btn" id="btnMegan">Megan</button>
       <button class="btn" id="btnDowntown">Downtown</button>
+      <button class="btn" id="btnFullscreen" title="Toggle fullscreen camera">Fullscreen</button>
 
       <div class="modePill" title="Current camera selection mode">
         MODE: <b id="modeLabel">RANDOM</b>
       </div>
     </div>
 
-    <!-- MAIN: we will toggle fullcam class from JS if --camFullscreen=1 -->
+    <!-- Fullscreen camera stage -->
+    <div class="fullStage" id="fullStage">
+      <div class="camInnerFull" id="camInnerFull">
+        <iframe class="camFrame" id="camFrameFull" title="AZ511 camera view (fullscreen)"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+      </div>
+    </div>
+
+    <!-- Overlay UI (only used in fullscreen) -->
+    <div class="overlay" id="overlay">
+      <div class="stack">
+        <section class="panel">
+          <div class="panelTitle">
+            <h3>TOP INCIDENTS</h3>
+            <small>UPDATED: <span id="incUpdated2">—</span></small>
+          </div>
+          <div class="incidents" id="incidentsList2"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panelTitle">
+            <h3>CITY SNAPSHOT</h3>
+            <small>STATUS: <span id="statusLabel2">—</span></small>
+          </div>
+          <div class="summary">
+            <div class="bigNums">
+              <div class="card">
+                <div class="k">ACTIVE EVENTS</div>
+                <div class="v" id="statEvents2">—</div>
+                <div class="s">Things impacting traffic right now</div>
+              </div>
+              <div class="card">
+                <div class="k">CAMERAS LIVE</div>
+                <div class="v" id="statCams2">—</div>
+                <div class="s">Available camera feeds</div>
+              </div>
+            </div>
+            <div class="focusBox">
+              <div class="headline" id="focusTitle2">What you’re looking at</div>
+              <div class="plain" id="focusBody2">—</div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="stack" style="align-items:flex-end;">
+        <section class="panel" style="width:min(520px, 100%);">
+          <div class="panelTitle">
+            <h3>LIVE CAMERA</h3>
+            <small>FEED: <span id="camIndex2">—</span></small>
+          </div>
+          <div style="padding:10px 12px 12px; display:grid; gap:10px;">
+            <div class="camMeta">
+              <div class="left">
+                <span class="livePip"><span class="dot"></span>LIVE</span>
+                <span id="camLabel2">—</span>
+              </div>
+              <div class="right">NEXT: <span id="camCountdown2">—</span>s</div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
     <div class="main" id="main">
-      <!-- Normal panels (kept for when fullscreen is off) -->
-      <section class="panel panelNormalOnly">
+      <!-- Incidents -->
+      <section class="panel">
         <div class="panelTitle">
           <h3>TOP INCIDENTS</h3>
           <small>UPDATED: <span id="incUpdated">—</span></small>
@@ -672,7 +702,8 @@
         </div>
       </section>
 
-      <section class="panel panelNormalOnly">
+      <!-- Summary -->
+      <section class="panel">
         <div class="panelTitle">
           <h3>CITY SNAPSHOT</h3>
           <small>STATUS: <span id="statusLabel">—</span></small>
@@ -702,25 +733,24 @@
         </div>
       </section>
 
-      <section class="panel panelNormalOnly">
+      <!-- Camera -->
+      <section class="panel">
         <div class="panelTitle">
           <h3>LIVE CAMERA</h3>
           <small>FEED: <span id="camIndex">—</span></small>
         </div>
 
-        <div class="camWrap" style="padding:10px 12px 12px; height: calc(100% - 52px); display:grid; grid-template-rows:auto 1fr; gap:10px; min-height:0;">
-          <div class="camMeta" style="display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center;">
-            <div class="left" title="Camera location" style="display:flex; align-items:center; gap:10px; font-family:var(--font-retro); font-size:20px; letter-spacing:1px; background:#0004; border:1px solid #fff2; border-radius:12px; padding:6px 10px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">
+        <div class="camWrap">
+          <div class="camMeta">
+            <div class="left" title="Camera location">
               <span class="livePip"><span class="dot"></span>LIVE</span>
               <span id="camLabel">Loading cameras…</span>
             </div>
-            <div class="right" style="font-family:var(--font-retro); font-size:20px; letter-spacing:1px; background:#0004; border:1px solid #fff2; border-radius:12px; padding:6px 10px; white-space:nowrap;">
-              NEXT: <span id="camCountdown">—</span>s
-            </div>
+            <div class="right">NEXT: <span id="camCountdown">—</span>s</div>
           </div>
 
           <div class="camBox">
-            <div class="camInner">
+            <div class="camInner" id="camInner">
               <iframe class="camFrame" id="camFrame" title="AZ511 camera view"
                 sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
             </div>
@@ -731,73 +761,6 @@
           </div>
         </div>
       </section>
-
-      <!-- Fullscreen camera stage (always present; used when fullcam is on) -->
-      <div class="camStage" id="camStage" style="display:none;">
-        <div class="camBoxFull">
-          <div class="camInner" id="camInnerFull">
-            <iframe class="camFrame" id="camFrameFull" title="AZ511 camera view (fullscreen)"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
-          </div>
-          <div class="camFallback" id="camFallbackFull">
-            CAMERA EMBED BLOCKED
-            <small>If AZ511 disallows iframe embedding, we can switch to still images (if available) or proxy a snapshot endpoint.</small>
-          </div>
-        </div>
-
-        <!-- Left overlay panels -->
-        <div class="overlay" id="overlay">
-          <section class="panel incPanel">
-            <div class="panelTitle">
-              <h3>TOP INCIDENTS</h3>
-              <small>UPDATED: <span id="incUpdated2">—</span></small>
-            </div>
-            <div class="incidents" id="incidentsList2"></div>
-          </section>
-
-          <section class="panel sumPanel">
-            <div class="panelTitle">
-              <h3>CITY SNAPSHOT</h3>
-              <small>STATUS: <span id="statusLabel2">—</span></small>
-            </div>
-
-            <div class="summary">
-              <div class="bigNums">
-                <div class="card">
-                  <div class="k">ACTIVE EVENTS</div>
-                  <div class="v" id="statEvents2">—</div>
-                  <div class="s">Things impacting traffic right now</div>
-                </div>
-                <div class="card">
-                  <div class="k">CAMERAS LIVE</div>
-                  <div class="v" id="statCams2">—</div>
-                  <div class="s">Available camera feeds</div>
-                </div>
-              </div>
-
-              <div class="focusBox">
-                <div class="headline" id="focusTitle2">What you’re looking at</div>
-                <div class="plain" id="focusBody2">Loading…</div>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <!-- Small HUD top-right -->
-        <div class="camHUD">
-          <div class="hudRow">
-            <div class="hudLeft" title="Camera location">
-              <span class="livePip"><span class="dot"></span>LIVE</span>
-              <span id="camLabel2">Loading cameras…</span>
-            </div>
-            <div class="hudRight">FEED <span id="camIndex2">—</span></div>
-          </div>
-          <div class="hudRow">
-            <div class="hudLeft">NEXT SWITCH</div>
-            <div class="hudRight"><span id="camCountdown2">—</span>s</div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <div class="ticker">
@@ -822,7 +785,7 @@
   const EVENTS_POLL_SECONDS = 45;        // refresh incidents
   const CAMS_REFRESH_SECONDS = 10 * 60;  // refresh camera list
 
-  // Button coords
+  // Button coords (same as you requested)
   const LOCATIONS = {
     HOME:     { name: "HOME",     lat: 33.295147, lon: -112.117982 },
     WORK:     { name: "WORK",     lat: 33.440492, lon: -111.953428 },
@@ -835,12 +798,6 @@
   // =========================
   const $ = (id) => document.getElementById(id);
   const pad2 = (n) => String(n).padStart(2, "0");
-
-  function cssNum(varName, fallback){
-    const raw = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
-    const n = Number(raw);
-    return Number.isFinite(n) ? n : fallback;
-  }
 
   function setDatePill(){
     const d = new Date();
@@ -925,25 +882,19 @@
   let lastEventIds = new Set();
   let lastEvents = [];
 
-  // Modes:
-  // "ACCIDENT" => nearest cam to newest accident (if coords exist), else random
-  // "RANDOM"   => random cams
-  // "NEAR"     => cams near a target location (HOME/WORK/MEGAN/DOWNTOWN)
+  // Modes
   let mode = { type: "RANDOM", target: null };
 
-  // Fullscreen toggle based on CSS var
-  const isFullcam = () => cssNum("--camFullscreen", 1) === 1;
+  // Fullscreen state
+  let fullscreen = false;
 
   // =========================
-  // UI (dual targets: normal + fullscreen overlay)
+  // UI setters
   // =========================
   function setModeLabel(){
-    const txt =
-      (mode.type === "ACCIDENT") ? "ACCIDENT" :
-      (mode.type === "RANDOM") ? "RANDOM" :
-      (mode.type === "NEAR") ? (mode.target?.name || "NEAR") : "RANDOM";
-
-    $("modeLabel").textContent = txt;
+    if(mode.type === "ACCIDENT") $("modeLabel").textContent = "ACCIDENT";
+    else if(mode.type === "RANDOM") $("modeLabel").textContent = "RANDOM";
+    else if(mode.type === "NEAR") $("modeLabel").textContent = mode.target?.name || "NEAR";
   }
 
   function setTicker(text){ $("tickerText").textContent = text; }
@@ -954,38 +905,35 @@
     if(n >= 80) label = "BUSY";
     else if(n >= 30) label = "ACTIVE";
     else if(n >= 10) label = "NORMAL";
+    $("statusLabel").textContent = label;
 
-    const title =
+    $("focusTitle").textContent =
       (mode.type === "ACCIDENT") ? "Accident mode" :
       (mode.type === "NEAR") ? `Near ${mode.target?.name || "target"}` :
       "Random mode";
 
-    let body = "";
     if(mode.type === "ACCIDENT"){
-      body =
+      $("focusBody").innerHTML =
         `We’ll prioritize cameras near new <b>accidents</b>.<br>
          When something new pops up, you’ll see an alert and we’ll try to jump to a nearby cam.`;
     } else if(mode.type === "NEAR"){
-      body =
+      $("focusBody").innerHTML =
         `Showing cameras within ~<b>10 miles</b> of <b>${escapeHTML(mode.target?.name || "your spot")}</b>.<br>
          Use Random anytime for a city-wide scan.`;
     } else {
-      body =
+      $("focusBody").innerHTML =
         `A city-wide shuffle of cameras.<br>
          Want something specific? Tap <b>Home</b> or <b>Downtown</b>.`;
     }
 
-    $("statusLabel").textContent = label;
-    $("focusTitle").textContent = title;
-    $("focusBody").innerHTML = body;
-
-    // fullscreen overlay mirrors
-    $("statusLabel2").textContent = label;
-    $("focusTitle2").textContent = title;
-    $("focusBody2").innerHTML = body;
-
-    $("statEvents2").textContent = $("statEvents").textContent;
-    $("statCams2").textContent = $("statCams").textContent;
+    // Mirror to fullscreen overlay (if present)
+    if($("statusLabel2")){
+      $("statusLabel2").textContent = label;
+      $("focusTitle2").textContent = $("focusTitle").textContent;
+      $("focusBody2").innerHTML = $("focusBody").innerHTML;
+      $("statEvents2").textContent = $("statEvents").textContent;
+      $("statCams2").textContent = $("statCams").textContent;
+    }
   }
 
   function showToast(msg){
@@ -994,6 +942,32 @@
     el.style.display = "block";
     clearTimeout(showToast._t);
     showToast._t = setTimeout(() => el.style.display = "none", 5200);
+  }
+
+  function applyFullscreen(on){
+    fullscreen = !!on;
+    $("main").classList.toggle("hidden", fullscreen);
+    $("fullStage").style.display = fullscreen ? "block" : "none";
+    $("overlay").classList.toggle("on", fullscreen);
+    $("fsPill").style.display = fullscreen ? "inline-flex" : "none";
+
+    // Keep the fullscreen iframe on the same feed
+    syncFullscreenFrame();
+    mirrorOverlayText();
+  }
+
+  function mirrorOverlayText(){
+    if(!fullscreen) return;
+    $("incUpdated2").textContent = $("incUpdated").textContent;
+    $("statEvents2").textContent = $("statEvents").textContent;
+    $("statCams2").textContent = $("statCams").textContent;
+    $("statusLabel2").textContent = $("statusLabel").textContent;
+    $("camIndex2").textContent = $("camIndex").textContent;
+    $("camLabel2").textContent = $("camLabel").textContent;
+    $("camCountdown2").textContent = $("camCountdown").textContent;
+
+    // incidents mirror
+    $("incidentsList2").innerHTML = $("incidentsList").innerHTML;
   }
 
   // =========================
@@ -1021,7 +995,7 @@
 
     cameras = cleaned;
     $("statCams").textContent = cameras.length ? String(cameras.length) : "0";
-    $("statCams2").textContent = $("statCams").textContent;
+    if($("statCams2")) $("statCams2").textContent = $("statCams").textContent;
 
     if(camIdx >= cameras.length) camIdx = 0;
 
@@ -1039,12 +1013,10 @@
     catch { data = await getJSON("alerts"); }
 
     lastEvents = Array.isArray(data) ? data : (data?.Events || data?.events || []);
-
     $("incUpdated").textContent = nowStamp();
-    $("incUpdated2").textContent = $("incUpdated").textContent;
-
     $("statEvents").textContent = String(lastEvents.length);
-    $("statEvents2").textContent = $("statEvents").textContent;
+    if($("incUpdated2")) $("incUpdated2").textContent = $("incUpdated").textContent;
+    if($("statEvents2")) $("statEvents2").textContent = $("statEvents").textContent;
 
     // New event detection
     const ids = new Set();
@@ -1060,16 +1032,16 @@
     if(lastEventIds.size && newAcc){
       const s = summarizeForHumans(newAcc);
       showToast(`${s.main} — ${s.detail}`);
-      if(mode.type === "ACCIDENT") jumpToNearestCamera(newAcc);
+      if(mode.type === "ACCIDENT"){
+        jumpToNearestCamera(newAcc);
+      }
     }
-
     lastEventIds = ids;
 
-    renderIncidents(lastEvents, $("incidentsList"));
-    renderIncidents(lastEvents, $("incidentsList2"));
-
+    renderIncidents(lastEvents);
     setStatus();
     setTicker(buildTicker(lastEvents));
+    mirrorOverlayText();
   }
 
   function buildTicker(events){
@@ -1083,14 +1055,15 @@
     return base + blurbs.join(" • ") + " • STAY SAFE — DRIVE SMART!";
   }
 
-  function renderIncidents(events, listEl){
-    listEl.innerHTML = "";
+  function renderIncidents(events){
+    const list = $("incidentsList");
+    list.innerHTML = "";
 
-    const maxInc = cssNum("--maxIncidents", 7);
+    const maxInc = Number(getComputedStyle(document.documentElement).getPropertyValue("--maxIncidents")) || 7;
     const show = events.slice(0, maxInc);
 
     if(!show.length){
-      listEl.innerHTML = `
+      list.innerHTML = `
         <div class="incident sev-low">
           <div class="ic">✓</div>
           <div>
@@ -1125,33 +1098,19 @@
         <div class="itag">${escapeHTML(tag)}</div>
       `;
       el.addEventListener("click", () => jumpToNearestCamera(ev));
-      listEl.appendChild(el);
+      list.appendChild(el);
     }
   }
 
   // =========================
-  // Camera selection + rendering (dual iframes)
+  // Camera logic
   // =========================
-  function setCamUI(cam){
-    // normal (if present)
-    $("camIndex").textContent = `${camIdx+1}/${cameras.length}`;
-    $("camLabel").textContent = (cam.viewDesc || cam.location || cam.roadway || `CAM ${cam.id}`).slice(0,60);
-
-    // fullscreen HUD
-    $("camIndex2").textContent = `${camIdx+1}/${cameras.length}`;
-    $("camLabel2").textContent = (cam.viewDesc || cam.location || cam.roadway || `CAM ${cam.id}`).slice(0,60);
-  }
-
-  function setCountdownUI(){
-    $("camCountdown").textContent = String(camCountdown);
-    $("camCountdown2").textContent = String(camCountdown);
-  }
-
-  function loadIntoFrame(frame, fallback, url){
-    let loaded = false;
-    frame.onload = () => { loaded = true; fallback.style.display = "none"; };
-    frame.src = url;
-    setTimeout(() => { if(!loaded) fallback.style.display = "grid"; }, 1400);
+  function syncFullscreenFrame(){
+    if(!fullscreen) return;
+    const src = $("camFrame").src || "";
+    if(src && $("camFrameFull").src !== src){
+      $("camFrameFull").src = src;
+    }
   }
 
   function showCamera(index){
@@ -1160,16 +1119,28 @@
     camIdx = (index + cameras.length) % cameras.length;
     const cam = cameras[camIdx];
 
-    setCamUI(cam);
+    $("camIndex").textContent = `${camIdx+1}/${cameras.length}`;
+    $("camLabel").textContent = (cam.viewDesc || cam.location || cam.roadway || `CAM ${cam.id}`).slice(0,60);
 
-    // Always load both iframes so toggling fullscreen doesn't blank
-    const f1 = $("camFrame");
-    const fb1 = $("camFallback");
-    const f2 = $("camFrameFull");
-    const fb2 = $("camFallbackFull");
+    const frame = $("camFrame");
+    const fallback = $("camFallback");
 
-    loadIntoFrame(f1, fb1, cam.viewUrl);
-    loadIntoFrame(f2, fb2, cam.viewUrl);
+    let loaded = false;
+    frame.onload = () => { loaded = true; fallback.style.display = "none"; };
+    frame.src = cam.viewUrl;
+
+    // mirror to fullscreen frame
+    if(fullscreen){
+      $("camFrameFull").src = cam.viewUrl;
+    }
+
+    setTimeout(() => {
+      if(!loaded){
+        fallback.style.display = "grid";
+      }
+    }, 1400);
+
+    mirrorOverlayText();
   }
 
   function pickRandomCameraIndex(){
@@ -1208,7 +1179,6 @@
     }
 
     camCountdown = CAMERA_ROTATE_SECONDS;
-    setCountdownUI();
   }
 
   function jumpToNearestCamera(eventObj){
@@ -1218,7 +1188,6 @@
     if(!p){
       showCamera(pickRandomCameraIndex());
       camCountdown = CAMERA_ROTATE_SECONDS;
-      setCountdownUI();
       return;
     }
 
@@ -1236,15 +1205,13 @@
 
     showCamera(bestI);
     camCountdown = CAMERA_ROTATE_SECONDS;
-    setCountdownUI();
 
     $("focusTitle").textContent = "Jumped to nearby camera";
     $("focusBody").innerHTML =
       `Found the closest camera to the selected event (~<b>${bestD.toFixed(1)} miles</b>).<br>
        Tap <b>Random</b> to go back to city shuffle, or <b>Home</b> to stay near your place.`;
 
-    $("focusTitle2").textContent = $("focusTitle").textContent;
-    $("focusBody2").innerHTML = $("focusBody").innerHTML;
+    setStatus();
   }
 
   function jumpToNewestAccident(){
@@ -1254,7 +1221,7 @@
   }
 
   // =========================
-  // Modes + buttons
+  // Button wiring
   // =========================
   function setModeAccident(){
     mode = { type: "ACCIDENT", target: null };
@@ -1283,69 +1250,49 @@
   }
 
   // =========================
-  // Fullscreen layout toggle
-  // =========================
-  function applyLayout(){
-    const main = $("main");
-    const stage = $("camStage");
-
-    if(isFullcam()){
-      main.classList.add("fullcam");
-      stage.style.display = "block";
-    } else {
-      main.classList.remove("fullcam");
-      stage.style.display = "none";
-    }
-  }
-
-  // =========================
   // Boot
   // =========================
   async function boot(){
-    applyLayout();
-
     setDatePill();
     updateClock();
     setInterval(updateClock, 1000);
 
-    // Hook up buttons
     $("btnAccident").addEventListener("click", setModeAccident);
     $("btnRandom").addEventListener("click", setModeRandom);
     $("btnHome").addEventListener("click", () => setModeNear(LOCATIONS.HOME));
     $("btnWork").addEventListener("click", () => setModeNear(LOCATIONS.WORK));
     $("btnMegan").addEventListener("click", () => setModeNear(LOCATIONS.MEGAN));
     $("btnDowntown").addEventListener("click", () => setModeNear(LOCATIONS.DOWNTOWN));
+    $("btnFullscreen").addEventListener("click", () => applyFullscreen(!fullscreen));
 
-    // Initial data load
-    try{
-      await loadCameras();
-    }catch(e){
+    try{ await loadCameras(); }
+    catch(e){
       $("statCams").textContent = "0";
-      $("statCams2").textContent = "0";
       setTicker(`CAMERA LOAD FAILED • CHECK WORKER /cameras • ${nowStamp()} •`);
       console.error(e);
     }
 
-    try{
-      await loadEvents();
-    }catch(e){
+    try{ await loadEvents(); }
+    catch(e){
       setTicker(`EVENT LOAD FAILED • CHECK WORKER /event • ${nowStamp()} •`);
       console.error(e);
     }
 
-    // Default mode: Random
     setModeRandom();
 
-    // Refresh loops
     setInterval(() => loadCameras().catch(console.error), CAMS_REFRESH_SECONDS * 1000);
     setInterval(() => loadEvents().catch(console.error), EVENTS_POLL_SECONDS * 1000);
 
-    // Camera rotation loop
     setInterval(() => {
       if(!cameras.length) return;
       camCountdown--;
       if(camCountdown <= 0) nextCamera();
-      setCountdownUI();
+      $("camCountdown").textContent = String(camCountdown);
+
+      // mirror countdown + labels in fullscreen overlay
+      if($("camCountdown2")) $("camCountdown2").textContent = $("camCountdown").textContent;
+      if($("camLabel2")) $("camLabel2").textContent = $("camLabel").textContent;
+      if($("camIndex2")) $("camIndex2").textContent = $("camIndex").textContent;
     }, 1000);
   }
 
