@@ -13,10 +13,10 @@
   <style>
     :root{
       /* ========= YOU TUNE THESE ========= */
-      --camSize: 0.30;        /* panel cam zoom-out (0.25–0.60 typical) */
-      --camSizeFull: 0.82;    /* fullscreen cam zoom (0.70–0.95 typical) */
-      --tickerSeconds: 55;    /* TICKER SPEED (higher = slower) */
-      --maxIncidents: 7;      /* how many incidents to list */
+      --sideW: 380px;           /* width of the small info strip on the right */
+      --camFit: 1;              /* 1 = fit by HEIGHT (recommended), 0 = fit by WIDTH */
+      --maxIncidents: 5;        /* fewer for small side panel */
+      --tickerSeconds: 55;
 
       /* Location presets (used by buttons) */
       --homeLat: 33.295147; --homeLon: -112.117982;
@@ -29,16 +29,18 @@
       --ink:#f7f3ff; --muted:#d7d2ff;
       --line:#ffffff22;
 
-      --peach:#ffb48a; --mint:#89f0d1; --sky:#86b7ff; --lav:#c3a1ff; --pink:#ff8fd1; --lemon:#ffe27a; --teal:#2bd9ff;
+      --mint:#89f0d1; --sky:#86b7ff; --lav:#c3a1ff; --pink:#ff8fd1; --lemon:#ffe27a;
       --danger:#ff5b6e; --warn:#ffbf4a; --ok:#60ffb0;
 
       --radius:18px; --radius2:14px;
-      --hdrH:60px; --tickerH:56px; --pad:14px;
+      --hdrH:56px; --controlsH:54px; --tickerH:52px; --pad:12px;
 
       --font-ui:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
       --font-retro:"VT323", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-      --shadow: 0 10px 30px #00000066;
+      /* “Video centering + no scrollbars” controls */
+      --videoMaxScale: 1.0;     /* hard cap scale (safety). 1.0 usually good */
+      --videoPadding: 0px;      /* add breathing room around video if you want */
     }
 
     *{ box-sizing:border-box; }
@@ -79,7 +81,7 @@
         rgba(0,0,0,0.0) 2px,
         rgba(0,0,0,0.0) 4px
       );
-      opacity:.38;
+      opacity:.30;
       pointer-events:none;
       mix-blend-mode: overlay;
       z-index: 50;
@@ -103,22 +105,22 @@
     .brand{ display:flex; align-items:baseline; gap:12px; }
     .logo{
       font-family:var(--font-retro);
-      font-size:42px;
+      font-size:40px;
       letter-spacing:2px;
       text-shadow:0 2px 0 #0007;
       line-height:1;
     }
     .sub{
       font-family:var(--font-retro);
-      font-size:22px;
+      font-size:20px;
       letter-spacing:1px;
       opacity:.9;
     }
 
     .meta{
-      display:flex; align-items:center; gap:14px;
+      display:flex; align-items:center; gap:12px;
       font-family:var(--font-retro);
-      font-size:22px;
+      font-size:20px;
       letter-spacing:1px;
       text-shadow:0 2px 0 #0007;
       white-space:nowrap;
@@ -138,7 +140,7 @@
 
     /* Buttons row */
     .controls{
-      height: 54px;
+      height: var(--controlsH);
       padding: 10px 14px 0;
       display:flex;
       align-items:center;
@@ -149,7 +151,7 @@
     }
     .btn{
       font-family: var(--font-retro);
-      font-size: 22px;
+      font-size: 20px;
       letter-spacing: 1px;
       padding: 8px 12px;
       border-radius: 14px;
@@ -159,6 +161,7 @@
       cursor: pointer;
       user-select:none;
       box-shadow: inset 0 0 0 1px #00000025;
+      white-space:nowrap;
     }
     .btn:hover{ filter: brightness(1.05); }
     .btn:active{ transform: translateY(1px); }
@@ -176,7 +179,7 @@
       align-items:center;
       gap:10px;
       font-family: var(--font-retro);
-      font-size: 22px;
+      font-size: 20px;
       letter-spacing: 1px;
       padding: 8px 12px;
       border-radius: 14px;
@@ -186,25 +189,116 @@
     }
     .modePill b{ color: var(--lemon); }
 
-    /* Main layout */
-    .main{
-      height: calc(100% - var(--hdrH) - var(--tickerH) - 54px);
-      padding: var(--pad);
+    /* ===== Thin-screen primary layout ===== */
+    .stage{
+      height: calc(100% - var(--hdrH) - var(--controlsH) - var(--tickerH));
       display:grid;
-      grid-template-columns: 1.1fr 1.0fr 1.7fr; /* incidents | summary | camera */
+      grid-template-columns: 1fr var(--sideW);
       gap:12px;
+      padding: var(--pad);
+      min-height: 0;
       position:relative;
       z-index: 2;
-      min-height: 0;
+    }
+
+    /* Video area (primary focus) */
+    .videoShell{
+      position:relative;
+      border-radius: var(--radius);
+      overflow:hidden;
+      border: 1px solid #ffffff20;
+      background:#000;
+      box-shadow: inset 0 0 0 1px #0003;
+      min-height:0;
+    }
+
+    /* A subtle top overlay bar inside video */
+    .videoHUD{
+      position:absolute;
+      left:12px;
+      right:12px;
+      top:12px;
+      z-index: 5;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      pointer-events:none;
+    }
+    .hudLeft, .hudRight{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      pointer-events:none;
+      flex-wrap:nowrap;
+      min-width:0;
+    }
+    .hudPill{
+      pointer-events:none;
+      font-family:var(--font-retro);
+      font-size:20px;
+      letter-spacing:1px;
+      padding: 8px 10px;
+      border-radius: 14px;
+      border:1px solid #ffffff26;
+      background: linear-gradient(180deg, #0a0d2499, #00000040);
+      backdrop-filter: blur(6px);
+      white-space:nowrap;
+      max-width: 100%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .hudPill b{ color: var(--lemon); }
+    .liveDot{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+    }
+    .liveDot .rd{
+      width:8px; height:8px; border-radius:50%;
+      background: var(--danger);
+      box-shadow:0 0 14px #ff5b6ecc;
+    }
+
+    /* The “no scrollbars, centered, fit height” embed trick */
+    .videoViewport{
+      position:absolute;
+      inset: var(--videoPadding);
+      overflow:hidden; /* NO SCROLLBARS */
+      display:grid;
+      place-items:center; /* center the embed */
+    }
+
+    /* We will set --embedScale dynamically based on viewport size. */
+    .embedSizer{
+      position:relative;
+      transform-origin:center center;
+      transform: scale(var(--embedScale, 1));
+      /* width/height are set in JS to match the iframe's natural size */
+    }
+
+    .camFrame{
+      width:100%;
+      height:100%;
+      border:0;
+      display:block;
+      background:#000;
+    }
+
+    /* Side info strip */
+    .side{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      min-height:0;
     }
 
     .panel{
-      background: linear-gradient(180deg, #ffffff14, #ffffff08);
-      border: 1px solid #ffffff20;
       border-radius: var(--radius);
       overflow:hidden;
+      border: 1px solid #ffffff20;
+      background: linear-gradient(180deg, #ffffff14, #ffffff08);
       box-shadow: inset 0 0 0 1px #0003;
-      position:relative;
       min-height: 0;
     }
     .panelTitle{
@@ -218,7 +312,7 @@
     .panelTitle h3{
       margin:0;
       font-family:var(--font-retro);
-      font-size:26px;
+      font-size:24px;
       letter-spacing:1px;
     }
     .panelTitle small{
@@ -229,27 +323,29 @@
       white-space:nowrap;
     }
 
-    /* Incidents list */
+    /* Incidents list (compact) */
     .incidents{
       padding:10px 12px 12px;
-      height: calc(100% - 52px);
       overflow:auto;
       display:flex;
       flex-direction:column;
       gap:10px;
+      min-height: 0;
+      flex: 1;
     }
     .incident{
       display:grid;
-      grid-template-columns: 34px 1fr auto;
+      grid-template-columns: 32px 1fr auto;
       gap:10px;
       align-items:center;
       padding: 10px 10px;
       border-radius: var(--radius2);
       background:#0002;
       border:1px solid #ffffff1e;
+      cursor:pointer;
     }
     .ic{
-      width:34px; height:34px;
+      width:32px; height:32px;
       border-radius:12px;
       display:grid;
       place-items:center;
@@ -258,11 +354,11 @@
       color:#0b0f2a;
       box-shadow: inset 0 0 0 1px #0002;
     }
-    .itop{ font-weight:900; font-size:14px; line-height:1.1; }
-    .isub{ opacity:.85; font-size:12px; margin-top:2px; }
+    .itop{ font-weight:900; font-size:13px; line-height:1.1; }
+    .isub{ opacity:.85; font-size:11px; margin-top:2px; }
     .itag{
       font-family:var(--font-retro);
-      font-size:18px;
+      font-size:16px;
       padding: 6px 8px;
       border-radius:12px;
       border:1px solid #ffffff26;
@@ -274,14 +370,11 @@
     .sev-med  .ic{ background: var(--warn); }
     .sev-low  .ic{ background: var(--mint); }
 
-    /* Summary panel */
+    /* Snapshot compact */
     .summary{
       padding:10px 12px 12px;
-      height: calc(100% - 52px);
-      display:flex;
-      flex-direction:column;
+      display:grid;
       gap:10px;
-      overflow:hidden;
     }
     .bigNums{
       display:grid;
@@ -293,197 +386,41 @@
       border: 1px solid #ffffff1f;
       background:#0002;
       padding: 10px 10px;
-      min-height: 70px;
       display:flex;
       flex-direction:column;
       gap:4px;
+      min-height: 66px;
     }
     .card .k{
       font-family: var(--font-retro);
-      font-size: 18px;
+      font-size: 16px;
       letter-spacing: 1px;
       opacity: .9;
     }
     .card .v{
       font-family: var(--font-retro);
-      font-size: 30px;
+      font-size: 28px;
       letter-spacing: 1px;
       color: var(--lemon);
       text-shadow: 0 2px 0 #0007;
       line-height: 1;
     }
     .card .s{
-      font-size: 12px;
+      font-size: 11px;
       opacity: .85;
       color: var(--muted);
       margin-top: 2px;
     }
-    .focusBox{
+    .note{
       border-radius: var(--radius2);
       border: 1px solid #ffffff1f;
       background:#0002;
-      padding: 12px 12px;
-      flex: 1;
-      min-height: 0;
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-      overflow:hidden;
-    }
-    .focusBox .headline{
-      font-family: var(--font-retro);
-      font-size: 26px;
-      letter-spacing: 1px;
-      color: var(--mint);
-      text-shadow: 0 2px 0 #0007;
-    }
-    .focusBox .plain{
-      font-size: 13px;
+      padding: 10px 10px;
+      font-size: 12px;
       line-height: 1.35;
-      opacity: .95;
-      overflow:auto;
-      padding-right: 4px;
-    }
-    .focusBox .plain b{ color: var(--lemon); }
-
-    /* Camera panel */
-    .camWrap{
-      padding:10px 12px 12px;
-      height: calc(100% - 52px);
-      display:grid;
-      grid-template-rows: auto 1fr;
-      gap:10px;
-      min-height: 0;
-    }
-    .camMeta{
-      display:grid;
-      grid-template-columns: 1fr auto;
-      gap:10px;
-      align-items:center;
-    }
-    .camMeta .left{
-      display:flex; align-items:center; gap:10px;
-      font-family:var(--font-retro);
-      font-size:20px;
-      letter-spacing:1px;
-      background:#0004;
-      border:1px solid #fff2;
-      border-radius:12px;
-      padding:6px 10px;
-      overflow:hidden;
-      white-space:nowrap;
-      text-overflow:ellipsis;
-    }
-    .livePip{ display:inline-flex; align-items:center; gap:6px; }
-    .livePip .dot{
-      width:8px; height:8px;
-      background:var(--danger);
-      box-shadow:0 0 14px #ff5b6ecc;
-    }
-    .camMeta .right{
-      font-family:var(--font-retro);
-      font-size:20px;
-      letter-spacing:1px;
-      background:#0004;
-      border:1px solid #fff2;
-      border-radius:12px;
-      padding:6px 10px;
-      white-space:nowrap;
-    }
-
-    .camBox{
-      border-radius: var(--radius2);
-      border:1px solid #ffffff1f;
-      overflow:hidden;
-      background:#0002;
-      position:relative;
-      min-height: 0;
-    }
-
-    /* IMPORTANT: center the video ALWAYS (panel mode) */
-    .camInner,
-    .camInnerFull{
-      position:absolute;
-      inset:0;
-      left:50%;
-      top:50%;
-      translate:-50% -50%;
-      transform-origin:center center;
-    }
-
-    /* Panel mode zoom (uses --camSize) */
-    .camInner{
-      transform: translate(-50%, -50%) scale(var(--camSize));
-      width: calc(100% / var(--camSize));
-      height: calc(100% / var(--camSize));
-    }
-
-    /* Fullscreen mode zoom (uses --camSizeFull) */
-    .camInnerFull{
-      transform: translate(-50%, -50%) scale(var(--camSizeFull));
-      width: calc(100% / var(--camSizeFull));
-      height: calc(100% / var(--camSizeFull));
-    }
-
-    .camFrame, .camFallback{
-      position:absolute; inset:0;
-      width:100%; height:100%;
-      border:0;
-    }
-    .camFallback{
-      display:none;
-      place-items:center;
-      padding:16px;
-      text-align:center;
       color: var(--muted);
-      font-family: var(--font-retro);
-      font-size: 26px;
-      letter-spacing: 1px;
-      background:
-        radial-gradient(900px 260px at 60% 70%, #ffb48a22, transparent 55%),
-        radial-gradient(700px 240px at 30% 50%, #86b7ff1f, transparent 60%),
-        linear-gradient(180deg, #0b0f2b, #070a1d);
     }
-    .camFallback small{
-      display:block;
-      font-size:18px;
-      opacity:.85;
-      margin-top:10px;
-      font-family: var(--font-ui);
-      letter-spacing:0;
-    }
-
-    /* Fullscreen camera stage (behind overlays) */
-    .fullStage{
-      position:absolute;
-      inset: calc(var(--hdrH) + 54px) 0 var(--tickerH) 0; /* below header+buttons, above ticker */
-      z-index: 1;
-      background:#000;
-      display:none; /* turned on in fullscreen mode */
-    }
-
-    /* Overlay UI (in fullscreen mode) */
-    .overlay{
-      position:absolute;
-      inset: calc(var(--hdrH) + 54px) 0 var(--tickerH) 0;
-      z-index: 6;
-      display:none;
-      pointer-events:none;
-      padding: var(--pad);
-      gap: 12px;
-    }
-    .overlay.on{ display:grid; grid-template-columns: 520px 1fr; }
-    .overlay .stack{ display:flex; flex-direction:column; gap:12px; min-width:0; }
-    .overlay .panel{
-      pointer-events:auto;
-      backdrop-filter: blur(6px);
-      background: linear-gradient(180deg, #0a0d2499, #00000033);
-      border: 1px solid #ffffff26;
-      box-shadow: 0 20px 50px #0007;
-    }
-
-    /* Hide normal main when fullscreen */
-    .main.hidden{ display:none; }
+    .note b{ color: var(--lemon); }
 
     /* Ticker */
     .ticker{
@@ -502,7 +439,7 @@
     }
     .tickerBrand{
       font-family:var(--font-retro);
-      font-size:34px;
+      font-size:32px;
       letter-spacing:2px;
       padding:6px 10px;
       border-radius:14px;
@@ -525,7 +462,7 @@
       display:inline-block;
       padding-left: 100%;
       font-family:var(--font-retro);
-      font-size:24px;
+      font-size:22px;
       letter-spacing:1px;
       animation: scroll var(--tickerSeconds) linear infinite;
       text-shadow:0 2px 0 #0007;
@@ -536,7 +473,7 @@
     }
     .clockBox{
       font-family:var(--font-retro);
-      font-size:34px;
+      font-size:32px;
       letter-spacing:2px;
       padding:6px 12px;
       border-radius:14px;
@@ -547,7 +484,7 @@
       white-space:nowrap;
     }
 
-    /* Simple “new accident” toast */
+    /* “new accident” toast */
     .toast{
       position:absolute;
       right: 16px;
@@ -564,7 +501,7 @@
     }
     .toast .t1{
       font-family: var(--font-retro);
-      font-size: 28px;
+      font-size: 26px;
       letter-spacing: 2px;
       display:flex;
       align-items:center;
@@ -587,11 +524,21 @@
       50%{ transform: scale(1.45); opacity: 1; }
       100%{ transform: scale(1); opacity: 0.9; }
     }
+
+    /* If the screen gets SUPER thin, shrink side panel a bit */
+    @media (max-width: 1100px){
+      :root{ --sideW: 320px; }
+    }
+    @media (max-width: 900px){
+      :root{ --sideW: 280px; }
+      .btn{ font-size:18px; padding:7px 10px; }
+    }
   </style>
 </head>
 
 <body>
-  <div class="bar" role="img" aria-label="AZ NOW live traffic and cams dashboard">
+  <div class="bar" aria-label="AZ NOW live traffic and cams dashboard">
+
     <div class="header">
       <div class="brand">
         <div class="logo">AZ NOW</div>
@@ -601,7 +548,6 @@
       <div class="meta">
         <div class="pill"><span class="dot"></span><span>LIVE</span></div>
         <div class="pill" id="datePill">—</div>
-        <div class="pill" id="fsPill" style="display:none;">FULLSCREEN</div>
       </div>
     </div>
 
@@ -612,155 +558,84 @@
       <button class="btn" id="btnWork">Work</button>
       <button class="btn" id="btnMegan">Megan</button>
       <button class="btn" id="btnDowntown">Downtown</button>
-      <button class="btn" id="btnFullscreen" title="Toggle fullscreen camera">Fullscreen</button>
 
-      <div class="modePill" title="Current camera selection mode">
+      <div class="modePill">
         MODE: <b id="modeLabel">RANDOM</b>
       </div>
     </div>
 
-    <!-- Fullscreen camera stage -->
-    <div class="fullStage" id="fullStage">
-      <div class="camInnerFull" id="camInnerFull">
-        <iframe class="camFrame" id="camFrameFull" title="AZ511 camera view (fullscreen)"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
-      </div>
-    </div>
+    <div class="stage">
+      <!-- VIDEO (primary focus) -->
+      <div class="videoShell">
+        <div class="videoHUD">
+          <div class="hudLeft">
+            <div class="hudPill">
+              <span class="liveDot"><span class="rd"></span>LIVE</span>
+              <span id="camLabelHud">Loading…</span>
+            </div>
+          </div>
+          <div class="hudRight">
+            <div class="hudPill">FEED <b id="camIndexHud">—</b></div>
+            <div class="hudPill">NEXT <b id="camCountdownHud">—</b>s</div>
+          </div>
+        </div>
 
-    <!-- Overlay UI (only used in fullscreen) -->
-    <div class="overlay" id="overlay">
-      <div class="stack">
-        <section class="panel">
+        <div class="videoViewport" id="videoViewport">
+          <!-- We size this element in JS and scale it to FIT HEIGHT by default -->
+          <div class="embedSizer" id="embedSizer">
+            <iframe
+              class="camFrame"
+              id="camFrame"
+              title="AZ511 camera view"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups">
+            </iframe>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIDE INFO (small strip) -->
+      <div class="side">
+        <section class="panel" style="flex: 1;">
           <div class="panelTitle">
             <h3>TOP INCIDENTS</h3>
-            <small>UPDATED: <span id="incUpdated2">—</span></small>
+            <small>UPDATED: <span id="incUpdated">—</span></small>
           </div>
-          <div class="incidents" id="incidentsList2"></div>
+          <div class="incidents" id="incidentsList">
+            <div class="incident sev-low">
+              <div class="ic">…</div>
+              <div>
+                <div class="itop">Loading</div>
+                <div class="isub">Waiting for AZ511 events…</div>
+              </div>
+              <div class="itag">LIVE</div>
+            </div>
+          </div>
         </section>
 
         <section class="panel">
           <div class="panelTitle">
             <h3>CITY SNAPSHOT</h3>
-            <small>STATUS: <span id="statusLabel2">—</span></small>
+            <small>STATUS: <span id="statusLabel">—</span></small>
           </div>
           <div class="summary">
             <div class="bigNums">
               <div class="card">
-                <div class="k">ACTIVE EVENTS</div>
-                <div class="v" id="statEvents2">—</div>
-                <div class="s">Things impacting traffic right now</div>
+                <div class="k">EVENTS</div>
+                <div class="v" id="statEvents">—</div>
+                <div class="s">Active traffic items</div>
               </div>
               <div class="card">
-                <div class="k">CAMERAS LIVE</div>
-                <div class="v" id="statCams2">—</div>
-                <div class="s">Available camera feeds</div>
+                <div class="k">CAMS</div>
+                <div class="v" id="statCams">—</div>
+                <div class="s">Camera feeds available</div>
               </div>
             </div>
-            <div class="focusBox">
-              <div class="headline" id="focusTitle2">What you’re looking at</div>
-              <div class="plain" id="focusBody2">—</div>
+            <div class="note" id="note">
+              Tip: <b>Accident view</b> jumps near crashes. <b>Home</b> keeps you near your place.
             </div>
           </div>
         </section>
       </div>
-
-      <div class="stack" style="align-items:flex-end;">
-        <section class="panel" style="width:min(520px, 100%);">
-          <div class="panelTitle">
-            <h3>LIVE CAMERA</h3>
-            <small>FEED: <span id="camIndex2">—</span></small>
-          </div>
-          <div style="padding:10px 12px 12px; display:grid; gap:10px;">
-            <div class="camMeta">
-              <div class="left">
-                <span class="livePip"><span class="dot"></span>LIVE</span>
-                <span id="camLabel2">—</span>
-              </div>
-              <div class="right">NEXT: <span id="camCountdown2">—</span>s</div>
-            </div>
-          </div>
-        </section>
-      </div>
-    </div>
-
-    <div class="main" id="main">
-      <!-- Incidents -->
-      <section class="panel">
-        <div class="panelTitle">
-          <h3>TOP INCIDENTS</h3>
-          <small>UPDATED: <span id="incUpdated">—</span></small>
-        </div>
-        <div class="incidents" id="incidentsList">
-          <div class="incident sev-low">
-            <div class="ic">…</div>
-            <div>
-              <div class="itop">Loading</div>
-              <div class="isub">Waiting for AZ511 events…</div>
-            </div>
-            <div class="itag">LIVE</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Summary -->
-      <section class="panel">
-        <div class="panelTitle">
-          <h3>CITY SNAPSHOT</h3>
-          <small>STATUS: <span id="statusLabel">—</span></small>
-        </div>
-
-        <div class="summary">
-          <div class="bigNums">
-            <div class="card">
-              <div class="k">ACTIVE EVENTS</div>
-              <div class="v" id="statEvents">—</div>
-              <div class="s">Things impacting traffic right now</div>
-            </div>
-            <div class="card">
-              <div class="k">CAMERAS LIVE</div>
-              <div class="v" id="statCams">—</div>
-              <div class="s">Available camera feeds</div>
-            </div>
-          </div>
-
-          <div class="focusBox">
-            <div class="headline" id="focusTitle">What you’re looking at</div>
-            <div class="plain" id="focusBody">
-              Loading…<br><br>
-              Tip: Use <b>Accident view</b> to jump to cams near crashes, or <b>Home</b> to surf cameras around your house.
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Camera -->
-      <section class="panel">
-        <div class="panelTitle">
-          <h3>LIVE CAMERA</h3>
-          <small>FEED: <span id="camIndex">—</span></small>
-        </div>
-
-        <div class="camWrap">
-          <div class="camMeta">
-            <div class="left" title="Camera location">
-              <span class="livePip"><span class="dot"></span>LIVE</span>
-              <span id="camLabel">Loading cameras…</span>
-            </div>
-            <div class="right">NEXT: <span id="camCountdown">—</span>s</div>
-          </div>
-
-          <div class="camBox">
-            <div class="camInner" id="camInner">
-              <iframe class="camFrame" id="camFrame" title="AZ511 camera view"
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
-            </div>
-            <div class="camFallback" id="camFallback">
-              CAMERA EMBED BLOCKED
-              <small>If AZ511 disallows iframe embedding, we can switch to still images (if available) or proxy a snapshot endpoint.</small>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
 
     <div class="ticker">
@@ -773,11 +648,12 @@
       <div class="t1"><span class="pulseDot"></span>NEW ACCIDENT</div>
       <div class="t2" id="toastMsg">—</div>
     </div>
+
   </div>
 
 <script>
   // =========================
-  // CONFIG (edit these only)
+  // CONFIG
   // =========================
   const WORKER_BASE = "https://az-now-511-proxy.zachary-1-marshall.workers.dev";
 
@@ -785,7 +661,6 @@
   const EVENTS_POLL_SECONDS = 45;        // refresh incidents
   const CAMS_REFRESH_SECONDS = 10 * 60;  // refresh camera list
 
-  // Button coords (same as you requested)
   const LOCATIONS = {
     HOME:     { name: "HOME",     lat: 33.295147, lon: -112.117982 },
     WORK:     { name: "WORK",     lat: 33.440492, lon: -111.953428 },
@@ -829,7 +704,7 @@
       .replaceAll("'","&#39;");
   }
 
-  // Haversine distance (miles)
+  // Haversine miles
   function distMiles(lat1, lon1, lat2, lon2){
     const toRad = (x) => x * Math.PI / 180;
     const R = 3958.8;
@@ -873,6 +748,46 @@
   }
 
   // =========================
+  // “Fit by HEIGHT” embed scaling
+  // =========================
+  // The AZ511 camera pages don’t give us a clean aspect ratio.
+  // So we use a “natural embed size” (like a virtual canvas), then scale it down
+  // until it fits the VIEWPORT HEIGHT. That prevents zooming too far horizontally.
+  const EMBED_NATURAL = {
+    w: 1280, // adjust if needed
+    h: 720   // adjust if needed
+  };
+
+  function computeEmbedScale(){
+    const viewport = $("videoViewport");
+    const sizer = $("embedSizer");
+    if(!viewport || !sizer) return;
+
+    const cs = getComputedStyle(document.documentElement);
+    const fitByHeight = Number(cs.getPropertyValue("--camFit").trim()) === 1;
+    const maxScale = Number(cs.getPropertyValue("--videoMaxScale").trim()) || 1;
+
+    const vw = viewport.clientWidth;
+    const vh = viewport.clientHeight;
+
+    // Scale so the embed fits HEIGHT (default) or WIDTH (optional)
+    const scaleH = vh / EMBED_NATURAL.h;
+    const scaleW = vw / EMBED_NATURAL.w;
+    let scale = fitByHeight ? scaleH : scaleW;
+
+    // Never upscale above maxScale
+    scale = Math.min(scale, maxScale);
+
+    // If it’s too small (rare), allow up to maxScale anyway
+    scale = Math.max(0.1, scale);
+
+    // Apply
+    sizer.style.setProperty("--embedScale", String(scale));
+    sizer.style.width = EMBED_NATURAL.w + "px";
+    sizer.style.height = EMBED_NATURAL.h + "px";
+  }
+
+  // =========================
   // State
   // =========================
   let cameras = [];
@@ -882,11 +797,7 @@
   let lastEventIds = new Set();
   let lastEvents = [];
 
-  // Modes
   let mode = { type: "RANDOM", target: null };
-
-  // Fullscreen state
-  let fullscreen = false;
 
   // =========================
   // UI setters
@@ -907,32 +818,12 @@
     else if(n >= 10) label = "NORMAL";
     $("statusLabel").textContent = label;
 
-    $("focusTitle").textContent =
-      (mode.type === "ACCIDENT") ? "Accident mode" :
-      (mode.type === "NEAR") ? `Near ${mode.target?.name || "target"}` :
-      "Random mode";
-
     if(mode.type === "ACCIDENT"){
-      $("focusBody").innerHTML =
-        `We’ll prioritize cameras near new <b>accidents</b>.<br>
-         When something new pops up, you’ll see an alert and we’ll try to jump to a nearby cam.`;
+      $("note").innerHTML = `Accident mode: we’ll jump to cams near new <b>crashes</b>.`;
     } else if(mode.type === "NEAR"){
-      $("focusBody").innerHTML =
-        `Showing cameras within ~<b>10 miles</b> of <b>${escapeHTML(mode.target?.name || "your spot")}</b>.<br>
-         Use Random anytime for a city-wide scan.`;
+      $("note").innerHTML = `Near <b>${escapeHTML(mode.target?.name || "target")}</b>: cams within ~<b>10 miles</b>.`;
     } else {
-      $("focusBody").innerHTML =
-        `A city-wide shuffle of cameras.<br>
-         Want something specific? Tap <b>Home</b> or <b>Downtown</b>.`;
-    }
-
-    // Mirror to fullscreen overlay (if present)
-    if($("statusLabel2")){
-      $("statusLabel2").textContent = label;
-      $("focusTitle2").textContent = $("focusTitle").textContent;
-      $("focusBody2").innerHTML = $("focusBody").innerHTML;
-      $("statEvents2").textContent = $("statEvents").textContent;
-      $("statCams2").textContent = $("statCams").textContent;
+      $("note").innerHTML = `Random: city-wide shuffle. Try <b>Home</b> or <b>Downtown</b>.`;
     }
   }
 
@@ -942,32 +833,6 @@
     el.style.display = "block";
     clearTimeout(showToast._t);
     showToast._t = setTimeout(() => el.style.display = "none", 5200);
-  }
-
-  function applyFullscreen(on){
-    fullscreen = !!on;
-    $("main").classList.toggle("hidden", fullscreen);
-    $("fullStage").style.display = fullscreen ? "block" : "none";
-    $("overlay").classList.toggle("on", fullscreen);
-    $("fsPill").style.display = fullscreen ? "inline-flex" : "none";
-
-    // Keep the fullscreen iframe on the same feed
-    syncFullscreenFrame();
-    mirrorOverlayText();
-  }
-
-  function mirrorOverlayText(){
-    if(!fullscreen) return;
-    $("incUpdated2").textContent = $("incUpdated").textContent;
-    $("statEvents2").textContent = $("statEvents").textContent;
-    $("statCams2").textContent = $("statCams").textContent;
-    $("statusLabel2").textContent = $("statusLabel").textContent;
-    $("camIndex2").textContent = $("camIndex").textContent;
-    $("camLabel2").textContent = $("camLabel").textContent;
-    $("camCountdown2").textContent = $("camCountdown").textContent;
-
-    // incidents mirror
-    $("incidentsList2").innerHTML = $("incidentsList").innerHTML;
   }
 
   // =========================
@@ -995,7 +860,6 @@
 
     cameras = cleaned;
     $("statCams").textContent = cameras.length ? String(cameras.length) : "0";
-    if($("statCams2")) $("statCams2").textContent = $("statCams").textContent;
 
     if(camIdx >= cameras.length) camIdx = 0;
 
@@ -1015,8 +879,6 @@
     lastEvents = Array.isArray(data) ? data : (data?.Events || data?.events || []);
     $("incUpdated").textContent = nowStamp();
     $("statEvents").textContent = String(lastEvents.length);
-    if($("incUpdated2")) $("incUpdated2").textContent = $("incUpdated").textContent;
-    if($("statEvents2")) $("statEvents2").textContent = $("statEvents").textContent;
 
     // New event detection
     const ids = new Set();
@@ -1041,7 +903,6 @@
     renderIncidents(lastEvents);
     setStatus();
     setTicker(buildTicker(lastEvents));
-    mirrorOverlayText();
   }
 
   function buildTicker(events){
@@ -1059,7 +920,7 @@
     const list = $("incidentsList");
     list.innerHTML = "";
 
-    const maxInc = Number(getComputedStyle(document.documentElement).getPropertyValue("--maxIncidents")) || 7;
+    const maxInc = Number(getComputedStyle(document.documentElement).getPropertyValue("--maxIncidents")) || 5;
     const show = events.slice(0, maxInc);
 
     if(!show.length){
@@ -1103,44 +964,27 @@
   }
 
   // =========================
-  // Camera logic
+  // Camera selection logic
   // =========================
-  function syncFullscreenFrame(){
-    if(!fullscreen) return;
-    const src = $("camFrame").src || "";
-    if(src && $("camFrameFull").src !== src){
-      $("camFrameFull").src = src;
-    }
-  }
-
   function showCamera(index){
     if(!cameras.length) return;
 
     camIdx = (index + cameras.length) % cameras.length;
     const cam = cameras[camIdx];
 
-    $("camIndex").textContent = `${camIdx+1}/${cameras.length}`;
-    $("camLabel").textContent = (cam.viewDesc || cam.location || cam.roadway || `CAM ${cam.id}`).slice(0,60);
+    $("camIndexHud").textContent = `${camIdx+1}/${cameras.length}`;
+    $("camLabelHud").textContent = (cam.viewDesc || cam.location || cam.roadway || `CAM ${cam.id}`).slice(0,70);
 
     const frame = $("camFrame");
-    const fallback = $("camFallback");
-
-    let loaded = false;
-    frame.onload = () => { loaded = true; fallback.style.display = "none"; };
     frame.src = cam.viewUrl;
 
-    // mirror to fullscreen frame
-    if(fullscreen){
-      $("camFrameFull").src = cam.viewUrl;
-    }
+    // Recompute scaling after load (so we always center + no scrollbars)
+    frame.onload = () => {
+      computeEmbedScale();
+    };
 
-    setTimeout(() => {
-      if(!loaded){
-        fallback.style.display = "grid";
-      }
-    }, 1400);
-
-    mirrorOverlayText();
+    // also compute now (in case load is fast)
+    computeEmbedScale();
   }
 
   function pickRandomCameraIndex(){
@@ -1206,12 +1050,8 @@
     showCamera(bestI);
     camCountdown = CAMERA_ROTATE_SECONDS;
 
-    $("focusTitle").textContent = "Jumped to nearby camera";
-    $("focusBody").innerHTML =
-      `Found the closest camera to the selected event (~<b>${bestD.toFixed(1)} miles</b>).<br>
-       Tap <b>Random</b> to go back to city shuffle, or <b>Home</b> to stay near your place.`;
-
-    setStatus();
+    // Simple note
+    $("note").innerHTML = `Jumped to the closest cam (~<b>${bestD.toFixed(1)} mi</b>) near that event.`;
   }
 
   function jumpToNewestAccident(){
@@ -1221,7 +1061,7 @@
   }
 
   // =========================
-  // Button wiring
+  // Modes
   // =========================
   function setModeAccident(){
     mode = { type: "ACCIDENT", target: null };
@@ -1257,14 +1097,15 @@
     updateClock();
     setInterval(updateClock, 1000);
 
+    // Buttons
     $("btnAccident").addEventListener("click", setModeAccident);
     $("btnRandom").addEventListener("click", setModeRandom);
     $("btnHome").addEventListener("click", () => setModeNear(LOCATIONS.HOME));
     $("btnWork").addEventListener("click", () => setModeNear(LOCATIONS.WORK));
     $("btnMegan").addEventListener("click", () => setModeNear(LOCATIONS.MEGAN));
     $("btnDowntown").addEventListener("click", () => setModeNear(LOCATIONS.DOWNTOWN));
-    $("btnFullscreen").addEventListener("click", () => applyFullscreen(!fullscreen));
 
+    // Initial data load
     try{ await loadCameras(); }
     catch(e){
       $("statCams").textContent = "0";
@@ -1278,22 +1119,26 @@
       console.error(e);
     }
 
+    // Default
     setModeRandom();
 
+    // Refresh loops
     setInterval(() => loadCameras().catch(console.error), CAMS_REFRESH_SECONDS * 1000);
     setInterval(() => loadEvents().catch(console.error), EVENTS_POLL_SECONDS * 1000);
 
+    // Camera rotation loop
     setInterval(() => {
       if(!cameras.length) return;
       camCountdown--;
       if(camCountdown <= 0) nextCamera();
-      $("camCountdown").textContent = String(camCountdown);
-
-      // mirror countdown + labels in fullscreen overlay
-      if($("camCountdown2")) $("camCountdown2").textContent = $("camCountdown").textContent;
-      if($("camLabel2")) $("camLabel2").textContent = $("camLabel").textContent;
-      if($("camIndex2")) $("camIndex2").textContent = $("camIndex").textContent;
+      $("camCountdownHud").textContent = String(camCountdown);
     }, 1000);
+
+    // Recompute embed scale on resize
+    window.addEventListener("resize", () => computeEmbedScale());
+
+    // Initial compute
+    computeEmbedScale();
   }
 
   boot();
