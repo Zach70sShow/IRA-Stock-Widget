@@ -5,24 +5,26 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>AZ NOW — Live Traffic + Cams</title>
 
-  <!-- Fonts (optional; safe fallbacks if blocked) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Sans:wght@400;600;800&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      /* ========= YOU TUNE THESE ========= */
-      --sideW: 380px;           /* width of the small info strip on the right */
-      --camFit: 1;              /* 1 = fit by HEIGHT (recommended), 0 = fit by WIDTH */
-      --maxIncidents: 5;        /* fewer for small side panel */
+      /* ========= TUNE THESE ========= */
+      --sideW: 360px;          /* side info panel width */
+      --contentZoom: 1.75;     /* camera fill amount (1.2–2.4 typical) */
+      --iframeOffsetX: 0px;    /* nudge camera LEFT(-)/RIGHT(+) */
+      --iframeOffsetY: 0px;    /* nudge camera UP(-)/DOWN(+) */
+      --hideScrollbarPx: 22px; /* shove iframe left to clip inner scrollbar */
+      --maxScale: 2.40;        /* safety cap for total scale */
+      --maxIncidents: 5;
       --tickerSeconds: 55;
 
-      /* Location presets (used by buttons) */
-      --homeLat: 33.295147; --homeLon: -112.117982;
-      --workLat: 33.440492; --workLon: -111.953428;
-      --meganLat: 33.419155; --meganLon: -111.703516;
-      --dtLat:   33.448231; --dtLon:   -112.074975;
+      /* How we “pretend” the embedded cam page is sized.
+         If it still looks tiny, try bumping H up to 900 or 1080. */
+      --embedW: 1280;
+      --embedH: 720;
 
       /* ========= THEME ========= */
       --bg0:#0d1230; --bg1:#171a3b;
@@ -37,10 +39,6 @@
 
       --font-ui:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
       --font-retro:"VT323", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-
-      /* “Video centering + no scrollbars” controls */
-      --videoMaxScale: 1.0;     /* hard cap scale (safety). 1.0 usually good */
-      --videoPadding: 0px;      /* add breathing room around video if you want */
     }
 
     *{ box-sizing:border-box; }
@@ -57,7 +55,6 @@
       font-family:var(--font-ui);
     }
 
-    /* Fullscreen shell */
     .bar{
       width:100vw; height:100vh;
       position:relative;
@@ -69,8 +66,6 @@
         radial-gradient(700px 300px at 50% 120%, #c3a1ff14, transparent 55%),
         linear-gradient(180deg, #13163a, #0f1232);
     }
-
-    /* CRT scanlines */
     .bar::before{
       content:"";
       position:absolute; inset:0;
@@ -87,7 +82,6 @@
       z-index: 50;
     }
 
-    /* Header */
     .header{
       height:var(--hdrH);
       display:grid;
@@ -101,7 +95,6 @@
       position:relative;
       z-index: 10;
     }
-
     .brand{ display:flex; align-items:baseline; gap:12px; }
     .logo{
       font-family:var(--font-retro);
@@ -116,7 +109,6 @@
       letter-spacing:1px;
       opacity:.9;
     }
-
     .meta{
       display:flex; align-items:center; gap:12px;
       font-family:var(--font-retro);
@@ -138,7 +130,6 @@
       box-shadow:0 0 0 3px #fff2, 0 0 16px var(--ok);
     }
 
-    /* Buttons row */
     .controls{
       height: var(--controlsH);
       padding: 10px 14px 0;
@@ -189,7 +180,7 @@
     }
     .modePill b{ color: var(--lemon); }
 
-    /* ===== Thin-screen primary layout ===== */
+    /* ===== main stage for 32:9 ===== */
     .stage{
       height: calc(100% - var(--hdrH) - var(--controlsH) - var(--tickerH));
       display:grid;
@@ -201,18 +192,18 @@
       z-index: 2;
     }
 
-    /* Video area (primary focus) */
+    /* VIDEO AREA */
     .videoShell{
       position:relative;
       border-radius: var(--radius);
-      overflow:hidden;
+      overflow:hidden;            /* outer clip */
       border: 1px solid #ffffff20;
       background:#000;
       box-shadow: inset 0 0 0 1px #0003;
       min-height:0;
     }
 
-    /* A subtle top overlay bar inside video */
+    /* HUD overlays */
     .videoHUD{
       position:absolute;
       left:12px;
@@ -224,14 +215,6 @@
       align-items:center;
       justify-content:space-between;
       pointer-events:none;
-    }
-    .hudLeft, .hudRight{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      pointer-events:none;
-      flex-wrap:nowrap;
-      min-width:0;
     }
     .hudPill{
       pointer-events:none;
@@ -249,50 +232,41 @@
       text-overflow:ellipsis;
     }
     .hudPill b{ color: var(--lemon); }
-    .liveDot{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-    }
+    .liveDot{ display:inline-flex; align-items:center; gap:8px; }
     .liveDot .rd{
       width:8px; height:8px; border-radius:50%;
       background: var(--danger);
       box-shadow:0 0 14px #ff5b6ecc;
     }
 
-    /* The “no scrollbars, centered, fit height” embed trick */
+    /* The important part:
+       - viewport clips everything (including iframe’s own scrollbar region)
+       - iframe is centered, scaled to FIT HEIGHT, then extra zoom applied
+       - we shift X left a bit to hide the inner scrollbar */
     .videoViewport{
       position:absolute;
-      inset: var(--videoPadding);
-      overflow:hidden; /* NO SCROLLBARS */
-      display:grid;
-      place-items:center; /* center the embed */
+      inset:0;
+      overflow:hidden; /* NO SCROLLBARS ON OUR PAGE */
     }
-
-    /* We will set --embedScale dynamically based on viewport size. */
-    .embedSizer{
-      position:relative;
+    .camIFrame{
+      position:absolute;
+      left:50%;
+      top:50%;
+      /* We set width/height in JS to the “virtual” embed size */
       transform-origin:center center;
-      transform: scale(var(--embedScale, 1));
-      /* width/height are set in JS to match the iframe's natural size */
-    }
-
-    .camFrame{
-      width:100%;
-      height:100%;
       border:0;
-      display:block;
       background:#000;
+      /* older attribute too */
+      overflow:hidden;
     }
 
-    /* Side info strip */
+    /* SIDE STRIP */
     .side{
       display:flex;
       flex-direction:column;
       gap:12px;
       min-height:0;
     }
-
     .panel{
       border-radius: var(--radius);
       overflow:hidden;
@@ -323,7 +297,6 @@
       white-space:nowrap;
     }
 
-    /* Incidents list (compact) */
     .incidents{
       padding:10px 12px 12px;
       overflow:auto;
@@ -370,7 +343,6 @@
     .sev-med  .ic{ background: var(--warn); }
     .sev-low  .ic{ background: var(--mint); }
 
-    /* Snapshot compact */
     .summary{
       padding:10px 12px 12px;
       display:grid;
@@ -422,7 +394,6 @@
     }
     .note b{ color: var(--lemon); }
 
-    /* Ticker */
     .ticker{
       height:var(--tickerH);
       border-top:1px solid var(--line);
@@ -484,7 +455,6 @@
       white-space:nowrap;
     }
 
-    /* “new accident” toast */
     .toast{
       position:absolute;
       right: 16px;
@@ -525,10 +495,7 @@
       100%{ transform: scale(1); opacity: 0.9; }
     }
 
-    /* If the screen gets SUPER thin, shrink side panel a bit */
-    @media (max-width: 1100px){
-      :root{ --sideW: 320px; }
-    }
+    @media (max-width: 1100px){ :root{ --sideW: 320px; } }
     @media (max-width: 900px){
       :root{ --sideW: 280px; }
       .btn{ font-size:18px; padding:7px 10px; }
@@ -537,7 +504,7 @@
 </head>
 
 <body>
-  <div class="bar" aria-label="AZ NOW live traffic and cams dashboard">
+  <div class="bar">
 
     <div class="header">
       <div class="brand">
@@ -559,43 +526,38 @@
       <button class="btn" id="btnMegan">Megan</button>
       <button class="btn" id="btnDowntown">Downtown</button>
 
-      <div class="modePill">
-        MODE: <b id="modeLabel">RANDOM</b>
-      </div>
+      <div class="modePill">MODE: <b id="modeLabel">RANDOM</b></div>
     </div>
 
     <div class="stage">
-      <!-- VIDEO (primary focus) -->
+      <!-- VIDEO (primary) -->
       <div class="videoShell">
         <div class="videoHUD">
-          <div class="hudLeft">
-            <div class="hudPill">
-              <span class="liveDot"><span class="rd"></span>LIVE</span>
-              <span id="camLabelHud">Loading…</span>
-            </div>
+          <div class="hudPill">
+            <span class="liveDot"><span class="rd"></span>LIVE</span>
+            <span id="camLabelHud">Loading…</span>
           </div>
-          <div class="hudRight">
+          <div style="display:flex; gap:10px; align-items:center;">
             <div class="hudPill">FEED <b id="camIndexHud">—</b></div>
             <div class="hudPill">NEXT <b id="camCountdownHud">—</b>s</div>
           </div>
         </div>
 
         <div class="videoViewport" id="videoViewport">
-          <!-- We size this element in JS and scale it to FIT HEIGHT by default -->
-          <div class="embedSizer" id="embedSizer">
-            <iframe
-              class="camFrame"
-              id="camFrame"
-              title="AZ511 camera view"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups">
-            </iframe>
-          </div>
+          <iframe
+            id="camFrame"
+            class="camIFrame"
+            title="AZ511 camera view"
+            scrolling="no"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+            referrerpolicy="no-referrer"
+          ></iframe>
         </div>
       </div>
 
-      <!-- SIDE INFO (small strip) -->
+      <!-- SIDE STRIP -->
       <div class="side">
-        <section class="panel" style="flex: 1;">
+        <section class="panel" style="flex:1;">
           <div class="panelTitle">
             <h3>TOP INCIDENTS</h3>
             <small>UPDATED: <span id="incUpdated">—</span></small>
@@ -658,8 +620,8 @@
   const WORKER_BASE = "https://az-now-511-proxy.zachary-1-marshall.workers.dev";
 
   const CAMERA_ROTATE_SECONDS = 20;
-  const EVENTS_POLL_SECONDS = 45;        // refresh incidents
-  const CAMS_REFRESH_SECONDS = 10 * 60;  // refresh camera list
+  const EVENTS_POLL_SECONDS = 45;
+  const CAMS_REFRESH_SECONDS = 10 * 60;
 
   const LOCATIONS = {
     HOME:     { name: "HOME",     lat: 33.295147, lon: -112.117982 },
@@ -674,13 +636,24 @@
   const $ = (id) => document.getElementById(id);
   const pad2 = (n) => String(n).padStart(2, "0");
 
+  function cssNum(name, fallback){
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    const n = Number(v);
+    return Number.isFinite(n) ? n : fallback;
+  }
+  function cssPx(name, fallback){
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    if(!v) return fallback;
+    // supports "22px" or "0"
+    return v.endsWith("px") ? Number(v.slice(0,-2)) : Number(v);
+  }
+
   function setDatePill(){
     const d = new Date();
     const days = ["SUN","MON","TUES","WED","THUR","FRI","SAT"];
     const months = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
     $("datePill").textContent = `${days[d.getDay()]} ${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
   }
-
   function updateClock(){
     const d = new Date();
     const h24 = d.getHours();
@@ -689,12 +662,10 @@
     const h = ((h24 + 11) % 12) + 1;
     $("clock").textContent = `${h}:${pad2(m)} ${ampm}`;
   }
-
   function nowStamp(){
     const d = new Date();
     return `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
   }
-
   function escapeHTML(s){
     return String(s)
       .replaceAll("&","&amp;")
@@ -733,11 +704,9 @@
     const road = (ev?.RoadwayName || ev?.Roadway || ev?.Road || "").toString();
     const desc = (ev?.Description || ev?.ShortDescription || ev?.EventDescription || "").toString();
     const loc  = (ev?.Location || ev?.LocationDescription || "").toString();
-
     const main = [type, road].filter(Boolean).join(" • ").trim() || "Traffic issue";
     const detail = (desc || loc || "Details unavailable").replace(/\s+/g," ").trim();
-
-    return { main: main.slice(0, 40), detail: detail.slice(0, 80) };
+    return { main: main.slice(0, 42), detail: detail.slice(0, 85) };
   }
 
   async function getJSON(path){
@@ -748,43 +717,39 @@
   }
 
   // =========================
-  // “Fit by HEIGHT” embed scaling
+  // Embed sizing (THIS fixes your 32:9 problem)
   // =========================
-  // The AZ511 camera pages don’t give us a clean aspect ratio.
-  // So we use a “natural embed size” (like a virtual canvas), then scale it down
-  // until it fits the VIEWPORT HEIGHT. That prevents zooming too far horizontally.
-  const EMBED_NATURAL = {
-    w: 1280, // adjust if needed
-    h: 720   // adjust if needed
-  };
+  function positionAndScaleIframe(){
+    const vp = $("videoViewport");
+    const iframe = $("camFrame");
+    if(!vp || !iframe) return;
 
-  function computeEmbedScale(){
-    const viewport = $("videoViewport");
-    const sizer = $("embedSizer");
-    if(!viewport || !sizer) return;
+    const vpW = vp.clientWidth;
+    const vpH = vp.clientHeight;
 
-    const cs = getComputedStyle(document.documentElement);
-    const fitByHeight = Number(cs.getPropertyValue("--camFit").trim()) === 1;
-    const maxScale = Number(cs.getPropertyValue("--videoMaxScale").trim()) || 1;
+    const embedW = cssNum("--embedW", 1280);
+    const embedH = cssNum("--embedH", 720);
 
-    const vw = viewport.clientWidth;
-    const vh = viewport.clientHeight;
+    // Fit by HEIGHT (always) so it stops zooming once vertical pixels fill up.
+    const fitScale = vpH / embedH;
 
-    // Scale so the embed fits HEIGHT (default) or WIDTH (optional)
-    const scaleH = vh / EMBED_NATURAL.h;
-    const scaleW = vw / EMBED_NATURAL.w;
-    let scale = fitByHeight ? scaleH : scaleW;
+    const contentZoom = cssNum("--contentZoom", 1.6);
+    const maxScale = cssNum("--maxScale", 2.4);
 
-    // Never upscale above maxScale
-    scale = Math.min(scale, maxScale);
+    const finalScale = Math.min(fitScale * contentZoom, maxScale);
 
-    // If it’s too small (rare), allow up to maxScale anyway
-    scale = Math.max(0.1, scale);
+    // Make iframe big enough to hide inner scrollbar by shifting left.
+    const hideSB = cssPx("--hideScrollbarPx", 22);
+    const offX = cssPx("--iframeOffsetX", 0);
+    const offY = cssPx("--iframeOffsetY", 0);
 
-    // Apply
-    sizer.style.setProperty("--embedScale", String(scale));
-    sizer.style.width = EMBED_NATURAL.w + "px";
-    sizer.style.height = EMBED_NATURAL.h + "px";
+    iframe.style.width  = embedW + "px";
+    iframe.style.height = embedH + "px";
+
+    // Center + offset + scrollbar shove, then scale.
+    // Note: we push LEFT by hideSB so the right-side scrollbar gets clipped.
+    iframe.style.transform =
+      `translate(-50%, -50%) translate(${offX - hideSB}px, ${offY}px) scale(${finalScale})`;
   }
 
   // =========================
@@ -800,14 +765,13 @@
   let mode = { type: "RANDOM", target: null };
 
   // =========================
-  // UI setters
+  // UI
   // =========================
   function setModeLabel(){
     if(mode.type === "ACCIDENT") $("modeLabel").textContent = "ACCIDENT";
     else if(mode.type === "RANDOM") $("modeLabel").textContent = "RANDOM";
     else if(mode.type === "NEAR") $("modeLabel").textContent = mode.target?.name || "NEAR";
   }
-
   function setTicker(text){ $("tickerText").textContent = text; }
 
   function setStatus(){
@@ -819,7 +783,7 @@
     $("statusLabel").textContent = label;
 
     if(mode.type === "ACCIDENT"){
-      $("note").innerHTML = `Accident mode: we’ll jump to cams near new <b>crashes</b>.`;
+      $("note").innerHTML = `Accident mode: jumps near new <b>crashes</b>.`;
     } else if(mode.type === "NEAR"){
       $("note").innerHTML = `Near <b>${escapeHTML(mode.target?.name || "target")}</b>: cams within ~<b>10 miles</b>.`;
     } else {
@@ -836,11 +800,10 @@
   }
 
   // =========================
-  // Data loading
+  // Loading
   // =========================
   async function loadCameras(){
     const data = await getJSON("cameras");
-
     const cleaned = [];
     for(const cam of data){
       const views = Array.isArray(cam.Views) ? cam.Views : [];
@@ -857,10 +820,8 @@
         viewDesc: enabled[0].Description || cam.Location || "Camera"
       });
     }
-
     cameras = cleaned;
     $("statCams").textContent = cameras.length ? String(cameras.length) : "0";
-
     if(camIdx >= cameras.length) camIdx = 0;
 
     if(cameras.length){
@@ -880,7 +841,6 @@
     $("incUpdated").textContent = nowStamp();
     $("statEvents").textContent = String(lastEvents.length);
 
-    // New event detection
     const ids = new Set();
     const newOnes = [];
     for(const ev of lastEvents){
@@ -964,7 +924,7 @@
   }
 
   // =========================
-  // Camera selection logic
+  // Cameras
   // =========================
   function showCamera(index){
     if(!cameras.length) return;
@@ -976,15 +936,11 @@
     $("camLabelHud").textContent = (cam.viewDesc || cam.location || cam.roadway || `CAM ${cam.id}`).slice(0,70);
 
     const frame = $("camFrame");
+    frame.onload = () => positionAndScaleIframe();
     frame.src = cam.viewUrl;
 
-    // Recompute scaling after load (so we always center + no scrollbars)
-    frame.onload = () => {
-      computeEmbedScale();
-    };
-
-    // also compute now (in case load is fast)
-    computeEmbedScale();
+    // also do it immediately
+    positionAndScaleIframe();
   }
 
   function pickRandomCameraIndex(){
@@ -1027,7 +983,6 @@
 
   function jumpToNearestCamera(eventObj){
     if(!cameras.length) return;
-
     const p = pickLatLon(eventObj);
     if(!p){
       showCamera(pickRandomCameraIndex());
@@ -1046,11 +1001,8 @@
         bestI = i;
       }
     }
-
     showCamera(bestI);
     camCountdown = CAMERA_ROTATE_SECONDS;
-
-    // Simple note
     $("note").innerHTML = `Jumped to the closest cam (~<b>${bestD.toFixed(1)} mi</b>) near that event.`;
   }
 
@@ -1065,24 +1017,19 @@
   // =========================
   function setModeAccident(){
     mode = { type: "ACCIDENT", target: null };
-    setModeLabel();
-    setStatus();
+    setModeLabel(); setStatus();
     jumpToNewestAccident();
     setTicker(`ACCIDENT VIEW • Watching for new crashes • ${nowStamp()} •`);
   }
-
   function setModeRandom(){
     mode = { type: "RANDOM", target: null };
-    setModeLabel();
-    setStatus();
+    setModeLabel(); setStatus();
     showCamera(pickRandomCameraIndex());
     setTicker(`RANDOM VIEW • City camera shuffle • ${nowStamp()} •`);
   }
-
   function setModeNear(loc){
     mode = { type: "NEAR", target: loc };
-    setModeLabel();
-    setStatus();
+    setModeLabel(); setStatus();
     const near = getCamerasNear(loc.lat, loc.lon, 10);
     if(near.length) showCamera(near[0].i);
     else showCamera(pickRandomCameraIndex());
@@ -1097,7 +1044,6 @@
     updateClock();
     setInterval(updateClock, 1000);
 
-    // Buttons
     $("btnAccident").addEventListener("click", setModeAccident);
     $("btnRandom").addEventListener("click", setModeRandom);
     $("btnHome").addEventListener("click", () => setModeNear(LOCATIONS.HOME));
@@ -1105,40 +1051,22 @@
     $("btnMegan").addEventListener("click", () => setModeNear(LOCATIONS.MEGAN));
     $("btnDowntown").addEventListener("click", () => setModeNear(LOCATIONS.DOWNTOWN));
 
-    // Initial data load
-    try{ await loadCameras(); }
-    catch(e){
-      $("statCams").textContent = "0";
-      setTicker(`CAMERA LOAD FAILED • CHECK WORKER /cameras • ${nowStamp()} •`);
-      console.error(e);
-    }
+    window.addEventListener("resize", () => positionAndScaleIframe());
 
-    try{ await loadEvents(); }
-    catch(e){
-      setTicker(`EVENT LOAD FAILED • CHECK WORKER /event • ${nowStamp()} •`);
-      console.error(e);
-    }
+    try{ await loadCameras(); } catch(e){ console.error(e); }
+    try{ await loadEvents(); } catch(e){ console.error(e); }
 
-    // Default
     setModeRandom();
 
-    // Refresh loops
     setInterval(() => loadCameras().catch(console.error), CAMS_REFRESH_SECONDS * 1000);
     setInterval(() => loadEvents().catch(console.error), EVENTS_POLL_SECONDS * 1000);
 
-    // Camera rotation loop
     setInterval(() => {
       if(!cameras.length) return;
       camCountdown--;
       if(camCountdown <= 0) nextCamera();
       $("camCountdownHud").textContent = String(camCountdown);
     }, 1000);
-
-    // Recompute embed scale on resize
-    window.addEventListener("resize", () => computeEmbedScale());
-
-    // Initial compute
-    computeEmbedScale();
   }
 
   boot();
